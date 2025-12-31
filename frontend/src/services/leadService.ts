@@ -69,7 +69,7 @@ export const leadService = {
 
   updateLead: async (
     id: string,
-    data: Partial<CreateLeadData & { classification?: string }>
+    data: Partial<CreateLeadData & { classification?: string ,voidReson?:string,customVoidReason?:string }>
   ): Promise<Lead> => {
     const response = await api.put(`/leads/${id}`, data);
     return response.data;

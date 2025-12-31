@@ -63,6 +63,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   logout: async () => {
     try {
       await authService.logout();
+
       localStorage.removeItem("user");
       set({
         user: null,
