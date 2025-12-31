@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import MenuSidebar from './components/MenuSidebar';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
 import LeadProfilePage from './pages/LeadProfilePage';
 import LeadsPage from './pages/Lead/LeadPage';
 import UsersPage from './pages/UsersPage';
@@ -43,14 +42,6 @@ const AppContent: React.FC = () => {
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/leads"
               element={
                 <ProtectedRoute>
@@ -74,7 +65,7 @@ const AppContent: React.FC = () => {
                 </ProtectedRoute>
               }
             />
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to="/leads" replace />} />
           </Routes>
         </main>
       </div>

@@ -15,24 +15,10 @@ const MenuSidebar: React.FC = () => {
 
   const allMenuSections = [
     {
-      title: 'MAIN',
-      items: [
-        { name: 'Dashboard', icon: '🏠' , route:'/dashboard', allowedRoles: ['admin', 'sales_agent', 'developer'] as Role[] },
-      ],
-    },
-    {
       title: 'MANAGEMENT',
       items: [
         { name: 'Leads', icon: '📋' , route:'/leads', allowedRoles: ['admin', 'sales_agent'] as Role[] },
         { name: 'Users', icon: '👥' ,route:'/users', allowedRoles: ['admin'] as Role[] },
-        { name: 'Account', icon: '💼' ,route:'/account', allowedRoles: ['admin', 'sales_agent', 'developer'] as Role[] },
-      ],
-    },
-    {
-      title: 'SETTINGS',
-      items: [
-        { name: 'Profile', icon: '⚙️', route:'/profile', allowedRoles: ['admin', 'sales_agent', 'developer'] as Role[] },
-        { name: 'Logout', icon: '🚪' ,route:'/logout', allowedRoles: ['admin', 'sales_agent', 'developer'] as Role[] },
       ],
     },
   ];

@@ -253,13 +253,13 @@ const LeadProfilePage: React.FC = () => {
             <span className="text-sm">Back to Leads</span>
           </button>
 
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg sm:text-xl flex-shrink-0">
                 {lead.name.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <h1 className="text-2xl font-bold">{lead.name}</h1>
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold truncate">{lead.name}</h1>
                 <span
                   className={`inline-block mt-1 px-3 py-1 rounded-full text-xs border ${getClassificationStyle(
                     lead.classification
@@ -272,7 +272,7 @@ const LeadProfilePage: React.FC = () => {
 
             <button
               onClick={() => setShowEditModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition w-full sm:w-auto"
             >
               <Edit2 className="h-4 w-4" />
               Edit Lead
@@ -283,11 +283,11 @@ const LeadProfilePage: React.FC = () => {
 
       {/* TABS */}
       <div className="border-b border-gray-800">
-        <div className="px-4 md:px-6">
-          <div className="flex gap-6">
+        <div className="px-3 sm:px-4 md:px-6">
+          <div className="flex gap-4 sm:gap-6 overflow-x-auto ">
             <button
               onClick={() => setActiveTab("overview")}
-              className={`py-3 border-b-2 transition ${
+              className={`py-3 border-b-2 transition whitespace-nowrap text-sm sm:text-base ${
                 activeTab === "overview"
                   ? "border-blue-500 text-white"
                   : "border-transparent text-gray-400 hover:text-white"
@@ -297,26 +297,26 @@ const LeadProfilePage: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab("tasks")}
-              className={`py-3 border-b-2 transition ${
+              className={`py-3 border-b-2 transition whitespace-nowrap text-sm sm:text-base ${
                 activeTab === "tasks"
                   ? "border-blue-500 text-white"
                   : "border-transparent text-gray-400 hover:text-white"
               }`}
             >
-              Tasks & Activities
+              Tasks
             </button>
           </div>
         </div>
       </div>
 
       {/* CONTENT */}
-      <div className="p-4 md:p-6 max-w-7xl mx-auto">
+      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
         {activeTab === "overview" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* LEFT COLUMN - Contact & Details */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
               {/* Contact Information */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
                 <h2 className="text-lg font-semibold mb-4">
                   Contact Information
                 </h2>
@@ -355,7 +355,7 @@ const LeadProfilePage: React.FC = () => {
               </div>
 
               {/* Classification & Void Reasons */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
                 <h2 className="text-lg font-semibold mb-4">Classification</h2>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
@@ -415,7 +415,7 @@ const LeadProfilePage: React.FC = () => {
               </div>
 
               {/* Agent Assignment */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
                 <h2 className="text-lg font-semibold mb-4">
                   Assigned Agent
                 </h2>
@@ -452,8 +452,8 @@ const LeadProfilePage: React.FC = () => {
             </div>
 
             {/* RIGHT COLUMN - Timeline */}
-            <div className="space-y-6">
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
                 <h2 className="text-lg font-semibold mb-4">Timeline</h2>
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
@@ -487,8 +487,8 @@ const LeadProfilePage: React.FC = () => {
         )}
 
         {activeTab === "tasks" && (
-          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-6">
-            <div className="text-center py-12">
+          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
+            <div className="text-center py-8 sm:py-12">
               <Clock className="h-12 w-12 text-gray-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Tasks Yet</h3>
               <p className="text-gray-400 mb-4">
@@ -631,7 +631,7 @@ const LeadProfilePage: React.FC = () => {
                 >
                   <option value="">-- Choose an agent --</option>
                   {agents.map((agent) => (
-                    <option key={agent.id} value={agent.id}>
+                    <option key={agent._id} value={agent._id}>
                       {agent.name} ({agent.email})
                     </option>
                   ))}

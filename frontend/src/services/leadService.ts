@@ -69,13 +69,13 @@ export const leadService = {
 
   updateLead: async (
     id: string,
-    data: Partial<CreateLeadData & { classification?: string ,voidReson?:string,customVoidReason?:string }>
-  ): Promise<Lead> => {
+    data: Record<string, unknown>
+  ): Promise<{ data: Lead }> => {
     const response = await api.put(`/leads/${id}`, data);
     return response.data;
   },
 
-  assignAgent: async (leadId: string, agentId: string): Promise<Lead> => {
+  assignAgent: async (leadId: string, agentId: string): Promise<{ data: Lead }> => {
     const response = await api.post(`/leads/${leadId}/assign`, { agentId });
     return response.data;
   },
