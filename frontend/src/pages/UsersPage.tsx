@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Search, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, Trash2, ChevronLeft, ChevronRight, Edit2 } from "lucide-react";
 import { userService, type User } from "../services/userService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,16 @@ const UsersPage: React.FC = () => {
     role: "sales_agent" as "admin" | "sales_agent" | "developer",
   });
   const [createLoading, setCreateLoading] = useState(false);
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "sales_agent" as "admin" | "sales_agent" | "developer",
+  });
+  const [editLoading, setEditLoading] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -85,6 +95,34 @@ const UsersPage: React.FC = () => {
       fetchUsers();
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to delete user");
+    }
+  };
+
+  const openEditModal = (user: User) => {
+    setEditingUser(user);
+    setEditForm({
+      name: user.name,
+      email: user.email,
+      phone: user.phone || "",
+      role: user.role,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setEditLoading(true);
+    setError(null);
+    try {
+      await userService.updateUser(editingUser._id, editForm);
+      setShowEditModal(false);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to update user");
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -166,14 +204,24 @@ const UsersPage: React.FC = () => {
                 <span className="text-sm text-gray-400">
                   {user.phone || "No phone"}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-400 hover:text-red-300"
-                  onClick={() => handleDeleteUser(user._id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-400 hover:text-blue-300"
+                    onClick={() => openEditModal(user)}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-400 hover:text-red-300"
+                    onClick={() => handleDeleteUser(user._id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           ))
@@ -224,14 +272,24 @@ const UsersPage: React.FC = () => {
                   </td>
                   <td className="p-3">{user.assignedLeadsCount}</td>
                   <td className="p-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-400 hover:text-red-300"
-                      onClick={() => handleDeleteUser(user._id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-400 hover:text-blue-300"
+                        onClick={() => openEditModal(user)}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-400 hover:text-red-300"
+                        onClick={() => handleDeleteUser(user._id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))
@@ -344,6 +402,83 @@ const UsersPage: React.FC = () => {
                 </Button>
                 <Button type="submit" disabled={createLoading}>
                   {createLoading ? "Creating..." : "Create"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showEditModal && editingUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <h2 className="text-xl font-semibold mb-4">Edit User</h2>
+            <form onSubmit={handleEditUser} className="space-y-4">
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Name *</label>
+                <Input
+                  type="text"
+                  required
+                  value={editForm.name}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, name: e.target.value })
+                  }
+                  className="bg-gray-800 border-gray-700"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Email *</label>
+                <Input
+                  type="email"
+                  required
+                  value={editForm.email}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, email: e.target.value })
+                  }
+                  className="bg-gray-800 border-gray-700"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Phone</label>
+                <Input
+                  type="text"
+                  value={editForm.phone}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, phone: e.target.value })
+                  }
+                  className="bg-gray-800 border-gray-700"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Role *</label>
+                <select
+                  value={editForm.role}
+                  onChange={(e) =>
+                    setEditForm({
+                      ...editForm,
+                      role: e.target.value as typeof editForm.role,
+                    })
+                  }
+                  className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
+                >
+                  <option value="sales_agent">Sales Agent</option>
+                  <option value="admin">Admin</option>
+                  <option value="developer">Developer</option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingUser(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={editLoading}>
+                  {editLoading ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
             </form>

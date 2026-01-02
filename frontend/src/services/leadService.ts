@@ -79,4 +79,9 @@ export const leadService = {
     const response = await api.post(`/leads/${leadId}/assign`, { agentId });
     return response.data;
   },
+
+  convertToCustomer: async (leadId: string): Promise<{ data: Lead }> => {
+    const response = await api.post(`/leads/${leadId}/convert`);
+    return response.data;
+  },
 };

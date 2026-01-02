@@ -33,6 +33,7 @@ const LeadProfilePage: React.FC = () => {
   const [showClassifyModal, setShowClassifyModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [converting, setConverting] = useState(false);
 
   const [agents, setAgents] = useState<User[]>([]);
   const [selectedClassification, setSelectedClassification] =
@@ -203,6 +204,28 @@ const LeadProfilePage: React.FC = () => {
     }
   };
 
+  /* ===================== CONVERT TO CUSTOMER ===================== */
+  const handleConvert = async () => {
+    if (!id || !lead) return;
+    if (lead.isConverted) {
+      alert("This lead is already converted");
+      return;
+    }
+    if (!confirm("Are you sure you want to convert this lead to a customer?")) return;
+
+    setConverting(true);
+    try {
+      const response = await leadService.convertToCustomer(id);
+      setLead(response.data);
+      alert("Lead converted to customer successfully!");
+    } catch (error) {
+      console.error("Failed to convert lead:", error);
+      alert("Failed to convert lead to customer");
+    } finally {
+      setConverting(false);
+    }
+  };
+
   /* ===================== UI HELPERS ===================== */
   const getClassificationStyle = (classification: LeadClassification) => {
     switch (classification) {
@@ -284,7 +307,7 @@ const LeadProfilePage: React.FC = () => {
       {/* TABS */}
       <div className="border-b border-gray-800">
         <div className="px-3 sm:px-4 md:px-6">
-          <div className="flex gap-4 sm:gap-6 overflow-x-auto ">
+          <div className="flex gap-4 sm:gap-6 overflow-x-auto p-1 ">
             <button
               onClick={() => setActiveTab("overview")}
               className={`py-3 border-b-2 transition whitespace-nowrap text-sm sm:text-base ${
@@ -447,6 +470,38 @@ const LeadProfilePage: React.FC = () => {
                     <UserPlus className="h-4 w-4 mr-2" />
                     {lead.assignedAgent ? "Reassign Agent" : "Assign Agent"}
                   </Button>
+                </div>
+              </div>
+
+              {/* Convert to Customer */}
+              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
+                <h2 className="text-lg font-semibold mb-4">Conversion</h2>
+                <div className="space-y-4">
+                  {lead.isConverted ? (
+                    <div className="flex items-center gap-3 text-green-400">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <span className="text-sm font-medium">Converted to Customer</span>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-400">
+                        Convert this lead to a customer when they make a purchase or sign a contract.
+                      </p>
+                      <Button
+                        onClick={handleConvert}
+                        disabled={converting || lead.classification === "Void"}
+                        className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                        {converting ? "Converting..." : "Convert to Customer"}
+                      </Button>
+                      {lead.classification === "Void" && (
+                        <p className="text-xs text-yellow-400">
+                          Cannot convert a voided lead
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>
