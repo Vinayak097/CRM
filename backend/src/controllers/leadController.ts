@@ -17,42 +17,39 @@ const getAgentIdForLead = (user?: AuthUser | null): string | null => {
 };
 
 export const LeadCreate = async (req: AuthRequest, res: Response) => {
-  const { name, phone, email, source, budgetRange, assignedAgent } = req.body;
+  const { identity, profile, demographics, buyerProfile, assetPreferences, purchaseReadiness, ownershipPreferences, locationProfile, lifestylePreferences, unitPreferences, notes, system } = req.body;
 
-  if (!name || !phone) {
-    res.status(400).json({ message: "Name and phone are required" });
+  if (!identity?.fullName || !identity?.phone) {
+    res.status(400).json({ message: "identity.fullName and identity.phone are required" });
     return;
   }
 
-  const agentId = assignedAgent || getAgentIdForLead(req.user);
+  const agentId = system?.assignedAgent || getAgentIdForLead(req.user);
 
   try {
-    let isDuplicate = false;
-    let duplicateTag = "";
-
-    const phoneLead = await Lead.findOne({ phone });
+    const phoneLead = await Lead.findOne({ "identity.phone": identity.phone });
     if (phoneLead) {
-      isDuplicate = true;
-      duplicateTag = "phone";
-    } else if (email) {
-      const emailLead = await Lead.findOne({ email });
-      if (emailLead) {
-        isDuplicate = true;
-        duplicateTag = "email";
-      }
+      res.status(409).json({ message: "Lead with this phone number already exists" });
+      return;
     }
 
     const lead = await Lead.create({
-      name,
-      phone,
-      email,
-      source,
-      budgetRange,
-      assignedAgent: agentId,
-      classification: "Cold",
-      isDuplicate,
-      duplicateTag,
-      isConverted: false,
+      identity,
+      profile,
+      demographics,
+      buyerProfile,
+      assetPreferences,
+      purchaseReadiness,
+      ownershipPreferences,
+      locationProfile,
+      lifestylePreferences,
+      unitPreferences,
+      notes,
+      system: {
+        ...system,
+        assignedAgent: agentId,
+        leadStatus: system?.leadStatus || "New",
+      },
     });
 
     if (agentId) {
@@ -83,14 +80,14 @@ export const updateLeadController = async (req: AuthRequest, res: Response) => {
       return;
     }
 
-    const oldAgent = existingLead.assignedAgent?.toString();
-    const newAgent = updates.assignedAgent;
+    const oldAgent = existingLead.system?.assignedAgent?.toString();
+    const newAgent = updates.system?.assignedAgent;
 
     const updatedLead = await Lead.findByIdAndUpdate(
       leadId,
       { ...updates, updatedAt: new Date() },
       { new: true }
-    ).populate("assignedAgent", "name email");
+    ).populate("system.assignedAgent", "name email");
 
     if (newAgent && newAgent !== oldAgent) {
       await createNotification({
@@ -123,18 +120,18 @@ export const getAllLeads = async (req: AuthRequest, res: Response) => {
     const filter: Record<string, unknown> = {};
 
     if (req.user?.role === Role.salesAgent) {
-      filter.assignedAgent = req.user.id;
+      filter["system.assignedAgent"] = req.user.id;
     }
     if (search) {
       filter.$or = [
-        { name: { $regex: search, $options: "i" } }, // Only name field
-        { email: { $regex: search, $options: "i" } }, // Only email field
-        { phone: { $regex: search, $options: "i" } },
+        { "identity.fullName": { $regex: search, $options: "i" } },
+        { "identity.email": { $regex: search, $options: "i" } },
+        { "identity.phone": { $regex: search, $options: "i" } },
       ];
     }
 
     const leads = await Lead.find(filter)
-      .populate("assignedAgent", "name email")
+      .populate("system.assignedAgent", "name email")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
@@ -161,7 +158,7 @@ export const getLeadById = async (req: AuthRequest, res: Response) => {
 
   try {
     const lead = await Lead.findById(id).populate(
-      "assignedAgent",
+      "system.assignedAgent",
       "name email"
     );
 
@@ -172,7 +169,7 @@ export const getLeadById = async (req: AuthRequest, res: Response) => {
 
     if (
       req.user?.role === Role.salesAgent &&
-      lead.assignedAgent?.toString() !== req.user.id
+      lead.system?.assignedAgent?.toString() !== req.user.id
     ) {
       res.status(403).json({ message: "Access denied" });
       return;
@@ -181,59 +178,6 @@ export const getLeadById = async (req: AuthRequest, res: Response) => {
     res.status(200).json({ data: lead });
   } catch (error) {
     console.error("Get lead error:", error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-export const classifyLeadController = async (
-  req: AuthRequest,
-  res: Response
-) => {
-  const { id } = req.params;
-  const { classification } = req.body;
-
-  const allowedClassifications = ["Cold", "Warm", "Hot", "Void"];
-
-  try {
-    if (!allowedClassifications.includes(classification)) {
-      res.status(400).json({ message: "Invalid classification value" });
-      return;
-    }
-
-    const lead = await Lead.findById(id);
-    if (!lead) {
-      res.status(404).json({ message: "Lead not found" });
-      return;
-    }
-
-    if (
-      req.user?.role === Role.salesAgent &&
-      lead.assignedAgent?.toString() !== req.user.id
-    ) {
-      res.status(403).json({ message: "Access denied" });
-      return;
-    }
-
-    lead.classification = classification;
-    await lead.save();
-
-    if (lead.assignedAgent) {
-      await createNotification({
-        recipient: lead.assignedAgent,
-        type: NotificationType.StatusUpdate,
-        title: "Lead Classification Updated",
-        message: `Lead ${lead.name} marked as ${classification}`,
-        relatedEntity: RelatedEntity.Lead,
-        relatedEntityId: lead._id,
-        isRead: false,
-      });
-    }
-
-    res
-      .status(200)
-      .json({ message: "Lead classification updated", data: lead });
-  } catch (error) {
-    console.error("Classify lead error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -262,8 +206,12 @@ export const assignAgentToLeadController = async (
       return;
     }
 
-    const oldAgent = lead.assignedAgent?.toString();
-    lead.assignedAgent = agentId;
+    const oldAgent = lead.system?.assignedAgent?.toString();
+    if (!lead.system) {
+      lead.system = { assignedAgent: agentId, leadStatus: "New" };
+    } else {
+      lead.system.assignedAgent = agentId;
+    }
     await lead.save();
 
     if (agentId !== oldAgent) {
@@ -298,20 +246,24 @@ export const convertLeadToCustomer = async (
       return;
     }
 
-    if (lead.isConverted) {
+    if (lead.system?.leadStatus === "Converted") {
       res.status(400).json({ message: "Lead already converted" });
       return;
     }
 
-    lead.isConverted = true;
+    if (!lead.system) {
+      lead.system = { leadStatus: "Converted" };
+    } else {
+      lead.system.leadStatus = "Converted";
+    }
     await lead.save();
 
-    if (lead.assignedAgent) {
+    if (lead.system?.assignedAgent) {
       await createNotification({
-        recipient: lead.assignedAgent,
+        recipient: lead.system.assignedAgent,
         type: NotificationType.StatusUpdate,
         title: "Lead Converted",
-        message: `Lead ${lead.name} has been converted`,
+        message: `Lead ${lead.identity?.fullName} has been converted`,
         relatedEntity: RelatedEntity.Lead,
         relatedEntityId: lead._id,
         isRead: false,
