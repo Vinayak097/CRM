@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Plus, ChevronLeft, ChevronRight } from "lucide-react";
-import { leadService, type Lead } from "../../services/leadService";
-import { userService, type User } from "../../services/userService";
+import { leadService } from "../../services/leadService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LeadFormWizard, type LeadFormData } from "@/components/LeadFormWizard";
+import type { Lead } from "@/types";
 
 const PAGE_SIZE = 10;
 
@@ -21,15 +22,6 @@ const LeadsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [agents, setAgents] = useState<User[]>([]);
-  const [createForm, setCreateForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    source: "Portal" as string,
-    budgetRange: "" as string,
-    assignedAgent: "" as string,
-  });
   const [createLoading, setCreateLoading] = useState(false);
 
   const fetchLeads = useCallback(async () => {
@@ -47,24 +39,9 @@ const LeadsPage: React.FC = () => {
     }
   }, [page, search]);
 
-  const fetchAgents = useCallback(async () => {
-    try {
-      const response = await userService.getUsers(1, 100);
-      setAgents(response.data.filter((u) => u.role === "sales_agent"));
-    } catch {
-      console.error("Failed to fetch agents");
-    }
-  }, []);
-
   useEffect(() => {
     fetchLeads();
   }, [fetchLeads]);
-
-  useEffect(() => {
-    if (showCreateModal) {
-      fetchAgents();
-    }
-  }, [showCreateModal, fetchAgents]);
 
   const handleSearch = () => {
     setSearch(searchInput);
@@ -77,46 +54,147 @@ const LeadsPage: React.FC = () => {
     }
   };
 
-  const handleCreateLead = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateLead = async (formData: LeadFormData) => {
     setCreateLoading(true);
     setError(null);
     try {
       await leadService.createLead({
-        name: createForm.name,
-        phone: createForm.phone,
-        email: createForm.email || undefined,
-        source: createForm.source || undefined,
-        budgetRange: createForm.budgetRange || undefined,
-        assignedAgent: createForm.assignedAgent || undefined,
+        identity: {
+          fullName: formData.identity.fullName,
+          email: formData.identity.email,
+          phone: formData.identity.phone,
+          residencyStatus: formData.identity.residencyStatus,
+          residencyDetails: formData.identity.residencyDetails,
+          discoverySource: formData.identity.discoverySource,
+          discoveryDetails: formData.identity.discoveryDetails,
+        },
+        demographics: {
+          ageGroup: formData.demographics.ageGroup,
+          professions: formData.demographics.professions,
+          householdSize: formData.demographics.householdSize,
+          annualIncomeRange: formData.demographics.annualIncomeRange,
+          notes: formData.demographics.notes,
+        },
+        propertyVision: {
+          propertiesPurchasedBefore: formData.propertyVision.propertiesPurchasedBefore,
+          propertyPurpose: formData.propertyVision.propertyPurpose,
+          propertyPurposeDetails: formData.propertyVision.propertyPurposeDetails,
+          buyingMotivation: formData.propertyVision.buyingMotivation,
+          buyingMotivationDetails: formData.propertyVision.buyingMotivationDetails,
+          shortTermRentalPreference: formData.propertyVision.shortTermRentalPreference,
+          assetTypes: formData.propertyVision.assetTypes,
+          assetTypesDetails: formData.propertyVision.assetTypesDetails,
+          waterSourcePreference: formData.propertyVision.waterSourcePreference,
+          unitConfigurations: formData.propertyVision.unitConfigurations,
+          unitConfigurationsDetails: formData.propertyVision.unitConfigurationsDetails,
+          farmlandSize: formData.propertyVision.farmlandSize,
+          farmlandSizeDetails: formData.propertyVision.farmlandSizeDetails,
+          farmlandSizeAcres: formData.propertyVision.farmlandSizeAcres,
+          farmlandVillaConfig: formData.propertyVision.farmlandVillaConfig,
+          journeyStage: formData.propertyVision.journeyStage,
+          journeyStageDetails: formData.propertyVision.journeyStageDetails,
+          explorationDuration: formData.propertyVision.explorationDuration,
+          explorationDurationDetails: formData.propertyVision.explorationDurationDetails,
+          purchaseTimeline: formData.propertyVision.purchaseTimeline,
+          purchaseTimelineDetails: formData.propertyVision.purchaseTimelineDetails,
+          budgetRange: formData.propertyVision.budgetRange,
+          budgetRangeDetails: formData.propertyVision.budgetRangeDetails,
+          notes: formData.propertyVision.notes,
+        },
+        investmentPreferences: {
+          ownershipStructure: formData.investmentPreferences.ownershipStructure,
+          ownershipStructureDetails: formData.investmentPreferences.ownershipStructureDetails,
+          possessionTimeline: formData.investmentPreferences.possessionTimeline,
+          possessionTimelineDetails: formData.investmentPreferences.possessionTimelineDetails,
+          managementModel: formData.investmentPreferences.managementModel,
+          managementModelDetails: formData.investmentPreferences.managementModelDetails,
+          fundingType: formData.investmentPreferences.fundingType,
+          fundingTypeDetails: formData.investmentPreferences.fundingTypeDetails,
+          notes: formData.investmentPreferences.notes,
+        },
+        locationPreferences: {
+          currentLocation: {
+            city: formData.locationPreferences.currentCity,
+            state: formData.locationPreferences.currentState,
+            country: formData.locationPreferences.currentCountry,
+          },
+          buyingRegions: formData.locationPreferences.buyingRegions,
+          preferredCountries: formData.locationPreferences.preferredCountries,
+          preferredStates: formData.locationPreferences.preferredStates,
+          preferredCities: formData.locationPreferences.preferredCities,
+          preferredCitiesDetails: formData.locationPreferences.preferredCitiesDetails,
+          climateRisksToAvoid: formData.locationPreferences.climateRisksToAvoid,
+          climatePreference: formData.locationPreferences.climatePreference,
+          climatePreferenceDetails: formData.locationPreferences.climatePreferenceDetails,
+          locationPriorities: formData.locationPreferences.locationPriorities,
+          locationPrioritiesDetails: formData.locationPreferences.locationPrioritiesDetails,
+          expansionRadiusKm: formData.locationPreferences.expansionRadiusKm,
+          expansionRadiusDetails: formData.locationPreferences.expansionRadiusDetails,
+          notes: formData.locationPreferences.notes,
+        },
+        lifestylePreferences: {
+          areaType: formData.lifestylePreferences.areaType,
+          areaTypeDetails: formData.lifestylePreferences.areaTypeDetails,
+          energyPreference: formData.lifestylePreferences.energyPreference,
+          energyPreferenceDetails: formData.lifestylePreferences.energyPreferenceDetails,
+          natureFeature: formData.lifestylePreferences.natureFeature,
+          natureFeatureDetails: formData.lifestylePreferences.natureFeatureDetails,
+          terrainPreference: formData.lifestylePreferences.terrainPreference,
+          terrainPreferenceDetails: formData.lifestylePreferences.terrainPreferenceDetails,
+          viewPreferences: formData.lifestylePreferences.viewPreferences,
+          viewPreferencesDetails: formData.lifestylePreferences.viewPreferencesDetails,
+          communityFormat: formData.lifestylePreferences.communityFormat,
+          communityFormatDetails: formData.lifestylePreferences.communityFormatDetails,
+          gatedPreference: formData.lifestylePreferences.gatedPreference,
+          communityFriendlyFor: formData.lifestylePreferences.communityFriendlyFor,
+          communityFriendlyForDetails: formData.lifestylePreferences.communityFriendlyForDetails,
+          outdoorAmenities: formData.lifestylePreferences.outdoorAmenities,
+          notes: formData.lifestylePreferences.notes,
+        },
+        unitPreferences: {
+          vastuDirections: formData.unitPreferences.vastuDirections,
+          furnishingLevel: formData.unitPreferences.furnishingLevel,
+          furnishingLevelDetails: formData.unitPreferences.furnishingLevelDetails,
+          interiorStyle: formData.unitPreferences.interiorStyle,
+          interiorStyleDetails: formData.unitPreferences.interiorStyleDetails,
+          smartHomeFeatures: formData.unitPreferences.smartHomeFeatures,
+          smartHomeFeaturesDetails: formData.unitPreferences.smartHomeFeaturesDetails,
+          mustHaveFeatures: formData.unitPreferences.mustHaveFeatures,
+          mustHaveFeaturesDetails: formData.unitPreferences.mustHaveFeaturesDetails,
+          notes: formData.unitPreferences.notes,
+        },
+        dreamHomeNotes: formData.dreamHomeNotes,
       });
       setShowCreateModal(false);
-      setCreateForm({
-        name: "",
-        phone: "",
-        email: "",
-        source: "Portal",
-        budgetRange: "",
-        assignedAgent: "",
-      });
       fetchLeads();
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to create lead");
+      throw err;
     } finally {
       setCreateLoading(false);
     }
   };
 
-  const getClassificationColor = (classification: string) => {
-    switch (classification) {
-      case "Hot":
-        return "bg-red-500/20 text-red-400";
-      case "Warm":
-        return "bg-orange-500/20 text-orange-400";
-      case "Cold":
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "New":
         return "bg-blue-500/20 text-blue-400";
-      case "Void":
-        return "bg-gray-500/20 text-gray-400";
+      case "Contacted":
+        return "bg-cyan-500/20 text-cyan-400";
+      case "Qualified":
+        return "bg-green-500/20 text-green-400";
+      case "Shortlisted":
+        return "bg-yellow-500/20 text-yellow-400";
+      case "Site Visit":
+        return "bg-purple-500/20 text-purple-400";
+      case "Negotiation":
+        return "bg-orange-500/20 text-orange-400";
+      case "Booked":
+        return "bg-pink-500/20 text-pink-400";
+      case "Lost":
+        return "bg-red-500/20 text-red-400";
+      case "Converted":
+        return "bg-emerald-500/20 text-emerald-400";
       default:
         return "bg-gray-500/20 text-gray-400";
     }
@@ -175,19 +253,17 @@ const LeadsPage: React.FC = () => {
             >
               <div className="flex justify-between items-start mb-2">
                 <div>
-                  <h3 className="font-medium">{lead.name}</h3>
-                  <p className="text-sm text-gray-400">{lead.phone}</p>
+                  <h3 className="font-medium">{lead.identity.fullName}</h3>
+                  <p className="text-sm text-gray-400">{lead.identity.phone}</p>
                 </div>
-                <span
-                  className={`px-2 py-1 rounded text-xs ${getClassificationColor(lead.classification)}`}
-                >
-                  {lead.classification}
+                <span className={`px-2 py-1 rounded text-xs ${getStatusColor(lead.system.leadStatus)}`}>
+                  {lead.system.leadStatus}
                 </span>
               </div>
               <div className="flex justify-between items-center mt-3 text-sm">
-                <span className="text-gray-400">{lead.source}</span>
+                <span className="text-gray-400">{lead.propertyVision.budgetRange || "-"}</span>
                 <span className="text-gray-400">
-                  {lead.assignedAgent?.name || "Unassigned"}
+                  {lead.system.assignedAgent?.name || "Unassigned"}
                 </span>
               </div>
             </div>
@@ -203,10 +279,10 @@ const LeadsPage: React.FC = () => {
               <th className="p-3">Name</th>
               <th className="p-3">Phone</th>
               <th className="p-3">Email</th>
-              <th className="p-3">Classification</th>
-              <th className="p-3">Source</th>
-              <th className="p-3">Assigned Agent</th>
               <th className="p-3">Status</th>
+              <th className="p-3">Budget</th>
+              <th className="p-3">Journey Stage</th>
+              <th className="p-3">Assigned Agent</th>
             </tr>
           </thead>
           <tbody>
@@ -229,33 +305,17 @@ const LeadsPage: React.FC = () => {
                   className="border-t border-gray-700 hover:bg-gray-800 cursor-pointer"
                   onClick={() => navigate(`/leads/${lead._id}`)}
                 >
-                  <td className="p-3 font-medium">{lead.name}</td>
-                  <td className="p-3">{lead.phone}</td>
-                  <td className="p-3">{lead.email || "-"}</td>
+                  <td className="p-3 font-medium">{lead.identity.fullName}</td>
+                  <td className="p-3">{lead.identity.phone}</td>
+                  <td className="p-3">{lead.identity.email || "-"}</td>
                   <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${getClassificationColor(lead.classification)}`}
-                    >
-                      {lead.classification}
+                    <span className={`px-2 py-1 rounded text-xs ${getStatusColor(lead.system.leadStatus)}`}>
+                      {lead.system.leadStatus}
                     </span>
                   </td>
-                  <td className="p-3">{lead.source}</td>
-                  <td className="p-3">{lead.assignedAgent?.name || "-"}</td>
-                  <td className="p-3">
-                    {lead.isConverted ? (
-                      <span className="px-2 py-1 rounded text-xs bg-green-500/20 text-green-400">
-                        Converted
-                      </span>
-                    ) : lead.isDuplicate ? (
-                      <span className="px-2 py-1 rounded text-xs bg-yellow-500/20 text-yellow-400">
-                        Duplicate
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 rounded text-xs bg-blue-500/20 text-blue-400">
-                        Active
-                      </span>
-                    )}
-                  </td>
+                  <td className="p-3">{lead.propertyVision.budgetRange || "-"}</td>
+                  <td className="p-3">{lead.propertyVision.journeyStage || "-"}</td>
+                  <td className="p-3">{lead.system.assignedAgent?.name || "-"}</td>
                 </tr>
               ))
             )}
@@ -288,109 +348,11 @@ const LeadsPage: React.FC = () => {
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-700 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">Create Lead</h2>
-            <form onSubmit={handleCreateLead} className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Name *</label>
-                <Input
-                  type="text"
-                  required
-                  value={createForm.name}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, name: e.target.value })
-                  }
-                  className="bg-gray-800 border-gray-700"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Phone *</label>
-                <Input
-                  type="text"
-                  required
-                  value={createForm.phone}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, phone: e.target.value })
-                  }
-                  className="bg-gray-800 border-gray-700"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Email</label>
-                <Input
-                  type="email"
-                  value={createForm.email}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, email: e.target.value })
-                  }
-                  className="bg-gray-800 border-gray-700"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Source</label>
-                <select
-                  value={createForm.source}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, source: e.target.value })
-                  }
-                  className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
-                >
-                  <option value="Portal">Portal</option>
-                  <option value="Website">Website</option>
-                  <option value="Referral">Referral</option>
-                  <option value="Social">Social</option>
-                  <option value="Walk-in">Walk-in</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Budget Range</label>
-                <select
-                  value={createForm.budgetRange}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, budgetRange: e.target.value })
-                  }
-                  className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
-                >
-                  <option value="">Select budget</option>
-                  <option value="<50L">Below 50L</option>
-                  <option value="50-75L">50-75L</option>
-                  <option value="75L-1Cr">75L-1Cr</option>
-                  <option value="1Cr+">Above 1Cr</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Assign to Agent</label>
-                <select
-                  value={createForm.assignedAgent}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, assignedAgent: e.target.value })
-                  }
-                  className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
-                >
-                  <option value="">Auto-assign</option>
-                  {agents.map((agent) => (
-                    <option key={agent._id} value={agent._id}>
-                      {agent.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={createLoading}>
-                  {createLoading ? "Creating..." : "Create"}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <LeadFormWizard
+          onSubmit={handleCreateLead}
+          onCancel={() => setShowCreateModal(false)}
+          loading={createLoading}
+        />
       )}
     </div>
   );

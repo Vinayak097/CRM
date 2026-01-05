@@ -5,101 +5,71 @@ import {
   Phone,
   Mail,
   Calendar,
-  Tag,
+  MapPin,
   Wallet,
   UserCheck,
-  BarChart3,
   UserPlus,
-  CheckCircle2,
   Clock,
-  Plus,
   Edit2,
-  X,
-  Save,
+  CheckCircle2,
+  Home,
+  Users,
+  Target,
+  Briefcase,
+  Heart,
+  MessageSquare,
+  Globe,
+  Building,
+  Trees,
 } from "lucide-react";
-import { leadService, type Lead } from "../services/leadService";
+import { leadService } from "../services/leadService";
 import { userService, type User } from "../services/userService";
 import { Button } from "@/components/ui/button";
-import { LeadClassification, VoidReason, BudgetRange } from "@/types";
+import type { Lead, LeadStatus } from "@/types";
 
 const LeadProfilePage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState<"overview" | "tasks">("overview");
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
 
-  const [showClassifyModal, setShowClassifyModal] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [agents, setAgents] = useState<User[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<LeadStatus>("New");
   const [converting, setConverting] = useState(false);
 
-  const [agents, setAgents] = useState<User[]>([]);
-  const [selectedClassification, setSelectedClassification] =
-    useState<LeadClassification>("Cold");
-  const [selectedAgent, setSelectedAgent] = useState("");
-  const [updating, setUpdating] = useState(false);
-  const [voidReason_value, setVoidReason] = useState<VoidReason | "">("");
-  const [customVoidReason, setCustomVoidReason] = useState("");
-
-  // Edit form state
-  const [editForm, setEditForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    budgetRange: "" as BudgetRange | "",
-    source: "",
-  });
-
-  const budgetRanges: BudgetRange[] = [
-    "0-10k",
-    "10k-50k",
-    "50k-100k",
-    "100k-500k",
-    "500k+",
+  const statuses: LeadStatus[] = [
+    "New",
+    "Contacted",
+    "Qualified",
+    "Shortlisted",
+    "Site Visit",
+    "Negotiation",
+    "Booked",
+    "Lost",
+    "Converted",
   ];
 
-  const voidReasons: { value: VoidReason; label: string }[] = [
-    { value: VoidReason.NotInterested, label: "Not Interested" },
-    { value: VoidReason.BudgetMismatch, label: "Budget Mismatch" },
-    { value: VoidReason.LocationIssue, label: "Location Issue" },
-    { value: VoidReason.JunkLead, label: "Junk Lead" },
-    { value: VoidReason.Other, label: "Other" },
-  ];
-
-  /* ===================== FETCH LEAD ===================== */
   useEffect(() => {
     const fetchLead = async () => {
       if (!id) return;
       try {
         const response = await leadService.getLeadById(id);
         setLead(response.data);
-        setSelectedClassification(response.data.classification);
-        setEditForm({
-          name: response.data.name || "",
-          email: response.data.email || "",
-          phone: response.data.phone || "",
-          budgetRange: response.data.budgetRange || "",
-          source: response.data.source || "",
-        });
-        if (response.data.voidReason) {
-          setVoidReason(response.data.voidReason as VoidReason);
-        }
-        if (response.data.customVoidReason) {
-          setCustomVoidReason(response.data.customVoidReason);
-        }
+        setSelectedStatus(response.data.system.leadStatus);
       } catch (error) {
         console.error("Failed to fetch lead:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchLead();
   }, [id]);
 
-  /* ===================== FETCH AGENTS ===================== */
   const fetchAgents = async () => {
     try {
       const response = await userService.getUsers(1, 100);
@@ -109,62 +79,8 @@ const LeadProfilePage: React.FC = () => {
     }
   };
 
-  /* ===================== CLASSIFY ===================== */
-  const handleClassify = async () => {
-    if (!id) return;
-
-    // Validation for Void classification
-    if (selectedClassification === "Void") {
-      if (!voidReason_value) {
-        alert("Please select a void reason");
-        return;
-      }
-      if (voidReason_value === VoidReason.Other && !customVoidReason.trim()) {
-        alert("Please enter a custom void reason");
-        return;
-      }
-    }
-
-    setUpdating(true);
-    try {
-      const data: Partial<Lead> = {
-        classification: selectedClassification,
-      };
-
-      if (selectedClassification === "Void") {
-        data.voidReason = voidReason_value as VoidReason;
-        if (voidReason_value === VoidReason.Other) {
-          data.customVoidReason = customVoidReason.trim();
-        } else {
-          data.customVoidReason = "";
-        }
-      } else {
-        // Clear void fields when not Void
-        data.voidReason = undefined;
-        data.customVoidReason = "";
-      }
-
-      const response = await leadService.updateLead(id, data);
-      setLead(response.data ?? response);
-      setShowClassifyModal(false);
-      
-      // Only reset if successful
-      if (selectedClassification !== "Void") {
-        setVoidReason("");
-        setCustomVoidReason("");
-      }
-    } catch (error) {
-      console.error("Failed to classify lead:", error);
-      alert("Failed to update classification");
-    } finally {
-      setUpdating(false);
-    }
-  };
-
-  /* ===================== ASSIGN AGENT ===================== */
   const handleAssign = async () => {
     if (!id || !selectedAgent) return;
-
     setUpdating(true);
     try {
       await leadService.assignAgent(id, selectedAgent);
@@ -179,35 +95,26 @@ const LeadProfilePage: React.FC = () => {
     }
   };
 
-  /* ===================== EDIT LEAD ===================== */
-  const handleEdit = async () => {
-    if (!id) return;
-
+  const handleStatusChange = async () => {
+    if (!id || !lead) return;
     setUpdating(true);
     try {
-      const data: Partial<Lead> = {
-        name: editForm.name,
-        email: editForm.email,
-        phone: editForm.phone,
-        budgetRange: editForm.budgetRange || undefined,
-        source: editForm.source,
-      };
-
-      const response = await leadService.updateLead(id, data);
-      setLead(response.data ?? response);
-      setShowEditModal(false);
+      const response = await leadService.updateLead(id, {
+        system: { ...lead.system, leadStatus: selectedStatus },
+      });
+      setLead(response.data);
+      setShowStatusModal(false);
     } catch (error) {
-      console.error("Failed to update lead:", error);
-      alert("Failed to update lead");
+      console.error("Failed to update status:", error);
+      alert("Failed to update status");
     } finally {
       setUpdating(false);
     }
   };
 
-  /* ===================== CONVERT TO CUSTOMER ===================== */
   const handleConvert = async () => {
     if (!id || !lead) return;
-    if (lead.isConverted) {
+    if (lead.system.leadStatus === "Converted") {
       alert("This lead is already converted");
       return;
     }
@@ -226,23 +133,21 @@ const LeadProfilePage: React.FC = () => {
     }
   };
 
-  /* ===================== UI HELPERS ===================== */
-  const getClassificationStyle = (classification: LeadClassification) => {
-    switch (classification) {
-      case "Hot":
-        return "bg-red-500/20 text-red-400 border-red-500/30";
-      case "Warm":
-        return "bg-orange-500/20 text-orange-400 border-orange-500/30";
-      case "Cold":
-        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
-      case "Void":
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
-      default:
-        return "bg-gray-500/20 text-gray-400 border-gray-500/30";
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "New": return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+      case "Contacted": return "bg-cyan-500/20 text-cyan-400 border-cyan-500/30";
+      case "Qualified": return "bg-green-500/20 text-green-400 border-green-500/30";
+      case "Shortlisted": return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+      case "Site Visit": return "bg-purple-500/20 text-purple-400 border-purple-500/30";
+      case "Negotiation": return "bg-orange-500/20 text-orange-400 border-orange-500/30";
+      case "Booked": return "bg-pink-500/20 text-pink-400 border-pink-500/30";
+      case "Lost": return "bg-red-500/20 text-red-400 border-red-500/30";
+      case "Converted": return "bg-emerald-500/20 text-emerald-400 border-emerald-500/30";
+      default: return "bg-gray-500/20 text-gray-400 border-gray-500/30";
     }
   };
 
-  /* ===================== LOADING / EMPTY ===================== */
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -254,20 +159,53 @@ const LeadProfilePage: React.FC = () => {
   if (!lead) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-400 mb-4">Lead not found</p>
-          <Button onClick={() => navigate("/leads")}>Back to Leads</Button>
-        </div>
+        <div className="text-gray-400">Lead not found</div>
       </div>
     );
   }
 
-  /* ===================== JSX ===================== */
+  const InfoCard = ({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) => (
+    <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Icon className="h-5 w-5 text-gray-400" />
+        <h2 className="text-lg font-semibold">{title}</h2>
+      </div>
+      {children}
+    </div>
+  );
+
+  const InfoRow = ({ label, value }: { label: string; value?: string | number | boolean | null }) => {
+    if (value === undefined || value === null || value === "") return null;
+    return (
+      <div className="flex justify-between py-2 border-b border-gray-800 last:border-0">
+        <span className="text-sm text-gray-400">{label}</span>
+        <span className="text-sm text-right max-w-[60%]">
+          {typeof value === "boolean" ? (value ? "Yes" : "No") : value}
+        </span>
+      </div>
+    );
+  };
+
+  const TagList = ({ items }: { items?: string[] }) => {
+    if (!items || items.length === 0) return <span className="text-gray-500 text-sm">-</span>;
+    return (
+      <div className="flex flex-wrap gap-1 mt-1">
+        {items.map((item, i) => (
+          <span key={i} className="px-2 py-1 bg-gray-800 rounded text-xs">{item}</span>
+        ))}
+      </div>
+    );
+  };
+
+  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    <div className="text-sm text-gray-400 mb-1">{children}</div>
+  );
+
   return (
     <div className="min-h-screen bg-background text-white">
-      {/* HEADER */}
-      <div className="border-b border-gray-800 bg-gray-900/50">
-        <div className="p-4 md:p-6">
+      {/* Header */}
+      <div className="bg-gray-900/50 border-b border-gray-800 p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
           <button
             onClick={() => navigate("/leads")}
             className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition"
@@ -277,437 +215,347 @@ const LeadProfilePage: React.FC = () => {
           </button>
 
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg sm:text-xl flex-shrink-0">
-                {lead.name.charAt(0).toUpperCase()}
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+                {lead.identity.fullName.charAt(0).toUpperCase()}
               </div>
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-bold truncate">{lead.name}</h1>
-                <span
-                  className={`inline-block mt-1 px-3 py-1 rounded-full text-xs border ${getClassificationStyle(
-                    lead.classification
-                  )}`}
-                >
-                  {lead.classification}
-                </span>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowEditModal(true)}
-              className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition w-full sm:w-auto"
-            >
-              <Edit2 className="h-4 w-4" />
-              Edit Lead
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* TABS */}
-      <div className="border-b border-gray-800">
-        <div className="px-3 sm:px-4 md:px-6">
-          <div className="flex gap-4 sm:gap-6 overflow-x-auto p-1 ">
-            <button
-              onClick={() => setActiveTab("overview")}
-              className={`py-3 border-b-2 transition whitespace-nowrap text-sm sm:text-base ${
-                activeTab === "overview"
-                  ? "border-blue-500 text-white"
-                  : "border-transparent text-gray-400 hover:text-white"
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab("tasks")}
-              className={`py-3 border-b-2 transition whitespace-nowrap text-sm sm:text-base ${
-                activeTab === "tasks"
-                  ? "border-blue-500 text-white"
-                  : "border-transparent text-gray-400 hover:text-white"
-              }`}
-            >
-              Tasks
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* CONTENT */}
-      <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto">
-        {activeTab === "overview" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-            {/* LEFT COLUMN - Contact & Details */}
-            <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-              {/* Contact Information */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
-                <h2 className="text-lg font-semibold mb-4">
-                  Contact Information
-                </h2>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <div className="text-xs text-gray-400">Email</div>
-                      <div className="text-sm">{lead.email || "N/A"}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <div className="text-xs text-gray-400">Phone</div>
-                      <div className="text-sm">{lead.phone || "N/A"}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Tag className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <div className="text-xs text-gray-400">Source</div>
-                      <div className="text-sm">{lead.source || "N/A"}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Wallet className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <div className="text-xs text-gray-400">Budget Range</div>
-                      <div className="text-sm">
-                        {lead.budgetRange ? `$${lead.budgetRange}` : "N/A"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Classification & Void Reasons */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
-                <h2 className="text-lg font-semibold mb-4">Classification</h2>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <BarChart3 className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <div className="text-xs text-gray-400">Status</div>
-                      <span
-                        className={`inline-block mt-1 px-3 py-1 rounded-full text-xs border ${getClassificationStyle(
-                          lead.classification
-                        )}`}
-                      >
-                        {lead.classification}
-                      </span>
-                    </div>
-                  </div>
-
-                  {lead.classification === "Void" && (
-                    <>
-                      {lead.voidReason && (
-                        <div className="flex items-start gap-3">
-                          <X className="h-5 w-5 text-red-400 mt-0.5" />
-                          <div className="flex-1">
-                            <div className="text-xs text-gray-400">
-                              Void Reason
-                            </div>
-                            <div className="text-sm bg-red-500/10 border border-red-500/30 rounded px-3 py-2 mt-1">
-                              {lead.voidReason}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {lead.customVoidReason && (
-                        <div className="flex items-start gap-3">
-                          <X className="h-5 w-5 text-red-400 mt-0.5" />
-                          <div className="flex-1">
-                            <div className="text-xs text-gray-400">
-                              Custom Reason Details
-                            </div>
-                            <div className="text-sm bg-gray-800/50 p-3 rounded border border-gray-700 mt-1">
-                              {lead.customVoidReason}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-
-                  <Button
-                    onClick={() => setShowClassifyModal(true)}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Tag className="h-4 w-4 mr-2" />
-                    Update Classification
-                  </Button>
-                </div>
-              </div>
-
-              {/* Agent Assignment */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
-                <h2 className="text-lg font-semibold mb-4">
-                  Assigned Agent
-                </h2>
-                <div className="space-y-4">
-                  {lead.assignedAgent ? (
-                    <div className="flex items-center gap-3">
-                      <UserCheck className="h-5 w-5 text-green-400" />
-                      <div>
-                        <div className="text-xs text-gray-400">Agent</div>
-                        <div className="text-sm">{lead.assignedAgent.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {lead.assignedAgent.email}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-sm text-gray-400">
-                      No agent assigned yet
-                    </div>
-                  )}
-
-                  <Button
-                    onClick={() => {
-                      fetchAgents();
-                      setShowAssignModal(true);
-                    }}
-                    className="w-full bg-purple-600 hover:bg-purple-700"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    {lead.assignedAgent ? "Reassign Agent" : "Assign Agent"}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Convert to Customer */}
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
-                <h2 className="text-lg font-semibold mb-4">Conversion</h2>
-                <div className="space-y-4">
-                  {lead.isConverted ? (
-                    <div className="flex items-center gap-3 text-green-400">
-                      <CheckCircle2 className="h-5 w-5" />
-                      <span className="text-sm font-medium">Converted to Customer</span>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="text-sm text-gray-400">
-                        Convert this lead to a customer when they make a purchase or sign a contract.
-                      </p>
-                      <Button
-                        onClick={handleConvert}
-                        disabled={converting || lead.classification === "Void"}
-                        className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-2" />
-                        {converting ? "Converting..." : "Convert to Customer"}
-                      </Button>
-                      {lead.classification === "Void" && (
-                        <p className="text-xs text-yellow-400">
-                          Cannot convert a voided lead
-                        </p>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN - Timeline */}
-            <div className="space-y-4 sm:space-y-6">
-              <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
-                <h2 className="text-lg font-semibold mb-4">Timeline</h2>
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <div className="text-xs text-gray-400">Created</div>
-                      <div className="text-sm">
-                        {new Date(lead.createdAt).toLocaleDateString()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(lead.createdAt).toLocaleTimeString()}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <div className="text-xs text-gray-400">Last Updated</div>
-                      <div className="text-sm">
-                        {new Date(lead.updatedAt).toLocaleDateString()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(lead.updatedAt).toLocaleTimeString()}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === "tasks" && (
-          <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
-            <div className="text-center py-8 sm:py-12">
-              <Clock className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Tasks Yet</h3>
-              <p className="text-gray-400 mb-4">
-                Create tasks to track activities for this lead
-              </p>
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <Plus className="h-4 w-4 mr-2" />
-                Create Task
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* CLASSIFY MODAL */}
-      {showClassifyModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">Update Classification</h2>
-
-            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Classification *
-                </label>
-                <select
-                  value={selectedClassification}
-                  onChange={(e) => {
-                    setSelectedClassification(e.target.value as LeadClassification);
-                    // Reset void fields when changing away from Void
-                    if (e.target.value !== "Void") {
-                      setVoidReason("");
-                      setCustomVoidReason("");
-                    }
-                  }}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="Hot">🔥 Hot</option>
-                  <option value="Warm">☀️ Warm</option>
-                  <option value="Cold">❄️ Cold</option>
-                  <option value="Void">🚫 Void</option>
-                </select>
+                <h1 className="text-2xl font-bold">{lead.identity.fullName}</h1>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(lead.system.leadStatus)}`}>
+                    {lead.system.leadStatus}
+                  </span>
+                  {lead.system.priorityScore !== undefined && lead.system.priorityScore > 0 && (
+                    <span className="text-sm text-gray-400">Priority: {lead.system.priorityScore}</span>
+                  )}
+                </div>
               </div>
+            </div>
 
-              {selectedClassification === "Void" && (
-                <>
-                  <div className="border-t border-gray-700 pt-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Void Reason *
-                    </label>
-                    <select
-                      value={voidReason_value}
-                      onChange={(e) => {
-                        const value = e.target.value as VoidReason | "";
-                        setVoidReason(value);
-                        if (value !== VoidReason.Other) {
-                          setCustomVoidReason("");
-                        }
-                      }}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">-- Select a reason --</option>
-                      {voidReasons.map((reason) => (
-                        <option key={reason.value} value={reason.value}>
-                          {reason.label}
-                        </option>
-                      ))}
-                    </select>
+            <Button onClick={() => setShowStatusModal(true)} variant="outline" size="sm">
+              <Edit2 className="h-4 w-4 mr-2" />
+              Update Status
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Contact Info */}
+            <InfoCard title="Contact Information" icon={Phone}>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Phone className="h-4 w-4 text-gray-400" />
+                  <span>{lead.identity.phone}</span>
+                </div>
+                {lead.identity.email && (
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-gray-400" />
+                    <span>{lead.identity.email}</span>
                   </div>
+                )}
+                <InfoRow label="Residency Status" value={lead.identity.residencyStatus} />
+                <InfoRow label="Discovery Source" value={lead.identity.discoverySource} />
+              </div>
+            </InfoCard>
 
-                  {voidReason_value === VoidReason.Other && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Custom Reason *
-                      </label>
-                      <textarea
-                        value={customVoidReason}
-                        onChange={(e) => setCustomVoidReason(e.target.value)}
-                        placeholder="Please explain why this lead is being marked as void..."
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white min-h-[120px] resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      />
-                      <p className="text-xs text-gray-500 mt-1">
-                        {customVoidReason.length} characters
-                      </p>
-                    </div>
-                  )}
+            {/* Demographics */}
+            <InfoCard title="Demographics" icon={Users}>
+              <InfoRow label="Age Group" value={lead.demographics?.ageGroup} />
+              <InfoRow label="Household Size" value={lead.demographics?.householdSize} />
+              <InfoRow label="Annual Income" value={lead.demographics?.annualIncomeRange} />
+              <div className="mt-3">
+                <SectionTitle>Professions</SectionTitle>
+                <TagList items={lead.demographics?.professions} />
+              </div>
+              {lead.demographics?.notes && (
+                <div className="mt-3">
+                  <SectionTitle>Notes</SectionTitle>
+                  <p className="text-sm bg-gray-800/50 p-3 rounded mt-1">{lead.demographics.notes}</p>
+                </div>
+              )}
+            </InfoCard>
 
-                  {voidReason_value && (
-                    <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3">
-                      <p className="text-xs text-yellow-400">
-                        ⚠️ Warning: Marking this lead as Void will remove it from active pipeline tracking.
-                      </p>
-                    </div>
-                  )}
+            {/* Property Vision */}
+            <InfoCard title="Property Vision" icon={Target}>
+              <InfoRow label="Properties Purchased Before" value={lead.propertyVision?.propertiesPurchasedBefore} />
+              <InfoRow label="Short-term Rental Interest" value={lead.propertyVision?.shortTermRentalPreference} />
+              <InfoRow label="Journey Stage" value={lead.propertyVision?.journeyStage} />
+              <InfoRow label="Exploration Duration" value={lead.propertyVision?.explorationDuration} />
+              <InfoRow label="Purchase Timeline" value={lead.propertyVision?.purchaseTimeline} />
+              <InfoRow label="Budget Range" value={lead.propertyVision?.budgetRange} />
+              <InfoRow label="Water Source Preference" value={lead.propertyVision?.waterSourcePreference} />
+              <InfoRow label="Farmland Size" value={lead.propertyVision?.farmlandSize} />
+              {lead.propertyVision?.farmlandSizeAcres && (
+                <InfoRow label="Farmland Acres" value={`${lead.propertyVision.farmlandSizeAcres} acres`} />
+              )}
+              <InfoRow label="Farmland Villa Config" value={lead.propertyVision?.farmlandVillaConfig} />
+              
+              <div className="mt-3">
+                <SectionTitle>Property Purpose</SectionTitle>
+                <TagList items={lead.propertyVision?.propertyPurpose} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Buying Motivation</SectionTitle>
+                <TagList items={lead.propertyVision?.buyingMotivation} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Asset Types</SectionTitle>
+                <TagList items={lead.propertyVision?.assetTypes} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Unit Configurations</SectionTitle>
+                <TagList items={lead.propertyVision?.unitConfigurations} />
+              </div>
+              {lead.propertyVision?.notes && (
+                <div className="mt-3">
+                  <SectionTitle>Notes</SectionTitle>
+                  <p className="text-sm bg-gray-800/50 p-3 rounded mt-1">{lead.propertyVision.notes}</p>
+                </div>
+              )}
+            </InfoCard>
+
+            {/* Investment Preferences */}
+            <InfoCard title="Investment Preferences" icon={Briefcase}>
+              <InfoRow label="Ownership Structure" value={lead.investmentPreferences?.ownershipStructure} />
+              <InfoRow label="Possession Timeline" value={lead.investmentPreferences?.possessionTimeline} />
+              <InfoRow label="Management Model" value={lead.investmentPreferences?.managementModel} />
+              <InfoRow label="Funding Type" value={lead.investmentPreferences?.fundingType} />
+              {lead.investmentPreferences?.notes && (
+                <div className="mt-3">
+                  <SectionTitle>Notes</SectionTitle>
+                  <p className="text-sm bg-gray-800/50 p-3 rounded mt-1">{lead.investmentPreferences.notes}</p>
+                </div>
+              )}
+            </InfoCard>
+
+            {/* Location Preferences */}
+            <InfoCard title="Location Preferences" icon={MapPin}>
+              {lead.locationPreferences?.currentLocation && (
+                <div className="mb-3">
+                  <SectionTitle>Current Location</SectionTitle>
+                  <p className="text-sm">
+                    {[
+                      lead.locationPreferences.currentLocation.city,
+                      lead.locationPreferences.currentLocation.state,
+                      lead.locationPreferences.currentLocation.country,
+                    ].filter(Boolean).join(", ") || "-"}
+                  </p>
+                </div>
+              )}
+              <InfoRow label="Expansion Radius" value={lead.locationPreferences?.expansionRadiusKm} />
+              
+              <div className="mt-3">
+                <SectionTitle>Buying Regions</SectionTitle>
+                <TagList items={lead.locationPreferences?.buyingRegions} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Preferred Countries</SectionTitle>
+                <TagList items={lead.locationPreferences?.preferredCountries} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Preferred States</SectionTitle>
+                <TagList items={lead.locationPreferences?.preferredStates} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Preferred Cities</SectionTitle>
+                <TagList items={lead.locationPreferences?.preferredCities} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Climate Risks to Avoid</SectionTitle>
+                <TagList items={lead.locationPreferences?.climateRisksToAvoid} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Climate Preference</SectionTitle>
+                <TagList items={lead.locationPreferences?.climatePreference} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Location Priorities</SectionTitle>
+                <TagList items={lead.locationPreferences?.locationPriorities} />
+              </div>
+              {lead.locationPreferences?.notes && (
+                <div className="mt-3">
+                  <SectionTitle>Notes</SectionTitle>
+                  <p className="text-sm bg-gray-800/50 p-3 rounded mt-1">{lead.locationPreferences.notes}</p>
+                </div>
+              )}
+            </InfoCard>
+
+            {/* Lifestyle Preferences */}
+            <InfoCard title="Lifestyle & Community" icon={Heart}>
+              <InfoRow label="Community Format" value={lead.lifestylePreferences?.communityFormat} />
+              <InfoRow label="Gated Preference" value={lead.lifestylePreferences?.gatedPreference} />
+              
+              <div className="mt-3">
+                <SectionTitle>Area Type</SectionTitle>
+                <TagList items={lead.lifestylePreferences?.areaType} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Energy Preference</SectionTitle>
+                <TagList items={lead.lifestylePreferences?.energyPreference} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Nature Features</SectionTitle>
+                <TagList items={lead.lifestylePreferences?.natureFeature} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Terrain Preference</SectionTitle>
+                <TagList items={lead.lifestylePreferences?.terrainPreference} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>View Preferences</SectionTitle>
+                <TagList items={lead.lifestylePreferences?.viewPreferences} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Community Friendly For</SectionTitle>
+                <TagList items={lead.lifestylePreferences?.communityFriendlyFor} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Outdoor Amenities</SectionTitle>
+                <TagList items={lead.lifestylePreferences?.outdoorAmenities} />
+              </div>
+              {lead.lifestylePreferences?.notes && (
+                <div className="mt-3">
+                  <SectionTitle>Notes</SectionTitle>
+                  <p className="text-sm bg-gray-800/50 p-3 rounded mt-1">{lead.lifestylePreferences.notes}</p>
+                </div>
+              )}
+            </InfoCard>
+
+            {/* Unit Preferences */}
+            <InfoCard title="Unit Preferences" icon={Home}>
+              <InfoRow label="Furnishing Level" value={lead.unitPreferences?.furnishingLevel} />
+              <InfoRow label="Interior Style" value={lead.unitPreferences?.interiorStyle} />
+              
+              <div className="mt-3">
+                <SectionTitle>Vastu Directions</SectionTitle>
+                <TagList items={lead.unitPreferences?.vastuDirections} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Smart Home Features</SectionTitle>
+                <TagList items={lead.unitPreferences?.smartHomeFeatures} />
+              </div>
+              <div className="mt-3">
+                <SectionTitle>Must-Have Features</SectionTitle>
+                <TagList items={lead.unitPreferences?.mustHaveFeatures} />
+              </div>
+              {lead.unitPreferences?.notes && (
+                <div className="mt-3">
+                  <SectionTitle>Notes</SectionTitle>
+                  <p className="text-sm bg-gray-800/50 p-3 rounded mt-1">{lead.unitPreferences.notes}</p>
+                </div>
+              )}
+            </InfoCard>
+
+            {/* Dream Home Notes */}
+            {lead.dreamHomeNotes && (
+              <InfoCard title="Dream Home Notes" icon={MessageSquare}>
+                <p className="text-sm bg-gray-800/50 p-3 rounded">{lead.dreamHomeNotes}</p>
+              </InfoCard>
+            )}
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Agent Assignment */}
+            <InfoCard title="Assigned Agent" icon={UserCheck}>
+              {lead.system.assignedAgent ? (
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold">
+                    {lead.system.assignedAgent.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div className="font-medium">{lead.system.assignedAgent.name}</div>
+                    <div className="text-sm text-gray-400">{lead.system.assignedAgent.email}</div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400 mb-4">No agent assigned</p>
+              )}
+              <Button
+                onClick={() => { fetchAgents(); setShowAssignModal(true); }}
+                className="w-full bg-purple-600 hover:bg-purple-700"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                {lead.system.assignedAgent ? "Reassign Agent" : "Assign Agent"}
+              </Button>
+            </InfoCard>
+
+            {/* Conversion */}
+            <InfoCard title="Conversion" icon={CheckCircle2}>
+              {lead.system.leadStatus === "Converted" ? (
+                <div className="flex items-center gap-3 text-green-400">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="font-medium">Converted to Customer</span>
+                </div>
+              ) : (
+                <>
+                  <p className="text-sm text-gray-400 mb-4">Convert this lead to a customer when they make a purchase.</p>
+                  <Button
+                    onClick={handleConvert}
+                    disabled={converting || lead.system.leadStatus === "Lost"}
+                    className="w-full bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    {converting ? "Converting..." : "Convert to Customer"}
+                  </Button>
                 </>
               )}
-            </div>
+            </InfoCard>
 
-            <div className="flex gap-3 mt-6">
-              <Button
-                onClick={() => {
-                  setShowClassifyModal(false);
-                  setSelectedClassification(lead.classification);
-                  setVoidReason(lead.voidReason || "");
-                  setCustomVoidReason(lead.customVoidReason || "");
-                }}
-                variant="outline"
-                className="flex-1"
-                disabled={updating}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleClassify}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                disabled={updating}
-              >
-                {updating ? "Updating..." : "Save Changes"}
-              </Button>
-            </div>
+            {/* Timeline */}
+            <InfoCard title="Timeline" icon={Clock}>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-gray-400" />
+                  <div>
+                    <div className="text-xs text-gray-400">Created</div>
+                    <div className="text-sm">{new Date(lead.createdAt).toLocaleDateString()}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Clock className="h-4 w-4 text-gray-400" />
+                  <div>
+                    <div className="text-xs text-gray-400">Last Updated</div>
+                    <div className="text-sm">{new Date(lead.updatedAt).toLocaleDateString()}</div>
+                  </div>
+                </div>
+              </div>
+            </InfoCard>
+
+            {/* Scores */}
+            {(lead.system.priorityScore || lead.system.investmentScore) && (
+              <InfoCard title="Scores" icon={Target}>
+                <InfoRow label="Priority Score" value={lead.system.priorityScore} />
+                <InfoRow label="Investment Score" value={lead.system.investmentScore} />
+              </InfoCard>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
-      {/* ASSIGN AGENT MODAL */}
+      {/* Assign Modal */}
       {showAssignModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-md w-full">
             <h2 className="text-xl font-semibold mb-4">Assign Agent</h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Select Agent
-                </label>
-                <select
-                  value={selectedAgent}
-                  onChange={(e) => setSelectedAgent(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
-                >
-                  <option value="">-- Choose an agent --</option>
-                  {agents.map((agent) => (
-                    <option key={agent._id} value={agent._id}>
-                      {agent.name} ({agent.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <Button
-                onClick={() => setShowAssignModal(false)}
-                variant="outline"
-                className="flex-1"
-                disabled={updating}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAssign}
-                className="flex-1 bg-purple-600 hover:bg-purple-700"
-                disabled={updating || !selectedAgent}
-              >
+            <select
+              value={selectedAgent}
+              onChange={(e) => setSelectedAgent(e.target.value)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white mb-4"
+            >
+              <option value="">-- Choose an agent --</option>
+              {agents.map((agent) => (
+                <option key={agent._id} value={agent._id}>{agent.name} ({agent.email})</option>
+              ))}
+            </select>
+            <div className="flex gap-3">
+              <Button onClick={() => setShowAssignModal(false)} variant="outline" className="flex-1">Cancel</Button>
+              <Button onClick={handleAssign} disabled={updating || !selectedAgent} className="flex-1">
                 {updating ? "Assigning..." : "Assign"}
               </Button>
             </div>
@@ -715,106 +563,24 @@ const LeadProfilePage: React.FC = () => {
         </div>
       )}
 
-      {/* EDIT LEAD MODAL */}
-      {showEditModal && (
+      {/* Status Modal */}
+      {showStatusModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-xl font-semibold mb-4">Edit Lead</h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  value={editForm.name}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, name: e.target.value })
-                  }
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={editForm.email}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, email: e.target.value })
-                  }
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Phone
-                </label>
-                <input
-                  type="tel"
-                  value={editForm.phone}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, phone: e.target.value })
-                  }
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Source
-                </label>
-                <input
-                  type="text"
-                  value={editForm.source}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, source: e.target.value })
-                  }
-                  placeholder="e.g., Website, Referral, LinkedIn"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Budget Range
-                </label>
-                <select
-                  value={editForm.budgetRange}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, budgetRange: e.target.value as BudgetRange | "" })
-                  }
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-- Select budget range --</option>
-                  {budgetRanges.map((range) => (
-                    <option key={range} value={range}>
-                      ${range}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <Button
-                onClick={() => setShowEditModal(false)}
-                variant="outline"
-                className="flex-1"
-                disabled={updating}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleEdit}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                disabled={updating}
-              >
-                {updating ? "Saving..." : "Save Changes"}
+          <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-semibold mb-4">Update Status</h2>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value as LeadStatus)}
+              className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white mb-4"
+            >
+              {statuses.map((status) => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
+            <div className="flex gap-3">
+              <Button onClick={() => setShowStatusModal(false)} variant="outline" className="flex-1">Cancel</Button>
+              <Button onClick={handleStatusChange} disabled={updating} className="flex-1">
+                {updating ? "Updating..." : "Update"}
               </Button>
             </div>
           </div>
