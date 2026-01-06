@@ -1,185 +1,43 @@
-import mongoose, { Schema, Document } from "mongoose";
-
-export interface LeadDocument extends Document {
-  // Section 1: Welcome
-  identity: {
-    fullName: string;
-    email: string;
-    phone: string;
-    residencyStatus: string;
-    residencyDetails?: string;
-    discoverySource: string;
-    discoveryDetails?: string;
-  };
-
-  // Section 2: Get to Know You
-  demographics: {
-    ageGroup?: string;
-    professions: string[];
-    householdSize?: string;
-    annualIncomeRange?: string;
-    notes?: string;
-  };
-
-  // Section 3: Property Vision
-  propertyVision: {
-    propertiesPurchasedBefore: string;
-    propertyPurpose: string[];
-    propertyPurposeDetails?: string;
-    buyingMotivation: string[];
-    buyingMotivationDetails?: string;
-    shortTermRentalPreference?: string;
-    assetTypes: string[];
-    assetTypesDetails?: string;
-    waterSourcePreference?: string;
-    unitConfigurations: string[];
-    unitConfigurationsDetails?: string;
-    farmlandSize?: string;
-    farmlandSizeDetails?: string;
-    farmlandSizeAcres?: number;
-    farmlandVillaConfig?: string;
-    journeyStage: string;
-    journeyStageDetails?: string;
-    explorationDuration: string;
-    explorationDurationDetails?: string;
-    purchaseTimeline: string;
-    purchaseTimelineDetails?: string;
-    budgetRange: string;
-    budgetRangeDetails?: string;
-    notes?: string;
-  };
-
-  // Section 4: Investment Snapshot
-  investmentPreferences: {
-    ownershipStructure?: string;
-    ownershipStructureDetails?: string;
-    possessionTimeline?: string;
-    possessionTimelineDetails?: string;
-    managementModel?: string;
-    managementModelDetails?: string;
-    fundingType?: string;
-    fundingTypeDetails?: string;
-    notes?: string;
-  };
-
-  // Section 5: Location
-  locationPreferences: {
-    currentLocation: {
-      city: string;
-      state: string;
-      country: string;
-    };
-    buyingRegions: string[];
-    preferredCountries: string[];
-    preferredStates: string[];
-    preferredCities: string[];
-    preferredCitiesDetails?: string;
-    climateRisksToAvoid: string[];
-    climatePreference: string[];
-    climatePreferenceDetails?: string;
-    locationPriorities: string[];
-    locationPrioritiesDetails?: string;
-    expansionRadiusKm?: string;
-    expansionRadiusDetails?: string;
-    notes?: string;
-  };
-
-  // Section 6: Lifestyle & Community
-  lifestylePreferences: {
-    areaType: string[];
-    areaTypeDetails?: string;
-    energyPreference: string[];
-    energyPreferenceDetails?: string;
-    natureFeature: string[];
-    natureFeatureDetails?: string;
-    terrainPreference: string[];
-    terrainPreferenceDetails?: string;
-    viewPreferences: string[];
-    viewPreferencesDetails?: string;
-    communityFormat?: string;
-    communityFormatDetails?: string;
-    gatedPreference?: string;
-    communityFriendlyFor: string[];
-    communityFriendlyForDetails?: string;
-    outdoorAmenities: string[];
-    notes?: string;
-  };
-
-  // Section 7: Unit Preferences
-  unitPreferences: {
-    vastuDirections: string[];
-    furnishingLevel?: string;
-    furnishingLevelDetails?: string;
-    interiorStyle?: string;
-    interiorStyleDetails?: string;
-    smartHomeFeatures: string[];
-    smartHomeFeaturesDetails?: string;
-    mustHaveFeatures: string[];
-    mustHaveFeaturesDetails?: string;
-    notes?: string;
-  };
-
-  // Section 8: Dream Home Notes
-  dreamHomeNotes?: string;
-
-  // System fields
-  system: {
-    leadStatus:
-      | "New"
-      | "Contacted"
-      | "Qualified"
-      | "Shortlisted"
-      | "Site Visit"
-      | "Negotiation"
-      | "Booked"
-      | "Lost"
-      | "Converted";
-    assignedAgent?: mongoose.Types.ObjectId;
-    priorityScore?: number;
-    investmentScore?: number;
-  };
-
-  createdAt: Date;
-  updatedAt: Date;
-}
+import mongoose, { Schema } from "mongoose";
+import { LeadStatus, type LeadDocument } from "../types/lead.types.js";
 
 const leadSchema = new Schema<LeadDocument>(
   {
     identity: {
-      fullName: { type: String, required: true, trim: true },
-      email: { type: String, required: true, trim: true, lowercase: true },
-      phone: { type: String, required: true, unique: true, trim: true },
-      residencyStatus: { type: String, default: "" },
+      fullName: { type: String, trim: true },
+      email: { type: String, trim: true, lowercase: true },
+      phone: { type: String, trim: true },
+      residencyStatus: { type: String },
       residencyDetails: { type: String },
-      discoverySource: { type: String, default: "" },
+      discoverySource: { type: String },
       discoveryDetails: { type: String },
     },
 
     demographics: {
       ageGroup: { type: String },
-      professions: [{ type: String }],
+      professions: { type: [String], default: [] },
       householdSize: { type: String },
       annualIncomeRange: { type: String },
       notes: { type: String },
     },
 
     propertyVision: {
-      propertiesPurchasedBefore: { type: String, default: "0" },
-      propertyPurpose: [{ type: String }],
+      propertiesPurchasedBefore: { type: Number, default: 0 },
+      propertyPurpose: { type: [String], default: [] },
       propertyPurposeDetails: { type: String },
-      buyingMotivation: [{ type: String }],
+      buyingMotivation: { type: [String], default: [] },
       buyingMotivationDetails: { type: String },
       shortTermRentalPreference: { type: String },
-      assetTypes: [{ type: String }],
+      assetTypes: { type: [String], default: [] },
       assetTypesDetails: { type: String },
       waterSourcePreference: { type: String },
-      unitConfigurations: [{ type: String }],
+      unitConfigurations: { type: [String], default: [] },
       unitConfigurationsDetails: { type: String },
       farmlandSize: { type: String },
       farmlandSizeDetails: { type: String },
       farmlandSizeAcres: { type: Number },
       farmlandVillaConfig: { type: String },
-      journeyStage: { type: String, default: "Just exploring" },
+      journeyStage: { type: String },
       journeyStageDetails: { type: String },
       explorationDuration: { type: String },
       explorationDurationDetails: { type: String },
@@ -204,19 +62,19 @@ const leadSchema = new Schema<LeadDocument>(
 
     locationPreferences: {
       currentLocation: {
-        city: { type: String, default: "" },
-        state: { type: String, default: "" },
+        city: { type: String },
+        state: { type: String },
         country: { type: String, default: "India" },
       },
-      buyingRegions: [{ type: String }],
-      preferredCountries: [{ type: String }],
-      preferredStates: [{ type: String }],
-      preferredCities: [{ type: String }],
+      buyingRegions: { type: [String], default: [] },
+      preferredCountries: { type: [String], default: [] },
+      preferredStates: { type: [String], default: [] },
+      preferredCities: { type: [String], default: [] },
       preferredCitiesDetails: { type: String },
-      climateRisksToAvoid: [{ type: String }],
-      climatePreference: [{ type: String }],
+      climateRisksToAvoid: { type: [String], default: [] },
+      climatePreference: { type: [String], default: [] },
       climatePreferenceDetails: { type: String },
-      locationPriorities: [{ type: String }],
+      locationPriorities: { type: [String], default: [] },
       locationPrioritiesDetails: { type: String },
       expansionRadiusKm: { type: String },
       expansionRadiusDetails: { type: String },
@@ -224,34 +82,34 @@ const leadSchema = new Schema<LeadDocument>(
     },
 
     lifestylePreferences: {
-      areaType: [{ type: String }],
+      areaType: { type: [String], default: [] },
       areaTypeDetails: { type: String },
-      energyPreference: [{ type: String }],
+      energyPreference: { type: [String], default: [] },
       energyPreferenceDetails: { type: String },
-      natureFeature: [{ type: String }],
+      natureFeature: { type: [String], default: [] },
       natureFeatureDetails: { type: String },
-      terrainPreference: [{ type: String }],
+      terrainPreference: { type: [String], default: [] },
       terrainPreferenceDetails: { type: String },
-      viewPreferences: [{ type: String }],
+      viewPreferences: { type: [String], default: [] },
       viewPreferencesDetails: { type: String },
       communityFormat: { type: String },
       communityFormatDetails: { type: String },
       gatedPreference: { type: String },
-      communityFriendlyFor: [{ type: String }],
+      communityFriendlyFor: { type: [String], default: [] },
       communityFriendlyForDetails: { type: String },
-      outdoorAmenities: [{ type: String }],
+      outdoorAmenities: { type: [String], default: [] },
       notes: { type: String },
     },
 
     unitPreferences: {
-      vastuDirections: [{ type: String }],
+      vastuDirections: { type: [String], default: [] },
       furnishingLevel: { type: String },
       furnishingLevelDetails: { type: String },
       interiorStyle: { type: String },
       interiorStyleDetails: { type: String },
-      smartHomeFeatures: [{ type: String }],
+      smartHomeFeatures: { type: [String], default: [] },
       smartHomeFeaturesDetails: { type: String },
-      mustHaveFeatures: [{ type: String }],
+      mustHaveFeatures: { type: [String], default: [] },
       mustHaveFeaturesDetails: { type: String },
       notes: { type: String },
     },
@@ -261,18 +119,8 @@ const leadSchema = new Schema<LeadDocument>(
     system: {
       leadStatus: {
         type: String,
-        enum: [
-          "New",
-          "Contacted",
-          "Qualified",
-          "Shortlisted",
-          "Site Visit",
-          "Negotiation",
-          "Booked",
-          "Lost",
-          "Converted",
-        ],
-        default: "New",
+        enum: Object.values(LeadStatus),
+        default: LeadStatus.New,
       },
       assignedAgent: {
         type: mongoose.Schema.Types.ObjectId,
@@ -285,9 +133,10 @@ const leadSchema = new Schema<LeadDocument>(
   { timestamps: true }
 );
 
-leadSchema.index({ "identity.phone": 1 }, { unique: true });
-leadSchema.index({ "identity.email": 1 });
-leadSchema.index({ "system.assignedAgent": 1 });
-leadSchema.index({ "system.leadStatus": 1 });
+/* INDEXES */
+// leadSchema.index({ "identity.phone": 1 }, { unique: true, sparse: true });
+// leadSchema.index({ "identity.email": 1 }, { sparse: true });
+// leadSchema.index({ "system.assignedAgent": 1 });
+// leadSchema.index({ "system.leadStatus": 1 });
 
-export default mongoose.model<LeadDocument>("Lead", leadSchema);
+export const Lead = mongoose.model<LeadDocument>("Lead", leadSchema);

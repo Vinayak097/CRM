@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+
 export const connectDB = async (): Promise<void> => {
   try {
     const mongoUri =

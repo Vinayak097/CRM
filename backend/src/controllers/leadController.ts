@@ -1,5 +1,5 @@
 import type { Response } from "express";
-import Lead from "../models/Lead.js";
+import { Lead } from "@/models/Lead.js";
 import { Role } from "../models/User.js";
 import { createNotification } from "./notificationController.js";
 import {
@@ -17,10 +17,25 @@ const getAgentIdForLead = (user?: AuthUser | null): string | null => {
 };
 
 export const LeadCreate = async (req: AuthRequest, res: Response) => {
-  const { identity, profile, demographics, buyerProfile, assetPreferences, purchaseReadiness, ownershipPreferences, locationProfile, lifestylePreferences, unitPreferences, notes, system } = req.body;
+  const {
+    identity,
+    profile,
+    demographics,
+    buyerProfile,
+    assetPreferences,
+    purchaseReadiness,
+    ownershipPreferences,
+    locationProfile,
+    lifestylePreferences,
+    unitPreferences,
+    notes,
+    system,
+  } = req.body;
 
   if (!identity?.fullName || !identity?.phone) {
-    res.status(400).json({ message: "identity.fullName and identity.phone are required" });
+    res
+      .status(400)
+      .json({ message: "identity.fullName and identity.phone are required" });
     return;
   }
 
@@ -29,7 +44,9 @@ export const LeadCreate = async (req: AuthRequest, res: Response) => {
   try {
     const phoneLead = await Lead.findOne({ "identity.phone": identity.phone });
     if (phoneLead) {
-      res.status(409).json({ message: "Lead with this phone number already exists" });
+      res
+        .status(409)
+        .json({ message: "Lead with this phone number already exists" });
       return;
     }
 
@@ -66,6 +83,93 @@ export const LeadCreate = async (req: AuthRequest, res: Response) => {
   } catch (e) {
     console.error("Error in create lead:", e);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+/**
+ * Create Lead
+ * - Accepts partial payload (webhook or manual)
+ * - Prevents duplicate leads by phone/email
+ * - Does NOT enforce required fields (except identity uniqueness)
+ */
+export const createLeadGPT = async (req: Request, res: Response) => {
+  try {
+    const payload = req.body;
+
+    // ----------------------------
+    // 1. Basic safety check
+    // ----------------------------
+    if (!payload?.identity?.phone && !payload?.identity?.email) {
+      return res.status(400).json({
+        success: false,
+        message: "At least phone or email is required to create a lead",
+      });
+    }
+
+    // ----------------------------
+    // 2. Normalize identity
+    // ----------------------------
+    if (payload.identity?.email) {
+      payload.identity.email = payload.identity.email.toLowerCase().trim();
+    }
+
+    if (payload.identity?.phone) {
+      payload.identity.phone = payload.identity.phone.trim();
+    }
+
+    // ----------------------------
+    // 3. Duplicate check
+    // ----------------------------
+    const existingLead = await Lead.findOne({
+      $or: [
+        { "identity.phone": payload.identity.phone },
+        { "identity.email": payload.identity.email },
+      ],
+    });
+
+    if (existingLead) {
+      return res.status(409).json({
+        success: false,
+        message: "Lead already exists",
+        data: existingLead,
+      });
+    }
+
+    // ----------------------------
+    // 4. Auto system fields
+    // ----------------------------
+    payload.system = {
+      ...payload.system,
+      leadStatus: payload.system?.leadStatus || "New",
+      assignedAgent: payload.system?.assignedAgent || req.user?._id,
+    };
+
+    // ----------------------------
+    // 5. Create lead
+    // ----------------------------
+    const lead = await Lead.create(payload);
+
+    return res.status(201).json({
+      success: true,
+      message: "Lead created successfully",
+      data: lead,
+    });
+  } catch (error: any) {
+    console.error("Create Lead Error:", error);
+
+    // Handle Mongo duplicate key error
+    if (error.code === 11000) {
+      return res.status(409).json({
+        success: false,
+        message: "Duplicate lead detected",
+        error: error.keyValue,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create lead",
+    });
   }
 };
 
@@ -118,7 +222,7 @@ export const getAllLeads = async (req: AuthRequest, res: Response) => {
     const search = req.query.search;
 
     const filter: Record<string, unknown> = {};
-
+    console.log("get all leads ");
     if (req.user?.role === Role.salesAgent) {
       filter["system.assignedAgent"] = req.user.id;
     }
