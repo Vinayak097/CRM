@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Plus, ChevronLeft, ChevronRight, Edit2, Trash2 } from "lucide-react";
 import { leadService } from "../../services/leadService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -86,6 +86,10 @@ const LeadsPage: React.FC = () => {
             <p className="text-gray-400 text-sm mt-1">{total} total leads</p>
           </div>
 
+          <Button onClick={() => navigate('/leads/create')} className="sm:w-auto w-full">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Lead
+          </Button>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
@@ -137,7 +141,7 @@ const LeadsPage: React.FC = () => {
                   {lead.system.leadStatus}
                 </span>
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="flex justify-between items-center text-sm mb-3">
                 <div>
                   <span className="text-gray-500">Budget:</span>
                   <p className="text-gray-300 font-medium">{lead.propertyVision.budgetRange || "-"}</p>
@@ -148,6 +152,37 @@ const LeadsPage: React.FC = () => {
                     {lead.system.assignedAgent?.name || "Unassigned"}
                   </p>
                 </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-2 pt-3 border-t border-gray-700">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 text-blue-400 hover:text-blue-300"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/leads/${lead._id}/edit`);
+                  }}
+                >
+                  <Edit2 className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 text-red-400 hover:text-red-300"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`Are you sure you want to delete ${lead.identity.fullName}?`)) {
+                      // TODO: Implement delete functionality
+                      console.log('Delete lead:', lead._id);
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
               </div>
               {lead.propertyVision.journeyStage && (
                 <div className="mt-3 pt-3 border-t border-gray-700">
@@ -172,18 +207,19 @@ const LeadsPage: React.FC = () => {
               <th className="p-3">Budget</th>
               <th className="p-3">Journey Stage</th>
               <th className="p-3">Assigned Agent</th>
+              <th className="p-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={7} className="p-6 text-center text-gray-400">
+                <td colSpan={8} className="p-6 text-center text-gray-400">
                   Loading...
                 </td>
               </tr>
             ) : leads.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-6 text-center text-gray-400">
+                <td colSpan={8} className="p-6 text-center text-gray-400">
                   No leads found
                 </td>
               </tr>
@@ -205,6 +241,35 @@ const LeadsPage: React.FC = () => {
                   <td className="p-3">{lead.propertyVision.budgetRange || "-"}</td>
                   <td className="p-3">{lead.propertyVision.journeyStage || "-"}</td>
                   <td className="p-3">{lead.system.assignedAgent?.name || "-"}</td>
+                  <td className="p-3">
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-400 hover:text-blue-300"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/leads/${lead._id}/edit`);
+                        }}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-400 hover:text-red-300"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Are you sure you want to delete ${lead.identity.fullName}?`)) {
+                            // TODO: Implement delete functionality
+                            console.log('Delete lead:', lead._id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}

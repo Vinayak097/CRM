@@ -21,6 +21,9 @@ import {
   Globe,
   Building,
   Trees,
+  MoreVertical,
+  Settings,
+  Trash2,
 } from "lucide-react";
 import { leadService } from "../services/leadService";
 import { userService, type User } from "../services/userService";
@@ -165,10 +168,12 @@ const LeadProfilePage: React.FC = () => {
   }
 
   const InfoCard = ({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) => (
-    <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 sm:p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <Icon className="h-5 w-5 text-gray-400" />
-        <h2 className="text-lg font-semibold">{title}</h2>
+    <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 hover:bg-gray-900/70 transition-colors">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-lg bg-gray-800 flex items-center justify-center">
+          <Icon className="h-5 w-5 text-gray-400" />
+        </div>
+        <h2 className="text-xl font-semibold">{title}</h2>
       </div>
       {children}
     </div>
@@ -203,48 +208,189 @@ const LeadProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-white">
-      {/* Header */}
-      <div className="bg-gray-900/50 border-b border-gray-800 p-4 sm:p-6">
-        <div className="max-w-7xl mx-auto">
+      {/* Header with Actions */}
+      <div className="bg-gradient-to-r from-gray-900 to-gray-800 border-b border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+          {/* Back Button */}
           <button
             onClick={() => navigate("/leads")}
-            className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition"
+            className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="text-sm">Back to Leads</span>
           </button>
 
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl">
+          {/* Main Header */}
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            {/* Lead Info */}
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-2xl shadow-lg">
                 {lead.identity.fullName.charAt(0).toUpperCase()}
               </div>
-              <div>
-                <h1 className="text-2xl font-bold">{lead.identity.fullName}</h1>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(lead.system.leadStatus)}`}>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-3xl font-bold text-white mb-2">{lead.identity.fullName}</h1>
+                <div className="flex flex-wrap items-center gap-3 mb-3">
+                  <span className={`px-3 py-1.5 rounded-full text-sm font-medium border ${getStatusColor(lead.system.leadStatus)}`}>
                     {lead.system.leadStatus}
                   </span>
                   {lead.system.priorityScore !== undefined && lead.system.priorityScore > 0 && (
-                    <span className="text-sm text-gray-400">Priority: {lead.system.priorityScore}</span>
+                    <span className="text-sm text-amber-400 font-medium bg-amber-500/10 px-2 py-1 rounded">
+                      Priority: {lead.system.priorityScore}
+                    </span>
+                  )}
+                  <span className="text-sm text-gray-400">
+                    Created {new Date(lead.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-gray-300">
+                  <span className="flex items-center gap-1">
+                    <Phone className="h-4 w-4" />
+                    {lead.identity.phone}
+                  </span>
+                  {lead.identity.email && (
+                    <span className="flex items-center gap-1">
+                      <Mail className="h-4 w-4" />
+                      {lead.identity.email}
+                    </span>
                   )}
                 </div>
               </div>
             </div>
 
-            <Button onClick={() => setShowStatusModal(true)} variant="outline" size="sm">
-              <Edit2 className="h-4 w-4 mr-2" />
-              Update Status
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-3">
+              <Button
+                onClick={() => navigate(`/leads/${id}/edit`)}
+                variant="outline"
+                className="border-gray-600 hover:border-gray-500"
+              >
+                <Edit2 className="h-4 w-4 mr-2" />
+                Edit Lead
+              </Button>
+              <Button
+                onClick={() => setShowStatusModal(true)}
+                variant="outline"
+                className="border-gray-600 hover:border-gray-500"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Update Status
+              </Button>
+              {lead.system.leadStatus !== "Converted" && (
+                <Button
+                  onClick={handleConvert}
+                  disabled={converting}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  {converting ? "Converting..." : "Convert to Customer"}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-6">
+      {/* Quick Stats */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                <Target className="h-5 w-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">Journey Stage</p>
+                <p className="text-lg font-semibold">{lead.propertyVision?.journeyStage || "Not set"}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <Wallet className="h-5 w-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">Budget Range</p>
+                <p className="text-lg font-semibold">{lead.propertyVision?.budgetRange || "Not set"}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                <MapPin className="h-5 w-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">Location</p>
+                <p className="text-lg font-semibold">
+                  {lead.locationPreferences?.currentLocation?.city || "Not set"}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+                <UserCheck className="h-5 w-5 text-orange-400" />
+              </div>
+              <div>
+                <p className="text-sm text-gray-400">Assigned Agent</p>
+                <p className="text-lg font-semibold truncate">
+                  {lead.system.assignedAgent?.name || "Unassigned"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Agent Assignment Section */}
+        <div className="bg-gray-900/50 border border-gray-800 rounded-xl p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">Agent Assignment</h3>
+            {lead.system.assignedAgent && (
+              <Button
+                onClick={() => { fetchAgents(); setShowAssignModal(true); }}
+                variant="outline"
+                size="sm"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Reassign Agent
+              </Button>
+            )}
+          </div>
+
+          {lead.system.assignedAgent ? (
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold">
+                {lead.system.assignedAgent.name.charAt(0)}
+              </div>
+              <div>
+                <div className="font-medium">{lead.system.assignedAgent.name}</div>
+                <div className="text-sm text-gray-400">{lead.system.assignedAgent.email}</div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <UserCheck className="h-12 w-12 text-gray-600 mx-auto mb-3" />
+              <p className="text-gray-400 mb-4">No agent assigned to this lead</p>
+              <Button
+                onClick={() => { fetchAgents(); setShowAssignModal(true); }}
+                className="bg-purple-600 hover:bg-purple-700"
+              >
+                <UserPlus className="h-4 w-4 mr-2" />
+                Assign Agent
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column - Main Details */}
+          <div className="lg:col-span-2 space-y-8">
             {/* Contact Info */}
             <InfoCard title="Contact Information" icon={Phone}>
               <div className="space-y-3">
@@ -461,40 +607,25 @@ const LeadProfilePage: React.FC = () => {
 
           {/* Right Column */}
           <div className="space-y-6">
-            {/* Agent Assignment */}
-            <InfoCard title="Assigned Agent" icon={UserCheck}>
-              {lead.system.assignedAgent ? (
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold">
-                    {lead.system.assignedAgent.name.charAt(0)}
-                  </div>
-                  <div>
-                    <div className="font-medium">{lead.system.assignedAgent.name}</div>
-                    <div className="text-sm text-gray-400">{lead.system.assignedAgent.email}</div>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400 mb-4">No agent assigned</p>
-              )}
-              <Button
-                onClick={() => { fetchAgents(); setShowAssignModal(true); }}
-                className="w-full bg-purple-600 hover:bg-purple-700"
-              >
-                <UserPlus className="h-4 w-4 mr-2" />
-                {lead.system.assignedAgent ? "Reassign Agent" : "Assign Agent"}
-              </Button>
-            </InfoCard>
-
-            {/* Conversion */}
-            <InfoCard title="Conversion" icon={CheckCircle2}>
+            {/* Conversion Status */}
+            <InfoCard title="Lead Status" icon={CheckCircle2}>
               {lead.system.leadStatus === "Converted" ? (
-                <div className="flex items-center gap-3 text-green-400">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-medium">Converted to Customer</span>
+                <div className="text-center py-4">
+                  <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle2 className="h-8 w-8 text-green-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-green-400 mb-2">Converted to Customer</h3>
+                  <p className="text-sm text-gray-400">This lead has been successfully converted</p>
                 </div>
               ) : (
-                <>
-                  <p className="text-sm text-gray-400 mb-4">Convert this lead to a customer when they make a purchase.</p>
+                <div className="text-center py-4">
+                  <div className="w-16 h-16 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-3">
+                    <Target className="h-8 w-8 text-blue-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">Lead in Progress</h3>
+                  <p className="text-sm text-gray-400 mb-4">
+                    Convert this lead to a customer when they make a purchase
+                  </p>
                   <Button
                     onClick={handleConvert}
                     disabled={converting || lead.system.leadStatus === "Lost"}
@@ -503,35 +634,70 @@ const LeadProfilePage: React.FC = () => {
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                     {converting ? "Converting..." : "Convert to Customer"}
                   </Button>
-                </>
+                </div>
               )}
             </InfoCard>
 
-            {/* Timeline */}
+            {/* Timeline & Activity */}
             <InfoCard title="Timeline" icon={Clock}>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <div className="text-xs text-gray-400">Created</div>
-                    <div className="text-sm">{new Date(lead.createdAt).toLocaleDateString()}</div>
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <Calendar className="h-4 w-4 text-blue-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">Lead Created</div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(lead.createdAt).toLocaleDateString()} at {new Date(lead.createdAt).toLocaleTimeString()}
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <div className="text-xs text-gray-400">Last Updated</div>
-                    <div className="text-sm">{new Date(lead.updatedAt).toLocaleDateString()}</div>
+
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-4 w-4 text-green-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">Last Updated</div>
+                    <div className="text-xs text-gray-400">
+                      {new Date(lead.updatedAt).toLocaleDateString()} at {new Date(lead.updatedAt).toLocaleTimeString()}
+                    </div>
                   </div>
                 </div>
+
+                {lead.system.assignedAgent && (
+                  <div className="flex items-start gap-4">
+                    <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                      <UserCheck className="h-4 w-4 text-purple-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium">Agent Assigned</div>
+                      <div className="text-xs text-gray-400">
+                        Assigned to {lead.system.assignedAgent.name}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </InfoCard>
 
-            {/* Scores */}
+            {/* Analytics & Scores */}
             {(lead.system.priorityScore || lead.system.investmentScore) && (
-              <InfoCard title="Scores" icon={Target}>
-                <InfoRow label="Priority Score" value={lead.system.priorityScore} />
-                <InfoRow label="Investment Score" value={lead.system.investmentScore} />
+              <InfoCard title="Analytics" icon={Target}>
+                <div className="grid grid-cols-2 gap-4">
+                  {lead.system.priorityScore && (
+                    <div className="text-center p-4 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-lg border border-amber-500/20">
+                      <div className="text-2xl font-bold text-amber-400 mb-1">{lead.system.priorityScore}</div>
+                      <div className="text-xs text-gray-400">Priority Score</div>
+                    </div>
+                  )}
+                  {lead.system.investmentScore && (
+                    <div className="text-center p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 rounded-lg border border-green-500/20">
+                      <div className="text-2xl font-bold text-green-400 mb-1">{lead.system.investmentScore}</div>
+                      <div className="text-xs text-gray-400">Investment Score</div>
+                    </div>
+                  )}
+                </div>
               </InfoCard>
             )}
           </div>

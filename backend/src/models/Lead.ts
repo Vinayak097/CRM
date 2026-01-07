@@ -133,7 +133,7 @@ const leadSchema = new Schema<LeadDocument>(
   { timestamps: true }
 );
 
-/* INDEXES */
+// /* INDEXES */
 // leadSchema.index({ "identity.phone": 1 }, { unique: true, sparse: true });
 // leadSchema.index({ "identity.email": 1 }, { sparse: true });
 // leadSchema.index({ "system.assignedAgent": 1 });

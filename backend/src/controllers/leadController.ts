@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import { Lead } from "@/models/Lead.js";
 import { Role } from "../models/User.js";
+import { LeadStatus } from "../types/lead.types.js";
 import { createNotification } from "./notificationController.js";
 import {
   NotificationMessage,
@@ -17,6 +18,7 @@ const getAgentIdForLead = (user?: AuthUser | null): string | null => {
 };
 
 export const LeadCreate = async (req: AuthRequest, res: Response) => {
+  console.log("LeadCreate called with body:", req.body);
   const {
     identity,
     profile,
@@ -42,46 +44,13 @@ export const LeadCreate = async (req: AuthRequest, res: Response) => {
   const agentId = system?.assignedAgent || getAgentIdForLead(req.user);
 
   try {
-    const phoneLead = await Lead.findOne({ "identity.phone": identity.phone });
-    if (phoneLead) {
-      res
-        .status(409)
-        .json({ message: "Lead with this phone number already exists" });
-      return;
-    }
-
-    const lead = await Lead.create({
-      identity,
-      profile,
-      demographics,
-      buyerProfile,
-      assetPreferences,
-      purchaseReadiness,
-      ownershipPreferences,
-      locationProfile,
-      lifestylePreferences,
-      unitPreferences,
-      notes,
-      system: {
-        ...system,
-        assignedAgent: agentId,
-        leadStatus: system?.leadStatus || "New",
-      },
+    res.status(201).json({
+      message: "Lead creation endpoint reached successfully",
+      receivedData: req.body,
+      user: req.user
     });
-
-    if (agentId) {
-      await createNotification({
-        isRead: false,
-        type: NotificationType.LeadAssigned,
-        message: NotificationMessage.LeadAssigned,
-        recipient: agentId,
-        title: NotificationType.LeadAssigned,
-      });
-    }
-
-    res.status(201).json({ message: "Lead created", data: lead });
-  } catch (e) {
-    console.error("Error in create lead:", e);
+  } catch (error) {
+    console.error("Error in LeadCreate:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -92,7 +61,7 @@ export const LeadCreate = async (req: AuthRequest, res: Response) => {
  * - Prevents duplicate leads by phone/email
  * - Does NOT enforce required fields (except identity uniqueness)
  */
-export const createLeadGPT = async (req: Request, res: Response) => {
+export const createLeadGPT = async (req: AuthRequest, res: Response) => {
   try {
     const payload = req.body;
 
@@ -141,7 +110,7 @@ export const createLeadGPT = async (req: Request, res: Response) => {
     payload.system = {
       ...payload.system,
       leadStatus: payload.system?.leadStatus || "New",
-      assignedAgent: payload.system?.assignedAgent || req.user?._id,
+      assignedAgent: payload.system?.assignedAgent || req.user?.id,
     };
 
     // ----------------------------
@@ -312,7 +281,7 @@ export const assignAgentToLeadController = async (
 
     const oldAgent = lead.system?.assignedAgent?.toString();
     if (!lead.system) {
-      lead.system = { assignedAgent: agentId, leadStatus: "New" };
+      lead.system = { assignedAgent: agentId, leadStatus: LeadStatus.New };
     } else {
       lead.system.assignedAgent = agentId;
     }
@@ -350,15 +319,15 @@ export const convertLeadToCustomer = async (
       return;
     }
 
-    if (lead.system?.leadStatus === "Converted") {
+    if (lead.system?.leadStatus === LeadStatus.Converted) {
       res.status(400).json({ message: "Lead already converted" });
       return;
     }
 
     if (!lead.system) {
-      lead.system = { leadStatus: "Converted" };
+      lead.system = { leadStatus: LeadStatus.Converted };
     } else {
-      lead.system.leadStatus = "Converted";
+      lead.system.leadStatus = LeadStatus.Converted;
     }
     await lead.save();
 

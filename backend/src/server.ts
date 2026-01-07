@@ -46,6 +46,12 @@ app.use(
   })
 );
 
+// Debug middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/leads", leadRoutes);

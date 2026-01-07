@@ -8,6 +8,8 @@ import MenuSidebar from './components/MenuSidebar';
 import LoginPage from './pages/LoginPage';
 import LeadProfilePage from './pages/LeadProfilePage';
 import LeadsPage from './pages/Lead/LeadPage';
+import CreateLeadPage from './pages/Lead/CreateLeadPage';
+import EditLeadPage from './pages/Lead/EditLeadPage';
 import UsersPage from './pages/UsersPage';
 
 const AppContent: React.FC = () => {
@@ -49,6 +51,22 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <LeadsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leads/create"
+              element={
+                <ProtectedRoute>
+                  <CreateLeadPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/leads/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditLeadPage />
                 </ProtectedRoute>
               }
             />
