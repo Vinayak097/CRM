@@ -122,6 +122,70 @@ export interface CreateLeadData {
   system?: {
     assignedAgent?: string;
   };
+  buyerProfile?: {
+    propertiesPurchasedBefore?: number;
+    propertyPurpose?: string[];
+    propertyPurposeDetails?: string;
+    buyingMotivation?: string[];
+    buyingMotivationDetails?: string;
+    shortTermRentalPreference?: string;
+    assetTypes?: string[];
+    assetTypesDetails?: string;
+    waterSourcePreference?: string;
+    unitConfigurations?: string[];
+    unitConfigurationsDetails?: string;
+    farmlandSize?: string;
+    farmlandSizeDetails?: string;
+    farmlandSizeAcres?: number;
+    farmlandVillaConfig?: string;
+    journeyStage?: string;
+    journeyStageDetails?: string;
+    explorationDuration?: string;
+    explorationDurationDetails?: string;
+    purchaseTimeline?: string;
+    purchaseTimelineDetails?: string;
+    budgetRange?: string;
+    budgetRangeDetails?: string;
+    notes?: string;
+  };
+  assetPreferences?: {
+    currentLocation?: {
+      city?: string;
+      state?: string;
+      country?: string;
+    };
+    buyingRegions?: string[];
+    preferredCountries?: string[];
+    preferredStates?: string[];
+    preferredCities?: string[];
+    preferredCitiesDetails?: string;
+    climateRisksToAvoid?: string[];
+    climatePreference?: string[];
+    climatePreferenceDetails?: string;
+    locationPriorities?: string[];
+    locationPrioritiesDetails?: string;
+    expansionRadiusKm?: string;
+    expansionRadiusDetails?: string;
+    notes?: string;
+  };
+  purchaseReadiness?: {
+    journeyStage?: string;
+    purchaseTimeline?: string;
+    budgetRange?: string;
+  };
+  ownershipPreferences?: {
+    ownershipStructure?: string;
+    fundingType?: string;
+  };
+  locationProfile?: {
+    currentLocation?: {
+      city?: string;
+      state?: string;
+      country?: string;
+    };
+    buyingRegions?: string[];
+    preferredCities?: string[];
+  };
 }
 
 export const leadService = {

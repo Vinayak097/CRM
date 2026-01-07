@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface LeadFormData {
-  // Basic Information
+  // Basic Informationle
   fullName: string;
   email: string;
   phone: string;
@@ -156,13 +156,6 @@ const CreateLeadPage: React.FC = () => {
           residencyDetails: formData.residencyDetails,
           discoverySource: formData.discoverySource,
           discoveryDetails: formData.discoveryDetails,
-        },
-        profile: {
-          ageGroup: formData.ageGroup,
-          professions: formData.professions,
-          householdSize: formData.householdSize,
-          annualIncomeRange: formData.annualIncomeRange,
-          notes: "",
         },
         demographics: {
           ageGroup: formData.ageGroup,
