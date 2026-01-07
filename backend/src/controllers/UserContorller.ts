@@ -1,8 +1,9 @@
-import type { Response, Request } from "express";
+import type { Response } from "express";
 import User, { Role } from "../models/User.js";
 import { SendServerError, SendTwoh } from "../common/shared.js";
+import type { AuthRequest } from "../middlewares/auth.js";
 
-const createUser = async (req: Request, res: Response) => {
+const createUser = async (req: AuthRequest, res: Response) => {
   const { password, name, role, email, phone } = req.body;
   try {
     const existUser = await User.findOne({ email });
@@ -33,7 +34,7 @@ const createUser = async (req: Request, res: Response) => {
   }
 };
 
-const updateUser = async (req: Request, res: Response) => {
+const updateUser = async (req: AuthRequest, res: Response) => {
   const { name, role, phone, email } = req.body;
   try {
     const existUser = await User.findOne({ email });
@@ -54,7 +55,7 @@ const updateUser = async (req: Request, res: Response) => {
   }
 };
 
-const ChangePassword = async (req: Request, res: Response) => {
+const ChangePassword = async (req: AuthRequest, res: Response) => {
   try {
     const { oldPassword, newPassword, id } = req.body;
     const existUser = await User.findById(id);
@@ -76,7 +77,7 @@ const ChangePassword = async (req: Request, res: Response) => {
   }
 };
 
-const deleteUser = async (req: Request, res: Response) => {
+const deleteUser = async (req: AuthRequest, res: Response) => {
   const userId = req.params.id;
   try {
     const existUser = await User.findById(userId);
@@ -91,7 +92,7 @@ const deleteUser = async (req: Request, res: Response) => {
     SendServerError(res);
   }
 };
-export const getUsers = async (req: Request, res: Response) => {
+export const getUsers = async (req: AuthRequest, res: Response) => {
   try {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
@@ -130,7 +131,7 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
-export const getUserById = async (req: Request, res: Response) => {
+export const getUserById = async (req: AuthRequest, res: Response) => {
   try {
     const user = await User.findById(req.params.id).select("-password");
     if (!user) {

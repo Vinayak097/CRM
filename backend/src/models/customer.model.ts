@@ -1,6 +1,6 @@
 import mongoose, { Schema } from "mongoose";
-import { CustomerDocument } from "./customer.types";
-import { CustomerStatus, CustomerType } from "./customer.enums";
+import type { CustomerDocument } from "./customer.types.js";
+import { CustomerStatus, CustomerType } from "./customer.enums.js";
 
 const customerSchema = new Schema<CustomerDocument>(
   {

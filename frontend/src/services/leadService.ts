@@ -230,4 +230,9 @@ export const leadService = {
     const response = await api.post(`/leads/${leadId}/convert`);
     return response.data;
   },
+
+  deleteLead: async (id: string): Promise<{ message: string }> => {
+    const response = await api.delete(`/leads/${id}`);
+    return response.data;
+  },
 };

@@ -21,33 +21,65 @@ export const LeadCreate = async (req: AuthRequest, res: Response) => {
   console.log("LeadCreate called with body:", req.body);
   const {
     identity,
-    profile,
     demographics,
-    buyerProfile,
-    assetPreferences,
-    purchaseReadiness,
-    ownershipPreferences,
-    locationProfile,
+    propertyVision,
+    investmentPreferences,
+    locationPreferences,
     lifestylePreferences,
     unitPreferences,
-    notes,
+    dreamHomeNotes,
     system,
   } = req.body;
 
-  if (!identity?.fullName || !identity?.phone) {
+  if (!identity?.fullName || !identity?.email) {
     res
       .status(400)
-      .json({ message: "identity.fullName and identity.phone are required" });
+      .json({ message: "identity.fullName and identity.email are required" });
     return;
   }
 
-  const agentId = system?.assignedAgent || getAgentIdForLead(req.user);
-
   try {
+    const existingLead = await Lead.findOne({
+      $or: [
+        { "identity.email": identity.email },
+        ...(identity.phone ? [{ "identity.phone": identity.phone }] : []),
+      ],
+    });
+
+    if (existingLead) {
+      res.status(409).json({
+        success: false,
+        message: "Lead already exists with this phone or email",
+        data: existingLead,
+      });
+      return;
+    }
+
+    const agentId = system?.assignedAgent || getAgentIdForLead(req.user);
+
+    const leadData = {
+      identity,
+      demographics,
+      propertyVision,
+      investmentPreferences,
+      locationPreferences,
+      lifestylePreferences,
+      unitPreferences,
+      dreamHomeNotes,
+      system: {
+        leadStatus: LeadStatus.New,
+        assignedAgent: agentId,
+        priorityScore: 0,
+        investmentScore: 0,
+      },
+    };
+
+    const lead = await Lead.create(leadData);
+
     res.status(201).json({
-      message: "Lead creation endpoint reached successfully",
-      receivedData: req.body,
-      user: req.user
+      success: true,
+      message: "Lead created successfully",
+      data: lead,
     });
   } catch (error) {
     console.error("Error in LeadCreate:", error);
@@ -302,6 +334,33 @@ export const assignAgentToLeadController = async (
     res.status(200).json({ message: "Agent assigned to lead", data: lead });
   } catch (error) {
     console.error("Assign agent error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const deleteLead = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+
+  try {
+    const lead = await Lead.findById(id);
+    if (!lead) {
+      res.status(404).json({ message: "Lead not found" });
+      return;
+    }
+
+    if (
+      req.user?.role === Role.salesAgent &&
+      lead.system?.assignedAgent?.toString() !== req.user.id
+    ) {
+      res.status(403).json({ message: "Access denied" });
+      return;
+    }
+
+    await Lead.findByIdAndDelete(id);
+
+    res.status(200).json({ message: "Lead deleted successfully" });
+  } catch (error) {
+    console.error("Delete lead error:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
