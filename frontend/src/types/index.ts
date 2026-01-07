@@ -9,10 +9,7 @@ export type LeadStatus =
   | "Lost"
   | "Converted";
 
-export interface Lead {
-  _id: string;
-
-  // CUSTOMER DATA - Basic Info
+export interface LeadIdentity {
   firstName?: string;
   lastName?: string;
   phone?: string;
@@ -31,21 +28,11 @@ export interface Lead {
   buyingJourneyStage?: string;
   explorationDuration?: string;
   purchaseTimeline?: string;
-  totalBudgetBandInr?: string;
-
-  // CUSTOMER DATA - Notes
-  propertyVisionNotes?: string;
   aboutYouNotes?: string;
   ownershipTimelineNotes?: string;
-  locationDealbreakerNotes?: string;
-  finalNotes?: string;
+}
 
-  // CUSTOMER DATA - Current Home
-  currentHomeCity?: string;
-  currentHomeState?: string;
-  currentHomeCountry?: string;
-
-  // LOCATION/CITY DATA
+export interface LeadLocation {
   buyingCountryFocus?: string;
   targetStatesRegions?: string[];
   climateRiskAvoidance?: string[];
@@ -54,8 +41,10 @@ export interface Lead {
   locationPriorities?: string[];
   areaTypePreference?: string[];
   naturalFeatureClosest?: string[];
+  locationDealbreakerNotes?: string;
+}
 
-  // PROPERTY DATA
+export interface LeadProperty {
   strPermissionImportance?: string;
   assetTypeInterest?: string[];
   farmlandWaterSourcePreference?: string;
@@ -76,20 +65,28 @@ export interface Lead {
   interiorFinishLevel?: string;
   smartHomeSecurityFeatures?: string[];
   privateOutdoorFeatures?: string[];
+  propertyVisionNotes?: string;
   idealHomeNotes?: string;
+  finalNotes?: string;
+}
 
-  // SYSTEM
-  system?: {
-    leadStatus?: LeadStatus;
-    assignedAgent?: {
-      _id: string;
-      name: string;
-      email: string;
-    };
-    priorityScore?: number;
-    investmentScore?: number;
+export interface LeadSystem {
+  leadStatus?: LeadStatus;
+  assignedAgent?: {
+    _id: string;
+    name: string;
+    email: string;
   };
+  priorityScore?: number;
+  investmentScore?: number;
+}
 
+export interface Lead {
+  _id: string;
+  identity?: LeadIdentity;
+  location?: LeadLocation;
+  property?: LeadProperty;
+  system?: LeadSystem;
   createdAt?: string;
   updatedAt?: string;
 }

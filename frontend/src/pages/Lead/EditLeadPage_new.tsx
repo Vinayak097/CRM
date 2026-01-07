@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { leadService } from "../../services/leadService";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { LeadIdentity, LeadLocation, LeadProperty } from "@/types";
+import type { Lead, LeadIdentity, LeadLocation, LeadProperty } from "@/types";
 import {
   residencyOptions,
   discoverySourceOptions,
@@ -48,9 +48,11 @@ import {
   mustHaveFeatureOptions,
 } from "../../components/LeadFormWizard/formOptions";
 
-const CreateLeadPage: React.FC = () => {
+const EditLeadPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
   // Form data
   const [identity, setIdentity] = useState<LeadIdentity>({
@@ -79,8 +81,32 @@ const CreateLeadPage: React.FC = () => {
     privateOutdoorFeatures: [],
   });
 
+  useEffect(() => {
+    const fetchLead = async () => {
+      if (!id) return;
+      try {
+        const response = await leadService.getLeadById(id);
+        const lead: Lead = response.data;
+
+        if (lead.identity) setIdentity(lead.identity);
+        if (lead.location) setLocation(lead.location);
+        if (lead.property) setProperty(lead.property);
+      } catch (error) {
+        console.error("Failed to fetch lead:", error);
+        alert("Failed to load lead data");
+        navigate("/leads");
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    fetchLead();
+  }, [id, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!id) return;
+
     setLoading(true);
 
     try {
@@ -90,11 +116,11 @@ const CreateLeadPage: React.FC = () => {
         property,
       };
 
-      await leadService.createLead(leadData);
-      navigate("/leads");
+      await leadService.updateLead(id, leadData);
+      navigate(`/leads/${id}`);
     } catch (error) {
-      console.error("Failed to create lead:", error);
-      alert("Failed to create lead. Please try again.");
+      console.error("Failed to update lead:", error);
+      alert("Failed to update lead. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -127,19 +153,28 @@ const CreateLeadPage: React.FC = () => {
     }
   };
 
+  if (fetching) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center text-gray-400">
+        <Loader2 className="h-8 w-8 animate-spin mr-2" />
+        Loading lead data...
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
-            onClick={() => navigate("/leads")}
+            onClick={() => navigate(`/leads/${id}`)}
             className="flex items-center gap-2 text-gray-400 hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Leads
+            Back to Lead Profile
           </button>
-          <h1 className="text-3xl font-bold">Create New Lead</h1>
+          <h1 className="text-3xl font-bold">Edit Lead</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -247,55 +282,49 @@ const CreateLeadPage: React.FC = () => {
                 <div>
                   <Label htmlFor="ageYears">Age</Label>
                   <Select
+                    id="ageYears"
                     value={identity.ageYears?.toString() || ""}
-                    onValueChange={(value) => setIdentity({ ...identity, ageYears: parseInt(value) || undefined })}
+                    onChange={(e) => setIdentity({ ...identity, ageYears: parseInt(e.target.value) || undefined })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select age group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ageGroupOptions.map((option) => (
-                        <SelectItem key={option} value={option.split(" ")[0]}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select age group</option>
+                    {ageGroupOptions.map((option) => (
+                      <option key={option} value={option.split(" ")[0]}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="profession">Profession</Label>
                   <Select
+                    id="profession"
                     value={identity.profession || ""}
-                    onValueChange={(value) => setIdentity({ ...identity, profession: value })}
+                    onChange={(e) => setIdentity({ ...identity, profession: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select profession" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {professionOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select profession</option>
+                    {professionOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="householdSize">Household Size</Label>
                   <Select
+                    id="householdSize"
                     value={identity.householdSize || ""}
-                    onValueChange={(value) => setIdentity({ ...identity, householdSize: value })}
+                    onChange={(e) => setIdentity({ ...identity, householdSize: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select household size" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {householdSizeOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select household size</option>
+                    {householdSizeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
               </div>
@@ -303,19 +332,17 @@ const CreateLeadPage: React.FC = () => {
               <div>
                 <Label htmlFor="householdIncomeBandInr">Income Range</Label>
                 <Select
+                  id="householdIncomeBandInr"
                   value={identity.householdIncomeBandInr || ""}
-                  onValueChange={(value) => setIdentity({ ...identity, householdIncomeBandInr: value })}
+                  onChange={(e) => setIdentity({ ...identity, householdIncomeBandInr: e.target.value })}
+                  className="bg-gray-800 border-gray-700"
                 >
-                  <SelectTrigger className="bg-gray-800 border-gray-700">
-                    <SelectValue placeholder="Select income range" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {incomeRangeOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  <option value="">Select income range</option>
+                  {incomeRangeOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </Select>
               </div>
 
@@ -365,55 +392,49 @@ const CreateLeadPage: React.FC = () => {
                 <div>
                   <Label htmlFor="priorPropertiesPurchased">Properties Purchased</Label>
                   <Select
+                    id="priorPropertiesPurchased"
                     value={identity.priorPropertiesPurchased || ""}
-                    onValueChange={(value) => setIdentity({ ...identity, priorPropertiesPurchased: value })}
+                    onChange={(e) => setIdentity({ ...identity, priorPropertiesPurchased: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {propertiesPurchasedOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select</option>
+                    {propertiesPurchasedOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="buyingJourneyStage">Journey Stage</Label>
                   <Select
+                    id="buyingJourneyStage"
                     value={identity.buyingJourneyStage || ""}
-                    onValueChange={(value) => setIdentity({ ...identity, buyingJourneyStage: value })}
+                    onChange={(e) => setIdentity({ ...identity, buyingJourneyStage: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {journeyStageOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select</option>
+                    {journeyStageOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="explorationDuration">Exploration Duration</Label>
                   <Select
+                    id="explorationDuration"
                     value={identity.explorationDuration || ""}
-                    onValueChange={(value) => setIdentity({ ...identity, explorationDuration: value })}
+                    onChange={(e) => setIdentity({ ...identity, explorationDuration: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {explorationDurationOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select</option>
+                    {explorationDurationOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
               </div>
@@ -421,19 +442,17 @@ const CreateLeadPage: React.FC = () => {
               <div>
                 <Label htmlFor="purchaseTimeline">Purchase Timeline</Label>
                 <Select
+                  id="purchaseTimeline"
                   value={identity.purchaseTimeline || ""}
-                  onValueChange={(value) => setIdentity({ ...identity, purchaseTimeline: value })}
+                  onChange={(e) => setIdentity({ ...identity, purchaseTimeline: e.target.value })}
+                  className="bg-gray-800 border-gray-700"
                 >
-                  <SelectTrigger className="bg-gray-800 border-gray-700">
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {purchaseTimelineOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  <option value="">Select</option>
+                  {purchaseTimelineOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </Select>
               </div>
 
@@ -471,19 +490,17 @@ const CreateLeadPage: React.FC = () => {
               <div>
                 <Label htmlFor="buyingCountryFocus">Country Focus</Label>
                 <Select
+                  id="buyingCountryFocus"
                   value={location.buyingCountryFocus || ""}
-                  onValueChange={(value) => setLocation({ ...location, buyingCountryFocus: value })}
+                  onChange={(e) => setLocation({ ...location, buyingCountryFocus: e.target.value })}
+                  className="bg-gray-800 border-gray-700"
                 >
-                  <SelectTrigger className="bg-gray-800 border-gray-700">
-                    <SelectValue placeholder="Select country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countryOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  <option value="">Select country</option>
+                  {countryOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </Select>
               </div>
 
@@ -609,19 +626,17 @@ const CreateLeadPage: React.FC = () => {
               <div>
                 <Label htmlFor="strPermissionImportance">STR Permission Importance</Label>
                 <Select
+                  id="strPermissionImportance"
                   value={property.strPermissionImportance || ""}
-                  onValueChange={(value) => setProperty({ ...property, strPermissionImportance: value })}
+                  onChange={(e) => setProperty({ ...property, strPermissionImportance: e.target.value })}
+                  className="bg-gray-800 border-gray-700"
                 >
-                  <SelectTrigger className="bg-gray-800 border-gray-700">
-                    <SelectValue placeholder="Select STR importance" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {shortTermRentalOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  <option value="">Select STR importance</option>
+                  {shortTermRentalOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </Select>
               </div>
 
@@ -648,19 +663,17 @@ const CreateLeadPage: React.FC = () => {
               <div>
                 <Label htmlFor="farmlandWaterSourcePreference">Farmland Water Source Preference</Label>
                 <Select
+                  id="farmlandWaterSourcePreference"
                   value={property.farmlandWaterSourcePreference || ""}
-                  onValueChange={(value) => setProperty({ ...property, farmlandWaterSourcePreference: value })}
+                  onChange={(e) => setProperty({ ...property, farmlandWaterSourcePreference: e.target.value })}
+                  className="bg-gray-800 border-gray-700"
                 >
-                  <SelectTrigger className="bg-gray-800 border-gray-700">
-                    <SelectValue placeholder="Select water source" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {waterSourceOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
+                  <option value="">Select water source</option>
+                  {waterSourceOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </Select>
               </div>
 
@@ -708,37 +721,33 @@ const CreateLeadPage: React.FC = () => {
                 <div>
                   <Label htmlFor="ownershipStructurePreference">Ownership Structure</Label>
                   <Select
+                    id="ownershipStructurePreference"
                     value={property.ownershipStructurePreference || ""}
-                    onValueChange={(value) => setProperty({ ...property, ownershipStructurePreference: value })}
+                    onChange={(e) => setProperty({ ...property, ownershipStructurePreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select ownership" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ownershipStructureOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select ownership</option>
+                    {ownershipStructureOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="possessionStagePreference">Possession Stage</Label>
                   <Select
+                    id="possessionStagePreference"
                     value={property.possessionStagePreference || ""}
-                    onValueChange={(value) => setProperty({ ...property, possessionStagePreference: value })}
+                    onChange={(e) => setProperty({ ...property, possessionStagePreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select possession stage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {possessionTimelineOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select possession stage</option>
+                    {possessionTimelineOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
               </div>
@@ -747,37 +756,33 @@ const CreateLeadPage: React.FC = () => {
                 <div>
                   <Label htmlFor="possessionTimelineBucket">Possession Timeline</Label>
                   <Select
+                    id="possessionTimelineBucket"
                     value={property.possessionTimelineBucket || ""}
-                    onValueChange={(value) => setProperty({ ...property, possessionTimelineBucket: value })}
+                    onChange={(e) => setProperty({ ...property, possessionTimelineBucket: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select timeline" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {possessionTimelineOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select timeline</option>
+                    {possessionTimelineOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="managementModelPreference">Management Model</Label>
                   <Select
+                    id="managementModelPreference"
                     value={property.managementModelPreference || ""}
-                    onValueChange={(value) => setProperty({ ...property, managementModelPreference: value })}
+                    onChange={(e) => setProperty({ ...property, managementModelPreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select management model" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {managementModelOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select management model</option>
+                    {managementModelOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
               </div>
@@ -786,37 +791,33 @@ const CreateLeadPage: React.FC = () => {
                 <div>
                   <Label htmlFor="fundingPreference">Funding Preference</Label>
                   <Select
+                    id="fundingPreference"
                     value={property.fundingPreference || ""}
-                    onValueChange={(value) => setProperty({ ...property, fundingPreference: value })}
+                    onChange={(e) => setProperty({ ...property, fundingPreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select funding" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {fundingTypeOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select funding</option>
+                    {fundingTypeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="communityFormatPreference">Community Format</Label>
                   <Select
+                    id="communityFormatPreference"
                     value={property.communityFormatPreference || ""}
-                    onValueChange={(value) => setProperty({ ...property, communityFormatPreference: value })}
+                    onChange={(e) => setProperty({ ...property, communityFormatPreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select community format" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {communityFormatOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select community format</option>
+                    {communityFormatOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
               </div>
@@ -885,37 +886,33 @@ const CreateLeadPage: React.FC = () => {
                 <div>
                   <Label htmlFor="furnishingLevelPreference">Furnishing Level</Label>
                   <Select
+                    id="furnishingLevelPreference"
                     value={property.furnishingLevelPreference || ""}
-                    onValueChange={(value) => setProperty({ ...property, furnishingLevelPreference: value })}
+                    onChange={(e) => setProperty({ ...property, furnishingLevelPreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select furnishing level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {furnishingLevelOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select furnishing level</option>
+                    {furnishingLevelOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
                 <div>
                   <Label htmlFor="interiorFinishLevel">Interior Finish Level</Label>
                   <Select
+                    id="interiorFinishLevel"
                     value={property.interiorFinishLevel || ""}
-                    onValueChange={(value) => setProperty({ ...property, interiorFinishLevel: value })}
+                    onChange={(e) => setProperty({ ...property, interiorFinishLevel: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
                   >
-                    <SelectTrigger className="bg-gray-800 border-gray-700">
-                      <SelectValue placeholder="Select interior finish" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {interiorStyleOptions.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <option value="">Select interior finish</option>
+                    {interiorStyleOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
                   </Select>
                 </div>
               </div>
@@ -1046,12 +1043,12 @@ const CreateLeadPage: React.FC = () => {
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Creating...
+                  Updating...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Create Lead
+                  Update Lead
                 </>
               )}
             </Button>
@@ -1062,4 +1059,4 @@ const CreateLeadPage: React.FC = () => {
   );
 };
 
-export default CreateLeadPage;
+export default EditLeadPage;

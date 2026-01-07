@@ -160,7 +160,7 @@ const LeadProfilePage: React.FC = () => {
     );
   };
 
-  const fullName = [lead.firstName, lead.lastName].filter(Boolean).join(" ") || "Unknown";
+  const fullName = [lead.identity?.firstName, lead.identity?.lastName].filter(Boolean).join(" ") || "Unknown";
 
   return (
     <div className="min-h-screen bg-background text-white">
@@ -188,8 +188,8 @@ const LeadProfilePage: React.FC = () => {
                   <span className="text-sm text-gray-400">Created {lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : "N/A"}</span>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-gray-300">
-                  {lead.phone && <span className="flex items-center gap-1"><Phone className="h-4 w-4" />{lead.phone}</span>}
-                  {lead.email && <span className="flex items-center gap-1"><Mail className="h-4 w-4" />{lead.email}</span>}
+                  {lead.identity?.phone && <span className="flex items-center gap-1"><Phone className="h-4 w-4" />{lead.identity.phone}</span>}
+                  {lead.identity?.email && <span className="flex items-center gap-1"><Mail className="h-4 w-4" />{lead.identity.email}</span>}
                 </div>
               </div>
             </div>
@@ -213,83 +213,79 @@ const LeadProfilePage: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             {/* Customer Info */}
             <InfoCard title="Customer Information" icon={Users}>
-              <InfoRow label="First Name" value={lead.firstName} />
-              <InfoRow label="Last Name" value={lead.lastName} />
-              <InfoRow label="Email" value={lead.email} />
-              <InfoRow label="Phone" value={lead.phone} />
-              <InfoRow label="Home Country" value={lead.homeCountry} />
-              <InfoRow label="Tax Residency" value={lead.taxResidencyCountry} />
-              <InfoRow label="Visa Status" value={lead.visaResidencyStatus} />
-              <InfoRow label="Lead Source" value={lead.leadSource} />
-              <InfoRow label="Age" value={lead.ageYears} />
-              <InfoRow label="Profession" value={lead.profession} />
-              <InfoRow label="Household Size" value={lead.householdSize} />
-              <InfoRow label="Income Range" value={lead.householdIncomeBandInr} />
-              <InfoRow label="Current City" value={lead.currentHomeCity} />
-              <InfoRow label="Current State" value={lead.currentHomeState} />
-              <InfoRow label="Current Country" value={lead.currentHomeCountry} />
-              <NotesSection label="About You Notes" value={lead.aboutYouNotes} />
+              <InfoRow label="First Name" value={lead.identity?.firstName} />
+              <InfoRow label="Last Name" value={lead.identity?.lastName} />
+              <InfoRow label="Email" value={lead.identity?.email} />
+              <InfoRow label="Phone" value={lead.identity?.phone} />
+              <InfoRow label="Home Country" value={lead.identity?.homeCountry} />
+              <InfoRow label="Tax Residency" value={lead.identity?.taxResidencyCountry} />
+              <InfoRow label="Visa Status" value={lead.identity?.visaResidencyStatus} />
+              <InfoRow label="Lead Source" value={lead.identity?.leadSource} />
+              <InfoRow label="Age" value={lead.identity?.ageYears} />
+              <InfoRow label="Profession" value={lead.identity?.profession} />
+              <InfoRow label="Household Size" value={lead.identity?.householdSize} />
+              <InfoRow label="Income Range" value={lead.identity?.householdIncomeBandInr} />
+              <NotesSection label="About You Notes" value={lead.identity?.aboutYouNotes} />
             </InfoCard>
 
             {/* Buying Journey */}
             <InfoCard title="Buying Journey" icon={Target}>
-              <InfoRow label="Properties Purchased" value={lead.priorPropertiesPurchased} />
-              <InfoRow label="Journey Stage" value={lead.buyingJourneyStage} />
-              <InfoRow label="Exploration Duration" value={lead.explorationDuration} />
-              <InfoRow label="Purchase Timeline" value={lead.purchaseTimeline} />
-              <InfoRow label="Total Budget" value={lead.totalBudgetBandInr} />
-              <TagList label="Property Role" items={lead.propertyRolePrimary} />
-              <TagList label="Search Triggers" items={lead.searchTrigger} />
-              <NotesSection label="Property Vision Notes" value={lead.propertyVisionNotes} />
-              <NotesSection label="Ownership Timeline Notes" value={lead.ownershipTimelineNotes} />
+              <InfoRow label="Properties Purchased" value={lead.identity?.priorPropertiesPurchased} />
+              <InfoRow label="Journey Stage" value={lead.identity?.buyingJourneyStage} />
+              <InfoRow label="Exploration Duration" value={lead.identity?.explorationDuration} />
+              <InfoRow label="Purchase Timeline" value={lead.identity?.purchaseTimeline} />
+              <TagList label="Property Role" items={lead.identity?.propertyRolePrimary} />
+              <TagList label="Search Triggers" items={lead.identity?.searchTrigger} />
+              <NotesSection label="Ownership Timeline Notes" value={lead.identity?.ownershipTimelineNotes} />
             </InfoCard>
 
             {/* Location Preferences */}
             <InfoCard title="Location Preferences" icon={MapPin}>
-              <InfoRow label="Country Focus" value={lead.buyingCountryFocus} />
-              <TagList label="Target States/Regions" items={lead.targetStatesRegions} />
-              <TagList label="Target Locations" items={lead.targetLocations} />
-              <TagList label="Climate Risks to Avoid" items={lead.climateRiskAvoidance} />
-              <TagList label="Preferred Climate" items={lead.preferredClimate} />
-              <TagList label="Location Priorities" items={lead.locationPriorities} />
-              <TagList label="Area Type Preference" items={lead.areaTypePreference} />
-              <TagList label="Natural Features" items={lead.naturalFeatureClosest} />
-              <NotesSection label="Location Deal-breakers" value={lead.locationDealbreakerNotes} />
+              <InfoRow label="Country Focus" value={lead.location?.buyingCountryFocus} />
+              <TagList label="Target States/Regions" items={lead.location?.targetStatesRegions} />
+              <TagList label="Target Locations" items={lead.location?.targetLocations} />
+              <TagList label="Climate Risks to Avoid" items={lead.location?.climateRiskAvoidance} />
+              <TagList label="Preferred Climate" items={lead.location?.preferredClimate} />
+              <TagList label="Location Priorities" items={lead.location?.locationPriorities} />
+              <TagList label="Area Type Preference" items={lead.location?.areaTypePreference} />
+              <TagList label="Natural Features" items={lead.location?.naturalFeatureClosest} />
+              <NotesSection label="Location Deal-breakers" value={lead.location?.locationDealbreakerNotes} />
             </InfoCard>
 
             {/* Property Preferences */}
             <InfoCard title="Property Preferences" icon={Building}>
-              <InfoRow label="STR Importance" value={lead.strPermissionImportance} />
-              <InfoRow label="Water Source Preference" value={lead.farmlandWaterSourcePreference} />
-              <InfoRow label="Ownership Structure" value={lead.ownershipStructurePreference} />
-              <InfoRow label="Possession Stage" value={lead.possessionStagePreference} />
-              <InfoRow label="Possession Timeline" value={lead.possessionTimelineBucket} />
-              <InfoRow label="Management Model" value={lead.managementModelPreference} />
-              <InfoRow label="Funding Preference" value={lead.fundingPreference} />
-              <InfoRow label="Community Format" value={lead.communityFormatPreference} />
-              <TagList label="Asset Types" items={lead.assetTypeInterest} />
-              <TagList label="Unit Configuration" items={lead.unitConfiguration} />
-              <TagList label="Land Size" items={lead.farmlandLandSizeBucket} />
-              <TagList label="Community Friendly For" items={lead.communityFriendlyFor} />
+              <InfoRow label="STR Importance" value={lead.property?.strPermissionImportance} />
+              <InfoRow label="Water Source Preference" value={lead.property?.farmlandWaterSourcePreference} />
+              <InfoRow label="Ownership Structure" value={lead.property?.ownershipStructurePreference} />
+              <InfoRow label="Possession Stage" value={lead.property?.possessionStagePreference} />
+              <InfoRow label="Possession Timeline" value={lead.property?.possessionTimelineBucket} />
+              <InfoRow label="Management Model" value={lead.property?.managementModelPreference} />
+              <InfoRow label="Funding Preference" value={lead.property?.fundingPreference} />
+              <InfoRow label="Community Format" value={lead.property?.communityFormatPreference} />
+              <TagList label="Asset Types" items={lead.property?.assetTypeInterest} />
+              <TagList label="Unit Configuration" items={lead.property?.unitConfiguration} />
+              <TagList label="Land Size" items={lead.property?.farmlandLandSizeBucket} />
+              <TagList label="Community Friendly For" items={lead.property?.communityFriendlyFor} />
             </InfoCard>
 
             {/* Home Features */}
             <InfoCard title="Home Features" icon={Home}>
-              <InfoRow label="Furnishing Level" value={lead.furnishingLevelPreference} />
-              <InfoRow label="Interior Finish" value={lead.interiorFinishLevel} />
-              <TagList label="Vastu Directions" items={lead.vastuPreferredDirections} />
-              <TagList label="Must-Have Features" items={lead.homeMustHaveFeatures} />
-              <TagList label="Nice-to-Have Features" items={lead.homeNiceToHaveFeatures} />
-              <TagList label="Smart Home & Security" items={lead.smartHomeSecurityFeatures} />
-              <TagList label="Private Outdoor Features" items={lead.privateOutdoorFeatures} />
-              <TagList label="Community Amenities" items={lead.communityOutdoorAmenitiesTop} />
-              <NotesSection label="Ideal Home Notes" value={lead.idealHomeNotes} />
+              <InfoRow label="Furnishing Level" value={lead.property?.furnishingLevelPreference} />
+              <InfoRow label="Interior Finish" value={lead.property?.interiorFinishLevel} />
+              <TagList label="Vastu Directions" items={lead.property?.vastuPreferredDirections} />
+              <TagList label="Must-Have Features" items={lead.property?.homeMustHaveFeatures} />
+              <TagList label="Nice-to-Have Features" items={lead.property?.homeNiceToHaveFeatures} />
+              <TagList label="Smart Home & Security" items={lead.property?.smartHomeSecurityFeatures} />
+              <TagList label="Private Outdoor Features" items={lead.property?.privateOutdoorFeatures} />
+              <TagList label="Community Amenities" items={lead.property?.communityOutdoorAmenitiesTop} />
+              <NotesSection label="Ideal Home Notes" value={lead.property?.idealHomeNotes} />
+              <NotesSection label="Property Vision Notes" value={lead.property?.propertyVisionNotes} />
             </InfoCard>
 
             {/* Final Notes */}
-            {lead.finalNotes && (
+            {lead.property?.finalNotes && (
               <InfoCard title="Additional Notes" icon={MessageSquare}>
-                <p className="text-sm bg-gray-800/50 p-3 rounded">{lead.finalNotes}</p>
+                <p className="text-sm bg-gray-800/50 p-3 rounded">{lead.property.finalNotes}</p>
               </InfoCard>
             )}
           </div>
