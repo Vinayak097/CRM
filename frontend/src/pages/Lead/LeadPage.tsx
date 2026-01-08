@@ -24,8 +24,8 @@ const LeadsPage: React.FC = () => {
     setError(null);
     try {
       const response = await leadService.getLeads(page, PAGE_SIZE, search);
-      setLeads(response.data);
-      setTotalPages(response.pagination.totalPages);
+      setLeads(response.leads);
+      setTotalPages(response.pagination.pages);
       setTotal(response.pagination.total);
     } catch {
       setError("Failed to fetch leads");
@@ -73,7 +73,7 @@ const LeadsPage: React.FC = () => {
   };
 
   const getFullName = (lead: Lead) => {
-    return [lead.firstName, lead.lastName].filter(Boolean).join(" ") || "Unknown";
+    return [lead.identity?.firstName, lead.identity?.lastName].filter(Boolean).join(" ") || "Unknown";
   };
 
   return (
@@ -129,8 +129,8 @@ const LeadsPage: React.FC = () => {
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-white truncate">{getFullName(lead)}</h3>
-                  <p className="text-sm text-gray-400 mt-1">{lead.phone || "No phone"}</p>
-                  <p className="text-sm text-gray-500 mt-1">{lead.email || "No email"}</p>
+                  <p className="text-sm text-gray-400 mt-1">{lead.identity?.phone || "No phone"}</p>
+                  <p className="text-sm text-gray-500 mt-1">{lead.identity?.email || "No email"}</p>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ml-2 shrink-0 ${getStatusColor(lead.system?.leadStatus)}`}>
                   {lead.system?.leadStatus || "New"}
@@ -189,8 +189,8 @@ const LeadsPage: React.FC = () => {
               leads.map((lead) => (
                 <tr key={lead._id} className="border-t border-gray-700 hover:bg-gray-800 cursor-pointer" onClick={() => navigate(`/leads/${lead._id}`)}>
                   <td className="p-3 font-medium">{getFullName(lead)}</td>
-                  <td className="p-3">{lead.phone || "-"}</td>
-                  <td className="p-3">{lead.email || "-"}</td>
+                  <td className="p-3">{lead.identity?.phone || "-"}</td>
+                  <td className="p-3">{lead.identity?.email || "-"}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded text-xs ${getStatusColor(lead.system?.leadStatus)}`}>{lead.system?.leadStatus || "New"}</span>
                   </td>

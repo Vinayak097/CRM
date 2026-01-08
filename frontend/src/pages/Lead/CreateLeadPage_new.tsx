@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { leadService } from "../../services/leadService";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Lead, LeadIdentity, LeadLocation, LeadProperty } from "@/types";
+import type { LeadIdentity, LeadLocation, LeadProperty } from "@/types";
 import {
   residencyOptions,
   discoverySourceOptions,
@@ -48,11 +48,9 @@ import {
   mustHaveFeatureOptions,
 } from "../../components/LeadFormWizard/formOptions";
 
-const EditLeadPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+const CreateLeadPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
 
   // Form data
   const [identity, setIdentity] = useState<LeadIdentity>({
@@ -81,31 +79,9 @@ const EditLeadPage: React.FC = () => {
     privateOutdoorFeatures: [],
   });
 
-  useEffect(() => {
-    const fetchLead = async () => {
-      if (!id) return;
-      try {
-        const response = await leadService.getLeadById(id);
-        const lead: Lead = response.data;
-
-        if (lead.identity) setIdentity(lead.identity);
-        if (lead.location) setLocation(lead.location);
-        if (lead.property) setProperty(lead.property);
-      } catch (error) {
-        console.error("Failed to fetch lead:", error);
-        alert("Failed to load lead data");
-        navigate("/leads");
-      } finally {
-        setFetching(false);
-      }
-    };
-
-    fetchLead();
-  }, [id, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!id) return;
 
     setLoading(true);
 
@@ -116,11 +92,11 @@ const EditLeadPage: React.FC = () => {
         property,
       };
 
-      await leadService.updateLead(id, leadData);
-      navigate(`/leads/${id}`);
+      await leadService.createLead(leadData);
+      navigate("/leads");
     } catch (error) {
-      console.error("Failed to update lead:", error);
-      alert("Failed to update lead. Please try again.");
+      console.error("Failed to create lead:", error);
+      alert("Failed to create lead. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -153,14 +129,6 @@ const EditLeadPage: React.FC = () => {
     }
   };
 
-  if (fetching) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-gray-400">
-        <Loader2 className="h-8 w-8 animate-spin mr-2" />
-        Loading lead data...
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background text-white">
@@ -168,13 +136,13 @@ const EditLeadPage: React.FC = () => {
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <button
-            onClick={() => navigate(`/leads/${id}`)}
+            onClick={() => navigate("/leads")}
             className="flex items-center gap-2 text-gray-400 hover:text-white"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Lead Profile
+            Back to Leads
           </button>
-          <h1 className="text-3xl font-bold">Edit Lead</h1>
+          <h1 className="text-3xl font-bold">Create New Lead</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -1043,12 +1011,12 @@ const EditLeadPage: React.FC = () => {
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Updating...
+                  Creating...
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Update Lead
+                  Create Lead
                 </>
               )}
             </Button>

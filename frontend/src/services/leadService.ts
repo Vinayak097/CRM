@@ -14,62 +14,64 @@ export interface PaginatedResponse<T> {
 }
 
 export interface CreateLeadData {
-  firstName: string;
-  lastName?: string;
-  phone?: string;
-  email: string;
-  homeCountry?: string;
-  taxResidencyCountry?: string;
-  visaResidencyStatus?: string;
-  leadSource?: string;
-  ageYears?: number;
-  profession?: string;
-  householdSize?: string;
-  householdIncomeBandInr?: string;
-  priorPropertiesPurchased?: string;
-  propertyRolePrimary?: string[];
-  searchTrigger?: string[];
-  buyingJourneyStage?: string;
-  explorationDuration?: string;
-  purchaseTimeline?: string;
-  totalBudgetBandInr?: string;
-  propertyVisionNotes?: string;
-  aboutYouNotes?: string;
-  ownershipTimelineNotes?: string;
-  locationDealbreakerNotes?: string;
-  finalNotes?: string;
-  currentHomeCity?: string;
-  currentHomeState?: string;
-  currentHomeCountry?: string;
-  buyingCountryFocus?: string;
-  targetStatesRegions?: string[];
-  climateRiskAvoidance?: string[];
-  targetLocations?: string[];
-  preferredClimate?: string[];
-  locationPriorities?: string[];
-  areaTypePreference?: string[];
-  naturalFeatureClosest?: string[];
-  strPermissionImportance?: string;
-  assetTypeInterest?: string[];
-  farmlandWaterSourcePreference?: string;
-  unitConfiguration?: string[];
-  farmlandLandSizeBucket?: string[];
-  ownershipStructurePreference?: string;
-  possessionStagePreference?: string;
-  possessionTimelineBucket?: string;
-  managementModelPreference?: string;
-  fundingPreference?: string;
-  communityFormatPreference?: string;
-  communityFriendlyFor?: string[];
-  communityOutdoorAmenitiesTop?: string[];
-  vastuPreferredDirections?: string[];
-  furnishingLevelPreference?: string;
-  homeMustHaveFeatures?: string[];
-  homeNiceToHaveFeatures?: string[];
-  interiorFinishLevel?: string;
-  smartHomeSecurityFeatures?: string[];
-  privateOutdoorFeatures?: string[];
-  idealHomeNotes?: string;
+  identity?: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    email?: string;
+    homeCountry?: string;
+    taxResidencyCountry?: string;
+    visaResidencyStatus?: string;
+    leadSource?: string;
+    ageYears?: number;
+    profession?: string;
+    householdSize?: string;
+    householdIncomeBandInr?: string;
+    priorPropertiesPurchased?: string;
+    propertyRolePrimary?: string[];
+    searchTrigger?: string[];
+    buyingJourneyStage?: string;
+    explorationDuration?: string;
+    purchaseTimeline?: string;
+    aboutYouNotes?: string;
+    ownershipTimelineNotes?: string;
+  };
+  location?: {
+    buyingCountryFocus?: string;
+    targetStatesRegions?: string[];
+    climateRiskAvoidance?: string[];
+    targetLocations?: string[];
+    preferredClimate?: string[];
+    locationPriorities?: string[];
+    areaTypePreference?: string[];
+    naturalFeatureClosest?: string[];
+    locationDealbreakerNotes?: string;
+  };
+  property?: {
+    strPermissionImportance?: string;
+    assetTypeInterest?: string[];
+    farmlandWaterSourcePreference?: string;
+    unitConfiguration?: string[];
+    farmlandLandSizeBucket?: string[];
+    ownershipStructurePreference?: string;
+    possessionStagePreference?: string;
+    possessionTimelineBucket?: string;
+    managementModelPreference?: string;
+    fundingPreference?: string;
+    communityFormatPreference?: string;
+    communityFriendlyFor?: string[];
+    communityOutdoorAmenitiesTop?: string[];
+    vastuPreferredDirections?: string[];
+    furnishingLevelPreference?: string;
+    homeMustHaveFeatures?: string[];
+    homeNiceToHaveFeatures?: string[];
+    interiorFinishLevel?: string;
+    smartHomeSecurityFeatures?: string[];
+    privateOutdoorFeatures?: string[];
+    propertyVisionNotes?: string;
+    idealHomeNotes?: string;
+    finalNotes?: string;
+  };
 }
 
 export const leadService = {
@@ -84,7 +86,7 @@ export const leadService = {
     });
     if (search) params.append("search", search);
     const response = await api.get(`/leads?${params}`);
-    return response.data;
+    return response.data.data;
   },
 
   getLeadById: async (id: string): Promise<{ data: Lead }> => {
@@ -101,12 +103,22 @@ export const leadService = {
     id: string,
     data: Record<string, unknown>
   ): Promise<{ data: Lead }> => {
-    const response = await api.put(`/leads/${id}`, data);
+    const response = await api.patch(`/leads/${id}`, data);
     return response.data;
   },
 
   assignAgent: async (leadId: string, agentId: string): Promise<{ data: Lead }> => {
-    const response = await api.post(`/leads/${leadId}/assign`, { agentId });
+    const response = await api.patch(`/leads/${leadId}/assign-agent`, { agentId });
+    return response.data;
+  },
+
+  updateStatus: async (leadId: string, leadStatus: string, notes?: string): Promise<{
+    leadId: string;
+    oldStatus: string;
+    newStatus: string;
+    updatedAt: string;
+  }> => {
+    const response = await api.patch(`/leads/${leadId}/status`, { leadStatus, notes });
     return response.data;
   },
 

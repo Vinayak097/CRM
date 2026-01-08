@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 
-import { Role } from "../models/User.js";
+import User, { Role } from "../models/User.js";
 import { LeadStatus } from "../types/lead.types.js";
 import { createNotification } from "./notificationController.js";
 import {
@@ -323,7 +323,7 @@ export const updateLeadStatusController = async (
     const { id } = req.params;
     const { leadStatus, notes } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (id && !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({
         success: false,
         message: "Invalid lead ID format",
@@ -398,10 +398,10 @@ export const updateLeadStatusController = async (
     }
 
     // Create notification for admin/sales manager
-    if (req.user?.role !== Role.admin && req.user?.role !== Role.salesManager) {
+    if (req.user?.role !== Role.Admin && req.user?.role !== Role.salesAgent) {
       // Find admin/sales manager to notify
       const admins = await User.find({
-        role: { $in: [Role.admin, Role.salesManager] },
+        role: { $in: [Role.Admin] },
       }).select("_id");
 
       for (const admin of admins) {
@@ -440,7 +440,7 @@ export const assignAgentToLeadController = async (
   req: AuthRequest,
   res: Response
 ) => {
-  const { leadId } = req.params;
+  const { id } = req.params;
   const { agentId } = req.body;
 
   try {
@@ -448,7 +448,7 @@ export const assignAgentToLeadController = async (
       return res.status(400).json({ message: "Agent ID is required" });
     }
 
-    const lead = await Lead.findById(leadId);
+    const lead = await Lead.findById(id);
     if (!lead) {
       return res.status(404).json({ message: "Lead not found" });
     }

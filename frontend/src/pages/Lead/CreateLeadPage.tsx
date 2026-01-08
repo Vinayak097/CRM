@@ -1,430 +1,1024 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, User, MapPin, Building, Home, Heart, DollarSign, MessageSquare } from "lucide-react";
+import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import { leadService } from "../../services/leadService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-
-// Option lists based on the specification
-const OPTIONS = {
-  visaResidencyStatus: ["Citizen (no visa required)", "Permanent Resident / Green Card", "Work Visa", "Student Visa", "Business Visa", "Tourist Visa", "OCI (Overseas Citizen of India)", "PIO (Person of Indian Origin)", "Dependent Visa", "Retired / Pensioner Visa", "Digital Nomad Visa", "Other"],
-  leadSource: ["I've used Avacasa before", "Friend / Family referral", "Colleague referral", "Google Search", "Facebook", "Instagram", "LinkedIn", "YouTube", "Twitter/X", "Property portal (99acres, MagicBricks, etc.)", "News article / Blog", "Podcast", "Real estate event / Expo", "WhatsApp group", "Email newsletter", "Print advertisement", "TV advertisement", "Radio", "SMS campaign", "Other"],
-  profession: ["Salaried - Private Sector", "Salaried - Government / PSU", "Business Owner / Entrepreneur", "Self-employed / Freelancer", "Medical Professional", "Legal Professional", "Retired", "Other"],
-  householdSize: ["1", "2", "3", "4", "5", "6", "7", "8+"],
-  householdIncomeBandInr: ["Under ₹10 Lakhs", "₹10-25 Lakhs", "₹25-50 Lakhs", "₹50-75 Lakhs", "₹75 Lakhs - ₹1 Crore", "₹1-1.5 Crores", "₹1.5-2 Crores", "₹2-3 Crores", "₹3-5 Crores", "Above ₹5 Crores"],
-  priorPropertiesPurchased: ["0 (this is my first)", "1", "2", "3", "4", "5", "6-10", "More than 10"],
-  propertyRolePrimary: ["Primary residence", "Second home / Weekend getaway", "Vacation home", "Retirement home", "Investment property", "Rental income property", "Short-term rental (Airbnb)", "Agricultural / Farming", "Commercial use", "Land banking", "For children / Family", "Holiday home for family", "Other"],
-  searchTrigger: ["Peace & relaxation", "Retirement planning", "Investment / Wealth building", "Rental income", "Nature / Clean air", "Escape from city", "Work from anywhere lifestyle", "Family gatherings", "Health reasons", "Children's future", "Other"],
-  buyingJourneyStage: ["Just exploring / Early research", "Actively searching", "Ready to buy soon"],
-  explorationDuration: ["Less than 1 month", "1-3 months", "3-6 months", "6-12 months", "1-2 years", "More than 2 years"],
-  purchaseTimeline: ["Immediately / ASAP", "Within 3 months", "3-6 months", "6-12 months", "1-2 years", "2-3 years", "3-5 years", "No fixed timeline", "Just exploring"],
-  totalBudgetBandInr: ["Less than ₹25 Lakhs", "₹25-50 Lakhs", "₹50-75 Lakhs", "₹75 Lakhs - ₹1 Crore", "₹1-1.5 Crores", "₹1.5-2 Crores", "₹2-3 Crores", "₹3-5 Crores", "₹5-10 Crores", "₹10-25 Crores", "Above ₹25 Crores"],
-  buyingCountryFocus: ["India", "Indonesia", "Thailand", "Portugal", "Other"],
-  targetStatesRegions: ["Haryana", "Himachal Pradesh", "Uttarakhand", "Rajasthan", "Punjab", "Uttar Pradesh", "Maharashtra", "Goa", "Karnataka", "Kerala", "Tamil Nadu", "Telangana", "Andhra Pradesh", "West Bengal", "Other"],
-  climateRiskAvoidance: ["Flooding / Waterlogging", "Earthquakes", "Cyclones / Hurricanes", "Extreme heat", "Extreme cold", "Drought", "Landslides", "Air pollution", "None - not concerned"],
-  preferredClimate: ["Cool / Pleasant year-round", "Warm & tropical", "Four distinct seasons", "Dry / Arid", "Coastal / Humid", "Mountain / Alpine", "Mediterranean"],
-  locationPriorities: ["Easy flight access", "Good road connectivity", "Close to major city", "Close to healthcare", "Good schools nearby", "Low cost of living", "Safety & security", "Expat-friendly community", "Cultural activities", "Nightlife & entertainment", "Outdoor activities", "Water activities", "Golf courses", "Spiritual / Religious sites", "Business opportunities", "Tax benefits", "Other"],
-  areaTypePreference: ["Urban city center", "Suburban", "Semi-rural / Countryside", "Rural / Remote", "Beachfront / Coastal", "Hill station / Mountains"],
-  naturalFeatureClosest: ["Beachfront / Ocean view", "Lake view / Lakefront", "River view / Riverside", "Mountain view", "Valley view", "Forest / Jungle", "Farmland / Agriculture", "Desert landscape", "Vineyard / Orchard", "Golf course view", "City skyline view", "Garden / Park view", "No preference"],
-  strPermissionImportance: ["Must-have (deal breaker)", "Nice to have", "Not important", "Prefer not to have STR"],
-  assetTypeInterest: ["Apartment / Flat", "Villa / Independent house", "Row house / Townhouse", "Farmhouse", "Agricultural land", "Plotted land", "Commercial property", "Other"],
-  farmlandWaterSourcePreference: ["Groundwater / Borewell", "Canal irrigation", "River / Stream", "Rainwater harvesting", "No preference"],
-  unitConfiguration: ["Studio", "1 BHK", "2 BHK", "3 BHK", "4 BHK", "5 BHK", "6+ BHK", "Flexible"],
-  farmlandLandSizeBucket: ["Under 0.25 acres", "0.25-0.5 acres", "0.5-1 acre", "1-2 acres", "2-5 acres", "5-10 acres", "10-25 acres", "25+ acres"],
-  ownershipStructurePreference: ["Full ownership (Freehold)", "Leasehold", "Fractional ownership", "Co-ownership", "Trust ownership", "Company ownership"],
-  possessionStagePreference: ["Ready to move", "Under construction", "Pre-launch", "Resale", "Land only", "Any"],
-  possessionTimelineBucket: ["Immediate", "Within 3 months", "3-6 months", "6-12 months", "1-2 years", "2-3 years", "3-5 years", "5+ years", "Flexible", "Not sure"],
-  managementModelPreference: ["Professional property management", "Self-managed", "Caretaker / On-site staff", "Developer-managed", "Undecided"],
-  fundingPreference: ["Loan / Mortgage", "Self-funded", "Part loan, part self", "Undecided"],
-  communityFormatPreference: ["Gated community", "Standalone property", "Apartment complex", "Township", "Farm community", "No preference"],
-  communityFriendlyFor: ["Pet-friendly", "Senior-friendly", "Child-friendly", "Family-oriented", "Singles / Couples", "Work from home", "Wellness focused"],
-  vastuPreferredDirections: ["North", "South", "East", "West", "North-East", "North-West", "South-East", "South-West"],
-  furnishingLevelPreference: ["Fully furnished", "Semi-furnished", "Unfurnished", "Modular ready", "Shell only", "Flexible"],
-  interiorFinishLevel: ["Standard / Basic", "Premium", "Luxury / Ultra-premium"],
-  communityOutdoorAmenitiesTop: ["Swimming pool", "Clubhouse", "Gym / Fitness center", "Tennis court", "Basketball court", "Badminton court", "Jogging track", "Walking paths", "Cycling track", "Children's play area", "Garden / Landscaping", "BBQ area", "Party lawn", "Open-air theater", "Gazebo / Pavilion", "Lake / Pond", "Water fountain", "Yoga deck", "Meditation garden", "Sports complex", "Cricket pitch", "Football field", "Volleyball court", "Skating rink", "Adventure zone", "Tree house", "Pet park", "Bird watching area", "Organic farm", "Fruit orchard", "Herb garden", "Amphitheater"],
-  homeMustHaveFeatures: ["Open-plan living", "Modular kitchen", "Island kitchen", "Breakfast counter", "Utility / Service area", "Store room", "Puja room", "Home office / Study", "Walk-in wardrobe", "Attached bathroom (all rooms)", "Guest bathroom", "Servant room", "Balcony / Terrace", "Covered parking", "Visitor parking"],
-  homeNiceToHaveFeatures: ["Private gym / Workout room", "Home theater", "Wine cellar", "Bar counter", "Spa / Jacuzzi room", "Steam / Sauna room", "Games room", "Library / Reading room", "Art studio", "Music room", "Kids playroom", "Meditation room", "Guest suite", "Separate living areas", "Double-height ceiling", "Floor-to-ceiling windows", "Skylight", "Fireplace", "Private elevator", "Rooftop access", "Basement", "Attic", "Safe room / Panic room", "EV charging point"],
-  smartHomeSecurityFeatures: ["Smart locks", "Video doorbell", "CCTV cameras", "Motion sensors", "Smart lighting", "Smart thermostat", "Voice assistant integration", "Automated blinds / Curtains", "Intruder alarm system"],
-  privateOutdoorFeatures: ["Private swimming pool", "Private garden", "Terrace garden", "Outdoor kitchen / BBQ", "Gazebo", "Fire pit", "Outdoor shower", "Hammock area", "Treehouse", "Koi pond", "Putting green", "Hot tub / Jacuzzi", "Outdoor gym"],
-};
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { LeadIdentity, LeadLocation, LeadProperty } from "@/types";
+import {
+  residencyOptions,
+  discoverySourceOptions,
+  ageGroupOptions,
+  professionOptions,
+  householdSizeOptions,
+  incomeRangeOptions,
+  propertiesPurchasedOptions,
+  propertyPurposeOptions,
+  buyingMotivationOptions,
+  shortTermRentalOptions,
+  assetTypeOptions,
+  waterSourceOptions,
+  unitConfigurationOptions,
+  farmlandSizeOptions,
+  journeyStageOptions,
+  explorationDurationOptions,
+  purchaseTimelineOptions,
+  ownershipStructureOptions,
+  possessionTimelineOptions,
+  managementModelOptions,
+  fundingTypeOptions,
+  countryOptions,
+  climateRiskOptions,
+  climatePreferenceOptions,
+  locationPriorityOptions,
+  areaTypeOptions,
+  natureFeatureOptions,
+  communityFormatOptions,
+  communityFriendlyOptions,
+  outdoorAmenitiesOptions,
+  vastuDirectionOptions,
+  furnishingLevelOptions,
+  interiorStyleOptions,
+  smartHomeFeatureOptions,
+  mustHaveFeatureOptions,
+} from "../../components/LeadFormWizard/formOptions";
 
 const CreateLeadPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const [formData, setFormData] = useState({
-    firstName: "", lastName: "", phone: "", email: "", homeCountry: "", taxResidencyCountry: "",
-    visaResidencyStatus: "", leadSource: "", ageYears: "", profession: "", householdSize: "",
-    householdIncomeBandInr: "", priorPropertiesPurchased: "", propertyRolePrimary: [] as string[],
-    searchTrigger: [] as string[], buyingJourneyStage: "", explorationDuration: "", purchaseTimeline: "",
-    totalBudgetBandInr: "", propertyVisionNotes: "", aboutYouNotes: "", ownershipTimelineNotes: "",
-    locationDealbreakerNotes: "", finalNotes: "", currentHomeCity: "", currentHomeState: "",
-    currentHomeCountry: "", buyingCountryFocus: "", targetStatesRegions: [] as string[],
-    climateRiskAvoidance: [] as string[], targetLocations: [] as string[], preferredClimate: [] as string[],
-    locationPriorities: [] as string[], areaTypePreference: [] as string[], naturalFeatureClosest: [] as string[],
-    strPermissionImportance: "", assetTypeInterest: [] as string[], farmlandWaterSourcePreference: "",
-    unitConfiguration: [] as string[], farmlandLandSizeBucket: [] as string[], ownershipStructurePreference: "",
-    possessionStagePreference: "", possessionTimelineBucket: "", managementModelPreference: "",
-    fundingPreference: "", communityFormatPreference: "", communityFriendlyFor: [] as string[],
-    communityOutdoorAmenitiesTop: [] as string[], vastuPreferredDirections: [] as string[],
-    furnishingLevelPreference: "", homeMustHaveFeatures: [] as string[], homeNiceToHaveFeatures: [] as string[],
-    interiorFinishLevel: "", smartHomeSecurityFeatures: [] as string[], privateOutdoorFeatures: [] as string[],
-    idealHomeNotes: "",
+  // Form data
+  const [identity, setIdentity] = useState<LeadIdentity>({
+    propertyRolePrimary: [],
+    searchTrigger: [],
+  });
+  const [location, setLocation] = useState<LeadLocation>({
+    targetStatesRegions: [],
+    climateRiskAvoidance: [],
+    targetLocations: [],
+    preferredClimate: [],
+    locationPriorities: [],
+    areaTypePreference: [],
+    naturalFeatureClosest: [],
+  });
+  const [property, setProperty] = useState<LeadProperty>({
+    assetTypeInterest: [],
+    unitConfiguration: [],
+    farmlandLandSizeBucket: [],
+    communityFriendlyFor: [],
+    communityOutdoorAmenitiesTop: [],
+    vastuPreferredDirections: [],
+    homeMustHaveFeatures: [],
+    homeNiceToHaveFeatures: [],
+    smartHomeSecurityFeatures: [],
+    privateOutdoorFeatures: [],
   });
 
-  const handleChange = (field: string, value: string | string[] | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors(prev => ({ ...prev, [field]: "" }));
-  };
-
-  const handleCheckbox = (field: string, value: string, checked: boolean) => {
-    const current = formData[field as keyof typeof formData] as string[];
-    if (checked) {
-      handleChange(field, [...current, value]);
-    } else {
-      handleChange(field, current.filter(v => v !== value));
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!formData.email.trim()) newErrors.email = "Email is required";
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
 
     setLoading(true);
-    setError(null);
 
     try {
-      const payload = {
-        ...formData,
-        ageYears: formData.ageYears ? parseInt(formData.ageYears) : undefined,
+      const leadData = {
+        identity,
+        location,
+        property,
       };
-      await leadService.createLead(payload);
+
+      await leadService.createLead(leadData);
       navigate("/leads");
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to create lead");
+    } catch (error) {
+      console.error("Failed to create lead:", error);
+      alert("Failed to create lead. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const CheckboxGroup = ({ field, options, cols = 3 }: { field: string; options: string[]; cols?: number }) => (
-    <div className={`grid grid-cols-2 md:grid-cols-${cols} gap-2`}>
-      {options.map(opt => (
-        <label key={opt} className="flex items-center space-x-2 cursor-pointer text-sm">
-          <Checkbox
-            checked={(formData[field as keyof typeof formData] as string[]).includes(opt)}
-            onCheckedChange={(c) => handleCheckbox(field, opt, !!c)}
-          />
-          <span>{opt}</span>
-        </label>
-      ))}
-    </div>
-  );
+  const handleArrayField = (
+    section: 'identity' | 'location' | 'property',
+    field: string,
+    value: string,
+    checked: boolean
+  ) => {
+    if (section === 'identity') {
+      const currentArray = (identity as any)[field] || [];
+      const newArray = checked
+        ? [...currentArray, value]
+        : currentArray.filter((item: string) => item !== value);
+      setIdentity({ ...identity, [field]: newArray });
+    } else if (section === 'location') {
+      const currentArray = (location as any)[field] || [];
+      const newArray = checked
+        ? [...currentArray, value]
+        : currentArray.filter((item: string) => item !== value);
+      setLocation({ ...location, [field]: newArray });
+    } else if (section === 'property') {
+      const currentArray = (property as any)[field] || [];
+      const newArray = checked
+        ? [...currentArray, value]
+        : currentArray.filter((item: string) => item !== value);
+      setProperty({ ...property, [field]: newArray });
+    }
+  };
 
-  const SelectField = ({ field, label, options, required }: { field: string; label: string; options: string[]; required?: boolean }) => (
-    <div className="space-y-2">
-      <Label htmlFor={field}>{label} {required && <span className="text-red-400">*</span>}</Label>
-      <Select
-        id={field}
-        value={formData[field as keyof typeof formData] as string}
-        onChange={(e) => handleChange(field, e.target.value)}
-        className={errors[field] ? 'border-red-500' : ''}
-      >
-        <option value="">Select...</option>
-        {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-      </Select>
-      {errors[field] && <p className="text-red-400 text-sm">{errors[field]}</p>}
-    </div>
-  );
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="bg-gray-900/50 border-b border-gray-800 p-4 sm:p-6">
-        <div className="max-w-7xl mx-auto">
-          <button onClick={() => navigate("/leads")} className="flex items-center gap-2 text-gray-400 hover:text-white mb-4">
-            <ArrowLeft className="h-4 w-4" /><span className="text-sm">Back to Leads</span>
+    <div className="min-h-screen bg-background text-white">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-8">
+          <button
+            onClick={() => navigate("/leads")}
+            className="flex items-center gap-2 text-gray-400 hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Leads
           </button>
-          <h1 className="text-2xl font-bold">Create New Lead</h1>
-          <p className="text-gray-400 text-sm">Fill in the lead information below</p>
+          <h1 className="text-3xl font-bold">Create New Lead</h1>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto p-4 sm:p-6">
-        {error && <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* SECTION 1: CUSTOMER DATA - Basic Info */}
-          <Card>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Identity Section */}
+          <Card className="bg-gray-900/50 border-gray-800">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center"><User className="h-4 w-4 text-blue-400" /></div>
-                Customer Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label>First Name <span className="text-red-400">*</span></Label>
-                  <Input value={formData.firstName} onChange={e => handleChange("firstName", e.target.value)} className={errors.firstName ? 'border-red-500' : ''} />
-                  {errors.firstName && <p className="text-red-400 text-sm">{errors.firstName}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label>Last Name</Label>
-                  <Input value={formData.lastName} onChange={e => handleChange("lastName", e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Email <span className="text-red-400">*</span></Label>
-                  <Input type="email" value={formData.email} onChange={e => handleChange("email", e.target.value)} className={errors.email ? 'border-red-500' : ''} />
-                  {errors.email && <p className="text-red-400 text-sm">{errors.email}</p>}
-                </div>
-                <div className="space-y-2">
-                  <Label>Phone (WhatsApp preferred)</Label>
-                  <Input value={formData.phone} onChange={e => handleChange("phone", e.target.value)} placeholder="+91..." />
-                </div>
-                <div className="space-y-2">
-                  <Label>Home Country</Label>
-                  <Input value={formData.homeCountry} onChange={e => handleChange("homeCountry", e.target.value)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tax Residency Country</Label>
-                  <Input value={formData.taxResidencyCountry} onChange={e => handleChange("taxResidencyCountry", e.target.value)} />
-                </div>
-                <SelectField field="visaResidencyStatus" label="Visa / Residency Status" options={OPTIONS.visaResidencyStatus} />
-                <SelectField field="leadSource" label="How did you discover Avacasa?" options={OPTIONS.leadSource} />
-                <div className="space-y-2">
-                  <Label>Age (years)</Label>
-                  <Input type="number" value={formData.ageYears} onChange={e => handleChange("ageYears", e.target.value)} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* SECTION 2: About You */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center"><User className="h-4 w-4 text-green-400" /></div>
-                About You
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <SelectField field="profession" label="Profession" options={OPTIONS.profession} />
-                <SelectField field="householdSize" label="Household Size" options={OPTIONS.householdSize} />
-                <SelectField field="householdIncomeBandInr" label="Household Income (Annual)" options={OPTIONS.householdIncomeBandInr} />
-              </div>
-              <div className="space-y-2">
-                <Label>Tell us more about yourself (optional)</Label>
-                <Textarea value={formData.aboutYouNotes} onChange={e => handleChange("aboutYouNotes", e.target.value)} rows={2} />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2"><Label>Current City</Label><Input value={formData.currentHomeCity} onChange={e => handleChange("currentHomeCity", e.target.value)} /></div>
-                <div className="space-y-2"><Label>Current State</Label><Input value={formData.currentHomeState} onChange={e => handleChange("currentHomeState", e.target.value)} /></div>
-                <div className="space-y-2"><Label>Current Country</Label><Input value={formData.currentHomeCountry} onChange={e => handleChange("currentHomeCountry", e.target.value)} /></div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* SECTION 3: Buying Journey */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center"><DollarSign className="h-4 w-4 text-purple-400" /></div>
-                Buying Journey
-              </CardTitle>
+              <CardTitle className="text-xl">Identity & Demographics</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SelectField field="priorPropertiesPurchased" label="Properties Purchased Before" options={OPTIONS.priorPropertiesPurchased} />
-                <SelectField field="buyingJourneyStage" label="Buying Journey Stage" options={OPTIONS.buyingJourneyStage} />
-                <SelectField field="explorationDuration" label="How long exploring?" options={OPTIONS.explorationDuration} />
-                <SelectField field="purchaseTimeline" label="Purchase Timeline" options={OPTIONS.purchaseTimeline} />
-                <SelectField field="totalBudgetBandInr" label="Total Budget" options={OPTIONS.totalBudgetBandInr} />
+                <div>
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={identity.firstName || ""}
+                    onChange={(e) => setIdentity({ ...identity, firstName: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={identity.lastName || ""}
+                    onChange={(e) => setIdentity({ ...identity, lastName: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={identity.phone || ""}
+                    onChange={(e) => setIdentity({ ...identity, phone: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={identity.email || ""}
+                    onChange={(e) => setIdentity({ ...identity, email: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Property Role (What role should this property play?)</Label>
-                <CheckboxGroup field="propertyRolePrimary" options={OPTIONS.propertyRolePrimary} cols={4} />
-              </div>
-              <div className="space-y-2">
-                <Label>Search Trigger (What's prompting your search?)</Label>
-                <CheckboxGroup field="searchTrigger" options={OPTIONS.searchTrigger} cols={4} />
-              </div>
-              <div className="space-y-2">
-                <Label>Property Vision Notes</Label>
-                <Textarea value={formData.propertyVisionNotes} onChange={e => handleChange("propertyVisionNotes", e.target.value)} rows={2} />
-              </div>
-              <div className="space-y-2">
-                <Label>Ownership & Timeline Notes</Label>
-                <Textarea value={formData.ownershipTimelineNotes} onChange={e => handleChange("ownershipTimelineNotes", e.target.value)} rows={2} />
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* SECTION 4: Location Preferences */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center"><MapPin className="h-4 w-4 text-orange-400" /></div>
-                Location Preferences
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <SelectField field="buyingCountryFocus" label="Which country are you interested in?" options={OPTIONS.buyingCountryFocus} />
+                <div>
+                  <Label htmlFor="homeCountry">Home Country</Label>
+                  <Input
+                    id="homeCountry"
+                    value={identity.homeCountry || ""}
+                    onChange={(e) => setIdentity({ ...identity, homeCountry: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="taxResidencyCountry">Tax Residency Country</Label>
+                  <Input
+                    id="taxResidencyCountry"
+                    value={identity.taxResidencyCountry || ""}
+                    onChange={(e) => setIdentity({ ...identity, taxResidencyCountry: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="visaResidencyStatus">Visa Residency Status</Label>
+                  <Select
+                    id="visaResidencyStatus"
+                    value={identity.visaResidencyStatus || ""}
+                    onChange={(e) => setIdentity({ ...identity, visaResidencyStatus: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select visa status</option>
+                    {residencyOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="leadSource">Lead Source</Label>
+                  <Select
+                    id="leadSource"
+                    value={identity.leadSource || ""}
+                    onChange={(e) => setIdentity({ ...identity, leadSource: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select lead source</option>
+                    {discoverySourceOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Target States / Regions</Label>
-                <CheckboxGroup field="targetStatesRegions" options={OPTIONS.targetStatesRegions} cols={5} />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="ageYears">Age</Label>
+                  <Select
+                    id="ageYears"
+                    value={identity.ageYears?.toString() || ""}
+                    onChange={(e) => setIdentity({ ...identity, ageYears: parseInt(e.target.value) || undefined })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select age group</option>
+                    {ageGroupOptions.map((option) => (
+                      <option key={option} value={option.split(" ")[0]}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="profession">Profession</Label>
+                  <Select
+                    id="profession"
+                    value={identity.profession || ""}
+                    onChange={(e) => setIdentity({ ...identity, profession: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select profession</option>
+                    {professionOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="householdSize">Household Size</Label>
+                  <Select
+                    id="householdSize"
+                    value={identity.householdSize || ""}
+                    onChange={(e) => setIdentity({ ...identity, householdSize: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select household size</option>
+                    {householdSizeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Target Locations (Cities)</Label>
-                <Input value={formData.targetLocations.join(", ")} onChange={e => handleChange("targetLocations", e.target.value.split(",").map(s => s.trim()).filter(Boolean))} placeholder="Enter cities separated by comma" />
+
+              <div>
+                <Label htmlFor="householdIncomeBandInr">Income Range</Label>
+                <Select
+                  id="householdIncomeBandInr"
+                  value={identity.householdIncomeBandInr || ""}
+                  onChange={(e) => setIdentity({ ...identity, householdIncomeBandInr: e.target.value })}
+                  className="bg-gray-800 border-gray-700"
+                >
+                  <option value="">Select income range</option>
+                  {incomeRangeOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Climate Risks to Avoid</Label>
-                <CheckboxGroup field="climateRiskAvoidance" options={OPTIONS.climateRiskAvoidance} cols={3} />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label className="text-base font-medium mb-3 block">Property Role (Primary)</Label>
+                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                    {propertyPurposeOptions.map((option) => (
+                      <div key={option} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`propertyRole-${option}`}
+                          checked={identity.propertyRolePrimary?.includes(option) || false}
+                          onCheckedChange={(checked) =>
+                            handleArrayField('identity', 'propertyRolePrimary', option, checked as boolean)
+                          }
+                        />
+                        <Label htmlFor={`propertyRole-${option}`} className="text-sm">
+                          {option}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-base font-medium mb-3 block">Search Triggers</Label>
+                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto">
+                    {buyingMotivationOptions.map((option) => (
+                      <div key={option} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`searchTrigger-${option}`}
+                          checked={identity.searchTrigger?.includes(option) || false}
+                          onCheckedChange={(checked) =>
+                            handleArrayField('identity', 'searchTrigger', option, checked as boolean)
+                          }
+                        />
+                        <Label htmlFor={`searchTrigger-${option}`} className="text-sm">
+                          {option}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Preferred Climate</Label>
-                <CheckboxGroup field="preferredClimate" options={OPTIONS.preferredClimate} cols={4} />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="priorPropertiesPurchased">Properties Purchased</Label>
+                  <Select
+                    id="priorPropertiesPurchased"
+                    value={identity.priorPropertiesPurchased || ""}
+                    onChange={(e) => setIdentity({ ...identity, priorPropertiesPurchased: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select</option>
+                    {propertiesPurchasedOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="buyingJourneyStage">Journey Stage</Label>
+                  <Select
+                    id="buyingJourneyStage"
+                    value={identity.buyingJourneyStage || ""}
+                    onChange={(e) => setIdentity({ ...identity, buyingJourneyStage: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select</option>
+                    {journeyStageOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="explorationDuration">Exploration Duration</Label>
+                  <Select
+                    id="explorationDuration"
+                    value={identity.explorationDuration || ""}
+                    onChange={(e) => setIdentity({ ...identity, explorationDuration: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select</option>
+                    {explorationDurationOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Location Priorities</Label>
-                <CheckboxGroup field="locationPriorities" options={OPTIONS.locationPriorities} cols={4} />
+
+              <div>
+                <Label htmlFor="purchaseTimeline">Purchase Timeline</Label>
+                <Select
+                  id="purchaseTimeline"
+                  value={identity.purchaseTimeline || ""}
+                  onChange={(e) => setIdentity({ ...identity, purchaseTimeline: e.target.value })}
+                  className="bg-gray-800 border-gray-700"
+                >
+                  <option value="">Select</option>
+                  {purchaseTimelineOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Area Type Preference</Label>
-                <CheckboxGroup field="areaTypePreference" options={OPTIONS.areaTypePreference} cols={3} />
-              </div>
-              <div className="space-y-2">
-                <Label>Natural Features Closest</Label>
-                <CheckboxGroup field="naturalFeatureClosest" options={OPTIONS.naturalFeatureClosest} cols={4} />
-              </div>
-              <div className="space-y-2">
-                <Label>Location Deal-breakers / Notes</Label>
-                <Textarea value={formData.locationDealbreakerNotes} onChange={e => handleChange("locationDealbreakerNotes", e.target.value)} rows={2} />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="aboutYouNotes">About You Notes</Label>
+                  <Textarea
+                    id="aboutYouNotes"
+                    value={identity.aboutYouNotes || ""}
+                    onChange={(e) => setIdentity({ ...identity, aboutYouNotes: e.target.value })}
+                    className="bg-gray-800 border-gray-700 min-h-[100px]"
+                    placeholder="Additional notes about the person..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ownershipTimelineNotes">Ownership Timeline Notes</Label>
+                  <Textarea
+                    id="ownershipTimelineNotes"
+                    value={identity.ownershipTimelineNotes || ""}
+                    onChange={(e) => setIdentity({ ...identity, ownershipTimelineNotes: e.target.value })}
+                    className="bg-gray-800 border-gray-700 min-h-[100px]"
+                    placeholder="Notes about ownership timeline..."
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* SECTION 5: Property Preferences */}
-          <Card>
+          {/* Location Section */}
+          <Card className="bg-gray-900/50 border-gray-800">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center"><Building className="h-4 w-4 text-pink-400" /></div>
-                Property Preferences
-              </CardTitle>
+              <CardTitle className="text-xl">Location Preferences</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <SelectField field="strPermissionImportance" label="Short-term Rental Importance" options={OPTIONS.strPermissionImportance} />
-                <SelectField field="farmlandWaterSourcePreference" label="Farmland Water Source" options={OPTIONS.farmlandWaterSourcePreference} />
-                <SelectField field="ownershipStructurePreference" label="Ownership Structure" options={OPTIONS.ownershipStructurePreference} />
-                <SelectField field="possessionStagePreference" label="Possession Stage" options={OPTIONS.possessionStagePreference} />
-                <SelectField field="possessionTimelineBucket" label="Possession Timeline" options={OPTIONS.possessionTimelineBucket} />
-                <SelectField field="managementModelPreference" label="Management Model" options={OPTIONS.managementModelPreference} />
-                <SelectField field="fundingPreference" label="Funding Preference" options={OPTIONS.fundingPreference} />
-                <SelectField field="communityFormatPreference" label="Community Format" options={OPTIONS.communityFormatPreference} />
+              <div>
+                <Label htmlFor="buyingCountryFocus">Country Focus</Label>
+                <Select
+                  id="buyingCountryFocus"
+                  value={location.buyingCountryFocus || ""}
+                  onChange={(e) => setLocation({ ...location, buyingCountryFocus: e.target.value })}
+                  className="bg-gray-800 border-gray-700"
+                >
+                  <option value="">Select country</option>
+                  {countryOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Asset Type Interest</Label>
-                <CheckboxGroup field="assetTypeInterest" options={OPTIONS.assetTypeInterest} cols={4} />
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Climate Risks to Avoid</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                  {climateRiskOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`climateRisk-${option}`}
+                        checked={location.climateRiskAvoidance?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('location', 'climateRiskAvoidance', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`climateRisk-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Unit Configuration</Label>
-                <CheckboxGroup field="unitConfiguration" options={OPTIONS.unitConfiguration} cols={4} />
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Preferred Climate</Label>
+                <div className="grid grid-cols-1 gap-2">
+                  {climatePreferenceOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`preferredClimate-${option}`}
+                        checked={location.preferredClimate?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('location', 'preferredClimate', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`preferredClimate-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Farmland / Land Size</Label>
-                <CheckboxGroup field="farmlandLandSizeBucket" options={OPTIONS.farmlandLandSizeBucket} cols={4} />
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Location Priorities</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                  {locationPriorityOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`locationPriority-${option}`}
+                        checked={location.locationPriorities?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('location', 'locationPriorities', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`locationPriority-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Community Friendly For</Label>
-                <CheckboxGroup field="communityFriendlyFor" options={OPTIONS.communityFriendlyFor} cols={4} />
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Area Type Preference</Label>
+                <div className="grid grid-cols-1 gap-2">
+                  {areaTypeOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`areaType-${option}`}
+                        checked={location.areaTypePreference?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('location', 'areaTypePreference', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`areaType-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Natural Features Closest</Label>
+                <div className="grid grid-cols-1 gap-2">
+                  {natureFeatureOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`naturalFeature-${option}`}
+                        checked={location.naturalFeatureClosest?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('location', 'naturalFeatureClosest', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`naturalFeature-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="locationDealbreakerNotes">Location Deal-breakers Notes</Label>
+                <Textarea
+                  id="locationDealbreakerNotes"
+                  value={location.locationDealbreakerNotes || ""}
+                  onChange={(e) => setLocation({ ...location, locationDealbreakerNotes: e.target.value })}
+                  className="bg-gray-800 border-gray-700 min-h-[100px]"
+                  placeholder="Any location deal-breakers or concerns..."
+                />
               </div>
             </CardContent>
           </Card>
 
-          {/* SECTION 6: Home Features */}
-          <Card>
+          {/* Property Section */}
+          <Card className="bg-gray-900/50 border-gray-800">
             <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center"><Home className="h-4 w-4 text-indigo-400" /></div>
-                Home Features & Amenities
-              </CardTitle>
+              <CardTitle className="text-xl">Property Preferences</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <SelectField field="furnishingLevelPreference" label="Furnishing Level" options={OPTIONS.furnishingLevelPreference} />
-                <SelectField field="interiorFinishLevel" label="Interior Finish Level" options={OPTIONS.interiorFinishLevel} />
+              <div>
+                <Label htmlFor="strPermissionImportance">STR Permission Importance</Label>
+                <Select
+                  id="strPermissionImportance"
+                  value={property.strPermissionImportance || ""}
+                  onChange={(e) => setProperty({ ...property, strPermissionImportance: e.target.value })}
+                  className="bg-gray-800 border-gray-700"
+                >
+                  <option value="">Select STR importance</option>
+                  {shortTermRentalOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Vastu Preferred Directions</Label>
-                <CheckboxGroup field="vastuPreferredDirections" options={OPTIONS.vastuPreferredDirections} cols={4} />
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Asset Types of Interest</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                  {assetTypeOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`assetType-${option}`}
+                        checked={property.assetTypeInterest?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('property', 'assetTypeInterest', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`assetType-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Must-Have Features</Label>
-                <CheckboxGroup field="homeMustHaveFeatures" options={OPTIONS.homeMustHaveFeatures} cols={4} />
+
+              <div>
+                <Label htmlFor="farmlandWaterSourcePreference">Farmland Water Source Preference</Label>
+                <Select
+                  id="farmlandWaterSourcePreference"
+                  value={property.farmlandWaterSourcePreference || ""}
+                  onChange={(e) => setProperty({ ...property, farmlandWaterSourcePreference: e.target.value })}
+                  className="bg-gray-800 border-gray-700"
+                >
+                  <option value="">Select water source</option>
+                  {waterSourceOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Nice-to-Have Features</Label>
-                <CheckboxGroup field="homeNiceToHaveFeatures" options={OPTIONS.homeNiceToHaveFeatures} cols={4} />
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Unit Configuration</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                  {unitConfigurationOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`unitConfig-${option}`}
+                        checked={property.unitConfiguration?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('property', 'unitConfiguration', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`unitConfig-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Smart Home & Security Features</Label>
-                <CheckboxGroup field="smartHomeSecurityFeatures" options={OPTIONS.smartHomeSecurityFeatures} cols={3} />
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Farmland Land Size Bucket</Label>
+                <div className="grid grid-cols-1 gap-2">
+                  {farmlandSizeOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`landSize-${option}`}
+                        checked={property.farmlandLandSizeBucket?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('property', 'farmlandLandSizeBucket', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`landSize-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Private Outdoor Features</Label>
-                <CheckboxGroup field="privateOutdoorFeatures" options={OPTIONS.privateOutdoorFeatures} cols={4} />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="ownershipStructurePreference">Ownership Structure</Label>
+                  <Select
+                    id="ownershipStructurePreference"
+                    value={property.ownershipStructurePreference || ""}
+                    onChange={(e) => setProperty({ ...property, ownershipStructurePreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select ownership</option>
+                    {ownershipStructureOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="possessionStagePreference">Possession Stage</Label>
+                  <Select
+                    id="possessionStagePreference"
+                    value={property.possessionStagePreference || ""}
+                    onChange={(e) => setProperty({ ...property, possessionStagePreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select possession stage</option>
+                    {possessionTimelineOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Community Outdoor Amenities</Label>
-                <CheckboxGroup field="communityOutdoorAmenitiesTop" options={OPTIONS.communityOutdoorAmenitiesTop} cols={5} />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="possessionTimelineBucket">Possession Timeline</Label>
+                  <Select
+                    id="possessionTimelineBucket"
+                    value={property.possessionTimelineBucket || ""}
+                    onChange={(e) => setProperty({ ...property, possessionTimelineBucket: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select timeline</option>
+                    {possessionTimelineOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="managementModelPreference">Management Model</Label>
+                  <Select
+                    id="managementModelPreference"
+                    value={property.managementModelPreference || ""}
+                    onChange={(e) => setProperty({ ...property, managementModelPreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select management model</option>
+                    {managementModelOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="fundingPreference">Funding Preference</Label>
+                  <Select
+                    id="fundingPreference"
+                    value={property.fundingPreference || ""}
+                    onChange={(e) => setProperty({ ...property, fundingPreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select funding</option>
+                    {fundingTypeOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="communityFormatPreference">Community Format</Label>
+                  <Select
+                    id="communityFormatPreference"
+                    value={property.communityFormatPreference || ""}
+                    onChange={(e) => setProperty({ ...property, communityFormatPreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select community format</option>
+                    {communityFormatOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Community Friendly For</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                  {communityFriendlyOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`communityFriendly-${option}`}
+                        checked={property.communityFriendlyFor?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('property', 'communityFriendlyFor', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`communityFriendly-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Community Outdoor Amenities (Top)</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                  {outdoorAmenitiesOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`outdoorAmenities-${option}`}
+                        checked={property.communityOutdoorAmenitiesTop?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('property', 'communityOutdoorAmenitiesTop', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`outdoorAmenities-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Vastu Preferred Directions</Label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                  {vastuDirectionOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`vastu-${option}`}
+                        checked={property.vastuPreferredDirections?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('property', 'vastuPreferredDirections', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`vastu-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="furnishingLevelPreference">Furnishing Level</Label>
+                  <Select
+                    id="furnishingLevelPreference"
+                    value={property.furnishingLevelPreference || ""}
+                    onChange={(e) => setProperty({ ...property, furnishingLevelPreference: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select furnishing level</option>
+                    {furnishingLevelOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="interiorFinishLevel">Interior Finish Level</Label>
+                  <Select
+                    id="interiorFinishLevel"
+                    value={property.interiorFinishLevel || ""}
+                    onChange={(e) => setProperty({ ...property, interiorFinishLevel: e.target.value })}
+                    className="bg-gray-800 border-gray-700"
+                  >
+                    <option value="">Select interior finish</option>
+                    {interiorStyleOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Must-Have Features</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                  {mustHaveFeatureOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`mustHave-${option}`}
+                        checked={property.homeMustHaveFeatures?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('property', 'homeMustHaveFeatures', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`mustHave-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Nice-to-Have Features</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                  {mustHaveFeatureOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`niceToHave-${option}`}
+                        checked={property.homeNiceToHaveFeatures?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('property', 'homeNiceToHaveFeatures', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`niceToHave-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Smart Home & Security Features</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                  {smartHomeFeatureOptions.map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`smartHome-${option}`}
+                        checked={property.smartHomeSecurityFeatures?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('property', 'smartHomeSecurityFeatures', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`smartHome-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-base font-medium mb-3 block">Private Outdoor Features</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                  {mustHaveFeatureOptions.filter(option => option.includes('Balcony') || option.includes('Terrace') || option.includes('Garden')).map((option) => (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`privateOutdoor-${option}`}
+                        checked={property.privateOutdoorFeatures?.includes(option) || false}
+                        onCheckedChange={(checked) =>
+                          handleArrayField('property', 'privateOutdoorFeatures', option, checked as boolean)
+                        }
+                      />
+                      <Label htmlFor={`privateOutdoor-${option}`} className="text-sm">
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="propertyVisionNotes">Property Vision Notes</Label>
+                  <Textarea
+                    id="propertyVisionNotes"
+                    value={property.propertyVisionNotes || ""}
+                    onChange={(e) => setProperty({ ...property, propertyVisionNotes: e.target.value })}
+                    className="bg-gray-800 border-gray-700 min-h-[100px]"
+                    placeholder="Describe the ideal property vision..."
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="idealHomeNotes">Ideal Home Notes</Label>
+                  <Textarea
+                    id="idealHomeNotes"
+                    value={property.idealHomeNotes || ""}
+                    onChange={(e) => setProperty({ ...property, idealHomeNotes: e.target.value })}
+                    className="bg-gray-800 border-gray-700 min-h-[100px]"
+                    placeholder="Describe the ideal home..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="finalNotes">Final Notes</Label>
+                <Textarea
+                  id="finalNotes"
+                  value={property.finalNotes || ""}
+                  onChange={(e) => setProperty({ ...property, finalNotes: e.target.value })}
+                  className="bg-gray-800 border-gray-700 min-h-[100px]"
+                  placeholder="Any additional notes or requirements..."
+                />
               </div>
             </CardContent>
           </Card>
 
-          {/* SECTION 7: Final Notes */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/20 flex items-center justify-center"><MessageSquare className="h-4 w-4 text-cyan-400" /></div>
-                Additional Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Ideal Home Notes</Label>
-                <Textarea value={formData.idealHomeNotes} onChange={e => handleChange("idealHomeNotes", e.target.value)} placeholder="Describe your ideal home..." rows={3} />
-              </div>
-              <div className="space-y-2">
-                <Label>Final Notes / Anything else?</Label>
-                <Textarea value={formData.finalNotes} onChange={e => handleChange("finalNotes", e.target.value)} placeholder="Any other information..." rows={3} />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Submit */}
-          <div className="flex justify-end gap-4 pt-6 border-t border-gray-800">
-            <Button type="button" variant="outline" onClick={() => navigate("/leads")} disabled={loading}>Cancel</Button>
-            <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700">
-              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creating...</> : <><Save className="h-4 w-4 mr-2" />Create Lead</>}
+          {/* Submit Button */}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-600 hover:bg-blue-700 px-8 py-2"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Create Lead
+                </>
+              )}
             </Button>
           </div>
         </form>
