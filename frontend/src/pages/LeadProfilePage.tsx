@@ -53,8 +53,7 @@ const LeadProfilePage: React.FC = () => {
     if (!id || !selectedAgent) return;
     setUpdating(true);
     try {
-      await leadService.assignAgent(id, selectedAgent);
-      const response = await leadService.getLeadById(id);
+      const response = await leadService.assignAgent(id, selectedAgent);
       setLead(response.data);
       setShowAssignModal(false);
     } catch { alert("Failed to assign agent"); }
@@ -65,10 +64,22 @@ const LeadProfilePage: React.FC = () => {
     if (!id || !lead) return;
     setUpdating(true);
     try {
-      const response = await leadService.updateLead(id, { system: { ...lead.system, leadStatus: selectedStatus } });
-      setLead(response.data);
+      const response = await leadService.updateStatus(id, selectedStatus);
+      // Update the lead status in local state
+      
+      setLead(prevLead => prevLead ? ({
+        ...prevLead,
+        system: {
+          ...prevLead.system,
+          leadStatus: response.data.newStatus as LeadStatus
+        }
+      }) : null);
+      // Close modal after successful update
       setShowStatusModal(false);
-    } catch { alert("Failed to update status"); }
+    } catch (error) {
+      console.error("Status update error:", error);
+      alert("Failed to update status");
+    }
     finally { setUpdating(false); }
   };
 
@@ -197,7 +208,10 @@ const LeadProfilePage: React.FC = () => {
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={() => navigate(`/leads/${id}/edit`)}><Edit2 className="h-4 w-4 mr-1" />Edit</Button>
               <Button variant="outline" size="sm" onClick={() => { fetchAgents(); setShowAssignModal(true); }}><UserPlus className="h-4 w-4 mr-1" />Assign</Button>
-              <Button variant="outline" size="sm" onClick={() => setShowStatusModal(true)}><Target className="h-4 w-4 mr-1" />Status</Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                setSelectedStatus(lead.system?.leadStatus || "New");
+                setShowStatusModal(true);
+              }}><Target className="h-4 w-4 mr-1" />Status</Button>
               <Button variant="outline" size="sm" onClick={handleDelete} disabled={deleting} className="text-red-400 hover:text-red-300">
                 <Trash2 className="h-4 w-4 mr-1" />{deleting ? "..." : "Delete"}
               </Button>

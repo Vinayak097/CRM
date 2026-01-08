@@ -79,8 +79,10 @@ const CreateLeadPage: React.FC = () => {
     privateOutdoorFeatures: [],
   });
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     setLoading(true);
 
     try {
@@ -126,6 +128,7 @@ const CreateLeadPage: React.FC = () => {
       setProperty({ ...property, [field]: newArray });
     }
   };
+
 
   return (
     <div className="min-h-screen bg-background text-white">
@@ -1024,4 +1027,4 @@ const CreateLeadPage: React.FC = () => {
   );
 };
 
-export default CreateLeadPage;
+export default EditLeadPage;

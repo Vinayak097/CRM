@@ -86,7 +86,7 @@ export const leadService = {
     });
     if (search) params.append("search", search);
     const response = await api.get(`/leads?${params}`);
-    return response.data;
+    return response.data.data;
   },
 
   getLeadById: async (id: string): Promise<{ data: Lead }> => {
@@ -103,12 +103,22 @@ export const leadService = {
     id: string,
     data: Record<string, unknown>
   ): Promise<{ data: Lead }> => {
-    const response = await api.put(`/leads/${id}`, data);
+    const response = await api.patch(`/leads/${id}`, data);
     return response.data;
   },
 
   assignAgent: async (leadId: string, agentId: string): Promise<{ data: Lead }> => {
-    const response = await api.post(`/leads/${leadId}/assign`, { agentId });
+    const response = await api.patch(`/leads/${leadId}/assign-agent`, { agentId });
+    return response.data;
+  },
+
+  updateStatus: async (leadId: string, leadStatus: string, notes?: string): Promise<{
+    leadId: string;
+    oldStatus: string;
+    newStatus: string;
+    updatedAt: string;
+  }> => {
+    const response = await api.patch(`/leads/${leadId}/status`, { leadStatus, notes });
     return response.data;
   },
 
