@@ -33,10 +33,10 @@ import {
   managementModelOptions,
   fundingTypeOptions,
   countryOptions,
-  climateRiskOptions,
-  climatePreferenceOptions,
+  
+  
   locationPriorityOptions,
-  areaTypeOptions,
+  
   natureFeatureOptions,
   communityFormatOptions,
   communityFriendlyOptions,
@@ -46,6 +46,8 @@ import {
   interiorStyleOptions,
   smartHomeFeatureOptions,
   mustHaveFeatureOptions,
+  HomecountryOptions,
+  relationShipStatus,
 } from "../../components/LeadFormWizard/formOptions";
 
 const EditLeadPage: React.FC = () => {
@@ -53,20 +55,25 @@ const EditLeadPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-
+const [household, setHousehold] = useState({
+  hasSeniorCitizen: "",
+  hasChildren: "",
+  hasPets: "",
+});
   // Form data
   const [identity, setIdentity] = useState<LeadIdentity>({
     propertyRolePrimary: [],
+    relationShipStatus:'',
     searchTrigger: [],
   });
   const [location, setLocation] = useState<LeadLocation>({
     targetStatesRegions: [],
-    climateRiskAvoidance: [],
+    
     targetLocations: [],
-    preferredClimate: [],
+    
     locationPriorities: [],
-    areaTypePreference: [],
-    naturalFeatureClosest: [],
+    
+    sorroundings: [],
   });
   const [property, setProperty] = useState<LeadProperty>({
     assetTypeInterest: [],
@@ -91,6 +98,7 @@ const EditLeadPage: React.FC = () => {
         if (lead.identity) setIdentity(lead.identity);
         if (lead.location) setLocation(lead.location);
         if (lead.property) setProperty(lead.property);
+        if(lead.identity && lead.identity.household) setHousehold(lead.identity.household)
       } catch (error) {
         console.error("Failed to fetch lead:", error);
         alert("Failed to load lead data");
@@ -226,24 +234,20 @@ const EditLeadPage: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="homeCountry">Home Country</Label>
-                  <Input
-                    id="homeCountry"
-                    value={identity.homeCountry || ""}
-                    onChange={(e) => setIdentity({ ...identity, homeCountry: e.target.value })}
-                    className="bg-gray-800 border-gray-700"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="taxResidencyCountry">Tax Residency Country</Label>
-                  <Input
-                    id="taxResidencyCountry"
-                    value={identity.taxResidencyCountry || ""}
-                    onChange={(e) => setIdentity({ ...identity, taxResidencyCountry: e.target.value })}
-                    className="bg-gray-800 border-gray-700"
-                  />
-                </div>
+                             <div>
+                               <Label htmlFor="homeCountry">Home Country</Label>
+                               <Select
+                                 id="homeCountry"
+                                 value={identity.homeCountry || ""}
+                                 onChange={(e) => setIdentity({ ...identity, homeCountry: e.target.value })}
+                                 className="bg-gray-800 border-gray-700"
+                               >
+                               <option value="" > select country</option>
+                               {HomecountryOptions.map(option=>(
+                                 <option key={option} value={option}>{option}</option>
+                               ))}
+                               </Select>
+                             </div>
                 <div>
                   <Label htmlFor="visaResidencyStatus">Visa Residency Status</Label>
                   <Select
@@ -311,6 +315,96 @@ const EditLeadPage: React.FC = () => {
                     ))}
                   </Select>
                 </div>
+
+
+                <div>
+                                  <Label htmlFor="">
+                                    What’s your current relationship status?
+                                    
+                                    <Select
+                                    id="relationShip_status"
+                                    value={identity.relationShipStatus}
+                                    onChange={(e)=>setIdentity({...identity,relationShipStatus:e.target.value})}
+                                    className="bg-gray-800 border-gray-700"
+                                    >
+                                      
+                                      {relationShipStatus.map((option)=>(
+                                        <option key={option} value={option}>
+                                          {option}
+                                        </option>
+                                      ))}
+                                    </Select>
+                
+                                  </Label>
+                                </div>
+                
+                
+                                <div className="space-y-4">
+                  
+                
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Senior Citizens */}
+                    <div>
+                      <Label>Senior citizen(s) living</Label>
+                      <Select
+                        value={household.hasSeniorCitizen || ""}
+                        onChange={(e) =>
+                          setHousehold({ ...household, hasSeniorCitizen: e.target.value })
+                        }
+                        className="bg-gray-800 border-gray-700"
+                      >
+                        <option value="">Select</option>
+                          {householdSizeOptions.map((option) => (
+                                      <option key={option} value={option}>
+                                        {option}
+                                      </option>
+                                    ))}
+                      </Select>
+                    </div>
+                
+                    {/* Children */}
+                    <div>
+                      <Label>Children living</Label>
+                      <Select
+                        value={household.hasChildren || ""}
+                        onChange={(e) =>
+                          setHousehold({ ...household, hasChildren: e.target.value })
+                        }
+                        className="bg-gray-800 border-gray-700"
+                      >
+                        <option value="">Select</option>
+                         {householdSizeOptions.map((option) => (
+                                      <option key={option} value={option}>
+                                        {option}
+                                      </option>
+                                    ))}
+                      </Select>
+                    </div>
+                
+                    {/* Pets */}
+                    <div>
+                      <Label>Pets living</Label>
+                      <Select
+                        value={household.hasPets || ""}
+                        onChange={(e) =>
+                          setHousehold({ ...household, hasPets: e.target.value })
+                        }
+                        className="bg-gray-800 border-gray-700"
+                      >
+                        <option value="">Select</option>
+                          {householdSizeOptions.map((option) => (
+                                      <option key={option} value={option}>
+                                        {option}
+                                      </option>
+                                    ))}
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+                
+                
+
+
                 <div>
                   <Label htmlFor="householdSize">Household Size</Label>
                   <Select
@@ -504,45 +598,9 @@ const EditLeadPage: React.FC = () => {
                 </Select>
               </div>
 
-              <div>
-                <Label className="text-base font-medium mb-3 block">Climate Risks to Avoid</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                  {climateRiskOptions.map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`climateRisk-${option}`}
-                        checked={location.climateRiskAvoidance?.includes(option) || false}
-                        onCheckedChange={(checked) =>
-                          handleArrayField('location', 'climateRiskAvoidance', option, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={`climateRisk-${option}`} className="text-sm">
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+             
 
-              <div>
-                <Label className="text-base font-medium mb-3 block">Preferred Climate</Label>
-                <div className="grid grid-cols-1 gap-2">
-                  {climatePreferenceOptions.map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`preferredClimate-${option}`}
-                        checked={location.preferredClimate?.includes(option) || false}
-                        onCheckedChange={(checked) =>
-                          handleArrayField('location', 'preferredClimate', option, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={`preferredClimate-${option}`} className="text-sm">
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+           
 
               <div>
                 <Label className="text-base font-medium mb-3 block">Location Priorities</Label>
@@ -564,39 +622,20 @@ const EditLeadPage: React.FC = () => {
                 </div>
               </div>
 
+            
               <div>
-                <Label className="text-base font-medium mb-3 block">Area Type Preference</Label>
-                <div className="grid grid-cols-1 gap-2">
-                  {areaTypeOptions.map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`areaType-${option}`}
-                        checked={location.areaTypePreference?.includes(option) || false}
-                        onCheckedChange={(checked) =>
-                          handleArrayField('location', 'areaTypePreference', option, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={`areaType-${option}`} className="text-sm">
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <Label className="text-base font-medium mb-3 block">Natural Features Closest</Label>
+                <Label className="text-base font-medium mb-3 block">sorroundings</Label>
                 <div className="grid grid-cols-1 gap-2">
                   {natureFeatureOptions.map((option) => (
                     <div key={option} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`naturalFeature-${option}`}
-                        checked={location.naturalFeatureClosest?.includes(option) || false}
+                        id={`sorroundings-${option}`}
+                        checked={location.sorroundings?.includes(option) || false}
                         onCheckedChange={(checked) =>
-                          handleArrayField('location', 'naturalFeatureClosest', option, checked as boolean)
+                          handleArrayField('location', 'sorroundings', option, checked as boolean)
                         }
                       />
-                      <Label htmlFor={`naturalFeature-${option}`} className="text-sm">
+                      <Label htmlFor={`sorroundings-${option}`} className="text-sm">
                         {option}
                       </Label>
                     </div>

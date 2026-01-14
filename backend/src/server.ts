@@ -14,6 +14,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { authenticateToken, requireRole } from "./middlewares/auth.js";
 import { Role } from "./models/User.js";
+import propertyRoutes from "./routes/property.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -63,7 +64,7 @@ app.use(
   leadRoutes
 );
 app.use("/api/users", userRoutes);
-
+app.use("/api/v1/properties", propertyRoutes);
 // Health check
 app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "OK" });

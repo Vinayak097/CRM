@@ -8,25 +8,25 @@ const leadSchema = new Schema(
       lastName: { type: String, trim: true },
       phone: { type: String, trim: true },
       email: { type: String, trim: true, lowercase: true },
-
       homeCountry: { type: String },
       taxResidencyCountry: { type: String },
       visaResidencyStatus: { type: String },
       leadSource: { type: String },
-
       ageYears: { type: Number },
       profession: { type: String },
       householdSize: { type: String },
+      household: {
+        hasSeniorCitizen: { type: String },
+        hasChildren: { type: String },
+        hasPets: { type: String },
+      },
       householdIncomeBandInr: { type: String },
       priorPropertiesPurchased: { type: String },
-
       propertyRolePrimary: { type: [String], default: [] },
       searchTrigger: { type: [String], default: [] },
-
       buyingJourneyStage: { type: String },
       explorationDuration: { type: String },
       purchaseTimeline: { type: String },
-
       // notes tied to identity
       aboutYouNotes: { type: String },
       ownershipTimelineNotes: { type: String },
@@ -35,13 +35,9 @@ const leadSchema = new Schema(
     location: {
       buyingCountryFocus: { type: String },
       targetStatesRegions: { type: [String], default: [] },
-      climateRiskAvoidance: { type: [String], default: [] },
       targetLocations: { type: [String], default: [] },
-      preferredClimate: { type: [String], default: [] },
       locationPriorities: { type: [String], default: [] },
-      areaTypePreference: { type: [String], default: [] },
       naturalFeatureClosest: { type: [String], default: [] },
-
       // notes tied to location
       locationDealbreakerNotes: { type: String },
     },

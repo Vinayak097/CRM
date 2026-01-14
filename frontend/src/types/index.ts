@@ -20,7 +20,13 @@ export interface LeadIdentity {
   leadSource?: string;
   ageYears?: number;
   profession?: string;
+  relationShipStatus?: string;
   householdSize?: string;
+  household?: {
+    hasSeniorCitizen: string;
+    hasChildren: string;
+    hasPets: string;
+  };
   householdIncomeBandInr?: string;
   priorPropertiesPurchased?: string;
   propertyRolePrimary?: string[];
@@ -35,12 +41,12 @@ export interface LeadIdentity {
 export interface LeadLocation {
   buyingCountryFocus?: string;
   targetStatesRegions?: string[];
-  climateRiskAvoidance?: string[];
+
   targetLocations?: string[];
-  preferredClimate?: string[];
+
   locationPriorities?: string[];
-  areaTypePreference?: string[];
-  naturalFeatureClosest?: string[];
+
+  sorroundings?: string[];
   locationDealbreakerNotes?: string;
 }
 

@@ -46,11 +46,18 @@ import {
   interiorStyleOptions,
   smartHomeFeatureOptions,
   mustHaveFeatureOptions,
+  relationShipStatus,
+  HomecountryOptions,
 } from "../../components/LeadFormWizard/formOptions";
 
 const CreateLeadPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+const [household, setHousehold] = useState({
+  hasSeniorCitizen: "",
+  hasChildren: "",
+  hasPets: "",
+});
 
   // Form data
   const [identity, setIdentity] = useState<LeadIdentity>({
@@ -59,12 +66,12 @@ const CreateLeadPage: React.FC = () => {
   });
   const [location, setLocation] = useState<LeadLocation>({
     targetStatesRegions: [],
-    climateRiskAvoidance: [],
+    
     targetLocations: [],
-    preferredClimate: [],
+    
     locationPriorities: [],
-    areaTypePreference: [],
-    naturalFeatureClosest: [],
+    
+    sorroundings: [],
   });
   const [property, setProperty] = useState<LeadProperty>({
     assetTypeInterest: [],
@@ -84,12 +91,14 @@ const CreateLeadPage: React.FC = () => {
     e.preventDefault();
 
     setLoading(true);
-
+    const ident=identity
+    ident.household=household
     try {
       const leadData = {
-        identity,
+        ident,
         location,
         property,
+        
       };
 
       await leadService.createLead(leadData);
@@ -196,13 +205,19 @@ const CreateLeadPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="homeCountry">Home Country</Label>
-                  <Input
+                  <Select
                     id="homeCountry"
                     value={identity.homeCountry || ""}
                     onChange={(e) => setIdentity({ ...identity, homeCountry: e.target.value })}
                     className="bg-gray-800 border-gray-700"
-                  />
+                  >
+                  <option value="" > select country</option>
+                  {HomecountryOptions.map(option=>(
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                  </Select>
                 </div>
+
                 <div>
                   <Label htmlFor="taxResidencyCountry">Tax Residency Country</Label>
                   <Input
@@ -249,19 +264,16 @@ const CreateLeadPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="ageYears">Age</Label>
-                  <Select
+                  <Input
                     id="ageYears"
+                    placeholder="how old are you?"
+                    type="number"
                     value={identity.ageYears?.toString() || ""}
                     onChange={(e) => setIdentity({ ...identity, ageYears: parseInt(e.target.value) || undefined })}
                     className="bg-gray-800 border-gray-700"
                   >
-                    <option value="">Select age group</option>
-                    {ageGroupOptions.map((option) => (
-                      <option key={option} value={option.split(" ")[0]}>
-                        {option}
-                      </option>
-                    ))}
-                  </Select>
+                    
+                  </Input>
                 </div>
                 <div>
                   <Label htmlFor="profession">Profession</Label>
@@ -279,6 +291,10 @@ const CreateLeadPage: React.FC = () => {
                     ))}
                   </Select>
                 </div>
+                
+
+
+
                 <div>
                   <Label htmlFor="householdSize">Household Size</Label>
                   <Select
@@ -457,7 +473,7 @@ const CreateLeadPage: React.FC = () => {
             <CardContent className="space-y-6">
               <div>
                 <Label htmlFor="buyingCountryFocus">Country Focus</Label>
-                <Select
+                <Select 
                   id="buyingCountryFocus"
                   value={location.buyingCountryFocus || ""}
                   onChange={(e) => setLocation({ ...location, buyingCountryFocus: e.target.value })}
@@ -472,45 +488,9 @@ const CreateLeadPage: React.FC = () => {
                 </Select>
               </div>
 
-              <div>
-                <Label className="text-base font-medium mb-3 block">Climate Risks to Avoid</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-                  {climateRiskOptions.map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`climateRisk-${option}`}
-                        checked={location.climateRiskAvoidance?.includes(option) || false}
-                        onCheckedChange={(checked) =>
-                          handleArrayField('location', 'climateRiskAvoidance', option, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={`climateRisk-${option}`} className="text-sm">
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+             
 
-              <div>
-                <Label className="text-base font-medium mb-3 block">Preferred Climate</Label>
-                <div className="grid grid-cols-1 gap-2">
-                  {climatePreferenceOptions.map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`preferredClimate-${option}`}
-                        checked={location.preferredClimate?.includes(option) || false}
-                        onCheckedChange={(checked) =>
-                          handleArrayField('location', 'preferredClimate', option, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={`preferredClimate-${option}`} className="text-sm">
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              
 
               <div>
                 <Label className="text-base font-medium mb-3 block">Location Priorities</Label>
@@ -532,39 +512,22 @@ const CreateLeadPage: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <Label className="text-base font-medium mb-3 block">Area Type Preference</Label>
-                <div className="grid grid-cols-1 gap-2">
-                  {areaTypeOptions.map((option) => (
-                    <div key={option} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`areaType-${option}`}
-                        checked={location.areaTypePreference?.includes(option) || false}
-                        onCheckedChange={(checked) =>
-                          handleArrayField('location', 'areaTypePreference', option, checked as boolean)
-                        }
-                      />
-                      <Label htmlFor={`areaType-${option}`} className="text-sm">
-                        {option}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+             
+             
 
               <div>
-                <Label className="text-base font-medium mb-3 block">Natural Features Closest</Label>
+                <Label className="text-base font-medium mb-3 block">sorroundings</Label>
                 <div className="grid grid-cols-1 gap-2">
                   {natureFeatureOptions.map((option) => (
                     <div key={option} className="flex items-center space-x-2">
                       <Checkbox
-                        id={`naturalFeature-${option}`}
-                        checked={location.naturalFeatureClosest?.includes(option) || false}
+                        id={`sorroundings-${option}`}
+                        checked={location.sorroundings?.includes(option) || false}
                         onCheckedChange={(checked) =>
-                          handleArrayField('location', 'naturalFeatureClosest', option, checked as boolean)
+                          handleArrayField('location', 'sorroundings', option, checked as boolean)
                         }
                       />
-                      <Label htmlFor={`naturalFeature-${option}`} className="text-sm">
+                      <Label htmlFor={`sorroundings-${option}`} className="text-sm">
                         {option}
                       </Label>
                     </div>

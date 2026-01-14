@@ -22,11 +22,17 @@ export const leadZodSchema = z.object({
       purchaseTimeline: z.string().optional(),
       aboutYouNotes: z.string().optional(),
       ownershipTimelineNotes: z.string().optional(),
+      household: {
+        hasSeniorCitizen: z.string().optional(),
+        hasChildren: z.string().optional(),
+        hasPets: z.string().optional(),
+      },
     })
     .optional()
     .default({
       propertyRolePrimary: [],
       searchTrigger: [],
+      household: {},
     }), // Provide minimal object with required defaults
 
   location: z
