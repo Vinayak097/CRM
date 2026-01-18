@@ -11,6 +11,9 @@ import LeadsPage from './pages/Lead/LeadPage';
 import CreateLeadPage from './pages/Lead/CreateLeadPage';
 import EditLeadPage from './pages/Lead/EditLeadPage';
 import UsersPage from './pages/UsersPage';
+import PropertiesPage from './pages/Property/PropertiesPage';
+import CreatePropertyPage from './pages/Property/CreatePropertyPage';
+import EditPropertyPage from './pages/Property/EditPropertyPage';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -83,6 +86,30 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <UsersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property"
+              element={
+                <ProtectedRoute>
+                  <PropertiesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property/create"
+              element={
+                <ProtectedRoute>
+                  <CreatePropertyPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/property/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditPropertyPage />
                 </ProtectedRoute>
               }
             />

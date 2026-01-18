@@ -9,6 +9,12 @@ export type LeadStatus =
   | "Lost"
   | "Converted";
 
+export type PropertyStatus =
+  | "AVAILABLE"
+  | "SOLD"
+  | "RESERVED"
+  | "UNDER_CONTRACT";
+
 export interface LeadIdentity {
   firstName?: string;
   lastName?: string;

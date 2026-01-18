@@ -45,35 +45,35 @@ export type ConstructionStatusType =
 // Legal Approvals schema
 export const legalApprovalsSchema = z
   .object({
-    type: z.string(),
-    details: z.string(),
+    type: z.string().optional(),
+    details: z.string().optional(),
   })
   .strict();
 
 // Registration Costs schema
 export const registrationCostsSchema = z
   .object({
-    stampDuty: z.string(),
-    registration: z.string(),
+    stampDuty: z.string().optional(),
+    registration: z.string().optional(),
   })
   .strict();
 
 // Unit Configuration schema
 export const unitConfigurationSchema = z
   .object({
-    type: z.string(),
-    size: z.string(),
-    price: z.string(),
+    type: z.string().optional(),
+    size: z.string().optional(),
+    price: z.string().optional(),
   })
   .strict();
 
 // Nearby Infrastructure schema
 export const nearbyInfrastructureSchema = z
   .object({
-    education: z.string(),
-    healthcare: z.string(),
-    shopping: z.string(),
-    transport: z.string(),
+    education: z.string().optional(),
+    healthcare: z.string().optional(),
+    shopping: z.string().optional(),
+    transport: z.string().optional(),
   })
   .strict();
 
@@ -108,24 +108,30 @@ export const propertySchema = z
     status: z.nativeEnum(PropertyStatus),
     featured: z.boolean().default(false),
     active: z.boolean().default(true),
-    unitConfiguration: unitConfigurationSchema.or(
-      z.string().transform((str) => JSON.parse(str))
-    ),
-    aboutProject: z.string().min(50).max(5000),
-    legalApprovals: legalApprovalsSchema.or(
-      z.string().transform((str) => JSON.parse(str))
-    ),
-    registrationCosts: registrationCostsSchema.or(
-      z.string().transform((str) => JSON.parse(str))
-    ),
-    propertyManagement: z.string().min(50).max(5000),
-    financialReturns: z.string().min(50).max(2000),
+    unitConfiguration: unitConfigurationSchema
+      .optional()
+      .nullable()
+      .or(z.string().transform((str) => JSON.parse(str)).optional().nullable()),
+    aboutProject: z.string().min(50).max(5000).optional().nullable(),
+    legalApprovals: legalApprovalsSchema
+      .optional()
+      .nullable()
+      .or(z.string().transform((str) => JSON.parse(str)).optional().nullable()),
+    registrationCosts: registrationCostsSchema
+      .optional()
+      .nullable()
+      .or(z.string().transform((str) => JSON.parse(str)).optional().nullable()),
+    propertyManagement: z.string().min(50).max(5000).optional().nullable(),
+    financialReturns: z.string().min(50).max(2000).optional().nullable(),
     investmentBenefits: z
       .array(z.string())
-      .or(z.string().transform((str) => JSON.parse(str))),
-    nearbyInfrastructure: nearbyInfrastructureSchema.or(
-      z.string().transform((str) => JSON.parse(str))
-    ),
+      .optional()
+      .nullable()
+      .or(z.string().transform((str) => JSON.parse(str)).optional().nullable()),
+    nearbyInfrastructure: nearbyInfrastructureSchema
+      .optional()
+      .nullable()
+      .or(z.string().transform((str) => JSON.parse(str)).optional().nullable()),
     plotSize: z.string().optional(),
     constructionStatus: z.string().or(z.nativeEnum(ConstructionStatus)),
     emiOptions: z.string().optional(),
@@ -139,8 +145,6 @@ export const propertySchema = z
 // Schema for creating new property
 export const createPropertySchema = propertySchema.omit({
   views: true,
-  createdAt: true,
-  updatedAt: true,
 });
 
 // Schema for updating property
@@ -150,14 +154,14 @@ export const updatePropertySchema = createPropertySchema.partial();
 export const queryPropertySchema = z.object({
   page: z
     .string()
+    .default("1")
     .transform(Number)
-    .pipe(z.number().int().positive())
-    .default("1"),
+    .pipe(z.number().int().positive()),
   limit: z
     .string()
+    .default("20")
     .transform(Number)
-    .pipe(z.number().int().min(1).max(100))
-    .default("20"),
+    .pipe(z.number().int().min(1).max(100)),
   search: z.string().optional(),
   propertyType: z.string().optional(),
   minPrice: z.string().transform(Number).pipe(z.number().positive()).optional(),

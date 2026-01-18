@@ -1,4 +1,3 @@
-import { Role } from '@/types';
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -26,7 +25,7 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen = false, onClose }) =>
       items: [
         { name: 'Leads', icon: '📋' , route:'/leads', allowedRoles: ['admin', 'sales_agent'] as Role[] },
         { name: 'Users', icon: '👥' ,route:'/users', allowedRoles: ['admin'] as Role[] },
-        {property:"property" , icon:'',route:'/property',allowedRoles:[Role.Admin,Role.Developer] as Role[]}
+        { name: 'Properties', icon: '🏠' ,route:'/property', allowedRoles: ['admin', 'developer'] as Role[] }
       ],
     },
   ];

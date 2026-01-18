@@ -52,7 +52,7 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
 
 export const getCurrentUser = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     if (!req.user) {
@@ -84,7 +84,7 @@ export const getCurrentUser = async (
 
 export const logout = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     if (!req.session) {
@@ -110,7 +110,7 @@ export const logout = async (
 
 export const verifySess = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     if (!req.user) {
@@ -144,7 +144,7 @@ export const verifySess = async (
 
 export const register = async (
   req: AuthRequest,
-  res: Response
+  res: Response,
 ): Promise<void> => {
   try {
     const { name, email, password, phone, role } = req.body;

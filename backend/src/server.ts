@@ -15,7 +15,8 @@ import { fileURLToPath } from "url";
 import { authenticateToken, requireRole } from "./middlewares/auth.js";
 import { Role } from "./models/User.js";
 import propertyRoutes from "./routes/property.routes.js";
-
+import { errorHandler } from "./utils/errorHandler.js";
+import locationRoutes from "./routes/location.routes.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app: Express = express();
@@ -31,7 +32,7 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:5173",
     credentials: true,
-  })
+  }),
 );
 app.use(express.json());
 app.use(cookieParser());
@@ -46,7 +47,7 @@ app.use(
       sameSite: "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
-  })
+  }),
 );
 
 // Debug middleware
@@ -61,10 +62,11 @@ app.use(
   "/api/leads",
   authenticateToken,
   requireRole([Role.Admin, Role.salesAgent]),
-  leadRoutes
+  leadRoutes,
 );
 app.use("/api/users", userRoutes);
-app.use("/api/v1/properties", propertyRoutes);
+app.use("/api/properties", propertyRoutes);
+app.use("/api/locations", locationRoutes);
 // Health check
 app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "OK" });
@@ -87,6 +89,10 @@ app.post("/typeform", async (req, res) => {
   // write file
   fs.writeFileSync(filePath, JSON.stringify(body, null, 2), "utf-8");
 });
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
