@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 import "express-session";
 import { Role } from "../models/User.js";
 
@@ -27,26 +28,42 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ): void => {
-  try {
-    console.log("token authetticaticteing", req.session);
-    if (!req.session?.userId) {
-      res.status(401).json({ error: "Not authenticated" });
-      return;
+    // 1. Check for session
+    if (req.session?.userId) {
+      req.user = {
+        id: req.session.userId,
+        email: req.session.userEmail!,
+        role: req.session.userRole as Role,
+        name: req.session.userName,
+      };
+      return next();
     }
 
-    req.user = {
-      id: req.session.userId,
-      email: req.session.userEmail!,
-      role: req.session.userRole as Role,
-      name: req.session.userName,
-    };
-    console.log("going next", req.user);
+    // 2. Check for Bearer token
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      if (token) {
+        try {
+          const decoded = jwt.verify(
+            token,
+            process.env.JWT_SECRET || "your_jwt_secret_key_change_this"
+          ) as any;
+          
+          req.user = {
+            id: decoded.id || decoded.userId,
+            email: decoded.email || decoded.userEmail,
+            role: (decoded.role || decoded.userRole) as Role,
+            name: decoded.name || decoded.userName,
+          };
+          return next();
+        } catch (err) {
+          // Token invalid, fall through to 401
+        }
+      }
+    }
 
-    next();
-  } catch (error) {
-    res.status(401).json({ error: "Authentication failed" });
-    return;
-  }
+    res.status(401).json({ error: "Not authenticated" });
 };
 
 export const requireRole = (allowedRoles: Role[]) => {

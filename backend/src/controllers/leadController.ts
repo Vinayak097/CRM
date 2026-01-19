@@ -9,7 +9,7 @@ import {
   RelatedEntity,
 } from "../models/Notification.js";
 import type { AuthRequest, AuthUser } from "../middlewares/auth.js";
-import { leadZodSchema } from "@/types/Lead.zod.js";
+import { leadZodSchema, type LeadInput } from "@/types/Lead.zod.js";
 import Lead from "@/models/Lead.js";
 import mongoose from "mongoose";
 
@@ -20,7 +20,7 @@ const getAgentIdForLead = (user?: AuthUser | null): string | null => {
   return null;
 };
 
-export async function createLeadController(req: Request, res: Response) {
+export async function createLeadController(req: AuthRequest, res: Response) {
   try {
     const validationResult = leadZodSchema.safeParse(req.body);
 
@@ -41,7 +41,7 @@ export async function createLeadController(req: Request, res: Response) {
         leadStatus: leadData.system?.leadStatus || LeadStatus.New,
         priorityScore: leadData.system?.priorityScore || 0,
         investmentScore: leadData.system?.investmentScore || 0,
-        assignedAgent: leadData.system?.assignedAgent || null,
+        assignedAgent: leadData.system?.assignedAgent || getAgentIdForLead(req.user),
       },
     });
 
@@ -112,7 +112,7 @@ export const updateLeadController = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Update lead
+    // Update lead with nested object support
     const updatedLead = await Lead.findByIdAndUpdate(
       id,
       { $set: req.body },
@@ -174,7 +174,7 @@ async function createAuditLog(data: any) {
     console.error("Failed to create audit log:", error);
   }
 }
-export const getAllLeadsController = async (req: Request, res: Response) => {
+export const getAllLeadsController = async (req: AuthRequest, res: Response) => {
   try {
     const {
       page = 1,
@@ -188,18 +188,21 @@ export const getAllLeadsController = async (req: Request, res: Response) => {
 
     const filter: any = {};
 
-    // Status filter
-    if (status) {
-      filter["system.leadStatus"] = status;
-    }
-
-    // Assigned agent filter
-    if (assignedAgent) {
+    // Role-based access control: agents can only see their assigned leads
+    if (req.user?.role === Role.salesAgent) {
+      filter["system.assignedAgent"] = new mongoose.Types.ObjectId(req.user.id);
+    } 
+    // Admin can filter by assignedAgent if provided
+    else if (assignedAgent) {
       if (mongoose.Types.ObjectId.isValid(assignedAgent as string)) {
         filter["system.assignedAgent"] = new mongoose.Types.ObjectId(
           assignedAgent as string
         );
       }
+    }
+    // Status filter
+    if (status) {
+      filter["system.leadStatus"] = status;
     }
 
     // Search filter (search across name, email, phone)
@@ -234,7 +237,7 @@ export const getAllLeadsController = async (req: Request, res: Response) => {
       data: {
         leads,
         pagination: {
-          page: pageNum,
+        page: pageNum,
           limit: limitNum,
           total,
           pages: Math.ceil(total / limitNum),

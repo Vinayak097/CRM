@@ -85,11 +85,11 @@ const PropertySchema = new mongoose.Schema(
 );
 
 /* Safe indexes only */
-PropertySchema.index({ listing_id: 1 });
 PropertySchema.index({ property_type: 1 });
 PropertySchema.index({ status: 1 });
+PropertySchema.index({ title: "text", description_short: "text", description_long: "text" });
 
-const PropertyModel: mongoose.Model<any> =
+export const PropertyModel: mongoose.Model<any> =
   (mongoose.models.Property as mongoose.Model<any>) ||
   mongoose.model("Property", PropertySchema);
 
@@ -141,7 +141,7 @@ export class PropertyRepository {
     return !!res;
   }
 
-  async increment(
+  async incrementField(
     id: string,
     fieldPath: string,
     value = 1
@@ -149,5 +149,13 @@ export class PropertyRepository {
     await PropertyModel.findByIdAndUpdate(id, {
       $inc: { [fieldPath]: value },
     });
+  }
+
+  async search(query: string, limit = 20) {
+    return PropertyModel.find({
+      $text: { $search: query },
+    })
+      .limit(limit)
+      .lean();
   }
 }
