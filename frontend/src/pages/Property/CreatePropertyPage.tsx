@@ -1,12 +1,13 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Plus, X } from "lucide-react";
-import { propertyService, type CreatePropertyData } from "../../services/propertyService";
-import { PROPERTY_TAGS } from "../../lib/propertyTags";
-import { CONSTRUCTION_STATUSES } from "../../lib/constructionStatuses";
+import { ArrowLeft, Plus, X, Loader2 } from "lucide-react";
+import { propertyService } from "../../services/propertyService";
 import { locationService } from "../../services/locationService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { PropertyFormData } from "../../types/propertyFormData";
+import { getDefaultFormData } from "../../types/propertyFormData";
 
 const CreatePropertyPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,45 +15,12 @@ const CreatePropertyPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [locations, setLocations] = useState<any[]>([]);
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const [formData, setFormData] = useState<CreatePropertyData>({
-    title: "",
-    slug: "",
-    description: "",
-    price: "",
-    locationId: "",
-    propertyType: "APARTMENT",
-    bedrooms: 0,
-    bathrooms: 0,
-    area: 0,
-    floors: 1,
-    images: [],
-    amenities: [],
-    features: [],
-    coordinates: {
-      lat: 0,
-      lng: 0,
-    },
-    status: "AVAILABLE",
-    featured: false,
-    active: true,
-    tags: [],
-  });
+  const [formData, setFormData] = useState<PropertyFormData>(getDefaultFormData());
 
   const [newImage, setNewImage] = useState("");
   const [newAmenity, setNewAmenity] = useState("");
   const [newFeature, setNewFeature] = useState("");
   const [newTag, setNewTag] = useState("");
-  const [selectedTag, setSelectedTag] = useState("");
-
-
-  const generateSlug = (title: string) => {
-    return title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-  };
 
   useEffect(() => {
     const fetchAllLocations = async () => {
@@ -64,38 +32,72 @@ const CreatePropertyPage: React.FC = () => {
        }
     };
     fetchAllLocations();
-
-    return () => {
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-    };
   }, []);
-
-  const handleTitleChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, title: value }));
-    if (!formData.slug || formData.slug === generateSlug(formData.title)) {
-      setFormData((prev) => ({ ...prev, slug: generateSlug(value) }));
-    }
-  };
 
   const addItem = (field: "images" | "amenities" | "features" | "tags", value: string) => {
     if (!value.trim()) return;
-    setFormData((prev) => ({
-      ...prev,
-      [field]: [...(prev[field] || []), value.trim()],
-    }));
-    if (field === "images") setNewImage("");
-    if (field === "amenities") setNewAmenity("");
-    if (field === "features") setNewFeature("");
-    if (field === "tags") setNewTag("");
+    
+    if (field === "images") {
+        setFormData(prev => ({
+            ...prev,
+            visual_assets: {
+                ...prev.visual_assets,
+                images: [...(prev.visual_assets.images || []), { src: value, title: "", type: "image", description: "", alt: "" }]
+            }
+        }));
+        setNewImage("");
+    } else if (field === "amenities") {
+        setFormData(prev => ({
+            ...prev,
+            amenities_summary: {
+                ...prev.amenities_summary,
+                primary_amenities: [...(prev.amenities_summary.primary_amenities || []), value]
+            }
+        }));
+        setNewAmenity("");
+    } else if (field === "features") {
+        setFormData(prev => ({
+            ...prev,
+            features: [...(prev.features || []), value]
+        }));
+        setNewFeature("");
+    } else if (field === "tags") {
+        setFormData(prev => ({
+            ...prev,
+            property_tags: [...(prev.property_tags || []), value]
+        }));
+        setNewTag("");
+    }
   };
 
   const removeItem = (field: "images" | "amenities" | "features" | "tags", index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: prev[field]?.filter((_, i) => i !== index) || [],
-    }));
+    if (field === "images") {
+        setFormData(prev => ({
+            ...prev,
+            visual_assets: {
+                ...prev.visual_assets,
+                images: prev.visual_assets.images.filter((_, i) => i !== index)
+            }
+        }));
+    } else if (field === "amenities") {
+        setFormData(prev => ({
+            ...prev,
+            amenities_summary: {
+                ...prev.amenities_summary,
+                primary_amenities: prev.amenities_summary.primary_amenities.filter((_, i) => i !== index)
+            }
+        }));
+    } else if (field === "features") {
+        setFormData(prev => ({
+            ...prev,
+            features: prev.features.filter((_, i) => i !== index)
+        }));
+    } else if (field === "tags") {
+        setFormData(prev => ({
+            ...prev,
+            property_tags: prev.property_tags.filter((_, i) => i !== index)
+        }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,36 +107,17 @@ const CreatePropertyPage: React.FC = () => {
 
     try {
       // Validate required fields
-      const missingFields = [];
-      if (!formData.title) missingFields.push("Title");
-      if (!formData.slug) missingFields.push("Slug");
-      if (!formData.description) missingFields.push("Description");
-      if (!formData.price) missingFields.push("Price");
-      if (!formData.locationId) missingFields.push("Location");
-      if (!formData.propertyType) missingFields.push("Property Type");
-
-      if (missingFields.length > 0) {
-        setError(`Please fill in all required fields: ${missingFields.join(", ")}`);
+      if (!formData.title) {
+        setError("Title is required");
         setLoading(false);
         return;
       }
 
-      if (formData.area <= 0) {
-        setError("Area must be greater than 0");
-        setLoading(false);
-        return;
-      }
-
-      if (formData.coordinates.lat === 0 && formData.coordinates.lng === 0) {
-        setError("Please provide valid coordinates");
-        setLoading(false);
-        return;
-      }
-
-      // Clean up formData
-      const submitData = { ...formData };
-      // @ts-ignore
-      delete submitData.locationName;
+      // The formData is already in the correct nested structure
+      const submitData = {
+          ...formData,
+          listing_id: formData.listing_id || `LST-${Date.now()}`,
+      };
 
       await propertyService.createProperty(submitData);
       navigate("/property");
@@ -157,7 +140,7 @@ const CreatePropertyPage: React.FC = () => {
           Back to Properties
         </Button>
         <h1 className="text-2xl font-semibold">Create New Property</h1>
-        <p className="text-gray-400 text-sm mt-1">Add a new property to the system</p>
+        <p className="text-gray-400 text-sm mt-1">Add a new property to the system with full details</p>
       </div>
 
       {error && (
@@ -167,490 +150,543 @@ const CreatePropertyPage: React.FC = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Information */}
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Basic Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="md:col-span-2">
-              <label className="block text-sm text-gray-400 mb-1">
-                Title <span className="text-red-400">*</span>
-              </label>
-              <Input
-                type="text"
-                required
-                value={formData.title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-                className="bg-gray-800 border-gray-700"
-                placeholder="e.g., Luxury 3BHK Apartment in Downtown"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm text-gray-400 mb-1">
-                Slug <span className="text-red-400">*</span>
-              </label>
-              <Input
-                type="text"
-                required
-                value={formData.slug}
-                onChange={(e) => setFormData((prev) => ({ ...prev, slug: e.target.value }))}
-                className="bg-gray-800 border-gray-700"
-                placeholder="e.g., luxury-3bhk-apartment-downtown"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm text-gray-400 mb-1">
-                Description <span className="text-red-400">*</span>
-              </label>
-              <textarea
-                required
-                value={formData.description}
-                onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white min-h-[100px]"
-                placeholder="Detailed description of the property..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">
-                Price <span className="text-red-400">*</span>
-              </label>
-              <Input
-                type="text"
-                required
-                value={formData.price}
-                onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
-                className="bg-gray-800 border-gray-700"
-                placeholder="e.g., 5000000"
-              />
-            </div>
-            
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-9 mb-8 bg-gray-900 border border-gray-700 h-auto">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="location">Location</TabsTrigger>
+            <TabsTrigger value="pricing">Pricing</TabsTrigger>
+            <TabsTrigger value="specs">Specs</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
+            <TabsTrigger value="amenities">Features</TabsTrigger>
+            <TabsTrigger value="project">Project</TabsTrigger>
+            <TabsTrigger value="financials">Financials</TabsTrigger>
+            <TabsTrigger value="metadata">Metadata</TabsTrigger>
+          </TabsList>
 
-        <div>
-          <label className="block text-sm text-gray-400 mb-1">
-            Location <span className="text-red-400">*</span>
-          </label>
-          <select
-            value={formData.locationId}
-            onChange={(e) => setFormData((prev) => ({ ...prev, locationId: e.target.value }))}
-            className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
-          >
-            <option value="">Select location</option>
-            {locations.map((loc) => (
-              <option key={loc._id} value={loc._id}>
-                {loc.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-
-
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">
-                Property Type <span className="text-red-400">*</span>
-              </label>
-              <select
-                value={formData.propertyType}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    propertyType: e.target.value as CreatePropertyData["propertyType"],
-                  }))
-                }
-                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
-              >
-                <option value="PLOT">Plot</option>
-                <option value="VILLA">Villa</option>
-                <option value="APARTMENT">Apartment</option>
-                <option value="FARM_HOUSE">Farm House</option>
-                <option value="COMMERCIAL">Commercial</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Status</label>
-              <select
-                value={formData.status}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    status: e.target.value as CreatePropertyData["status"],
-                  }))
-                }
-                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
-              >
-                <option value="AVAILABLE">Available</option>
-                <option value="SOLD">Sold</option>
-                <option value="RESERVED">Reserved</option>
-                <option value="UNDER_CONTRACT">Under Contract</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Property Details */}
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Property Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">
-                Area (sq.ft) <span className="text-red-400">*</span>
-              </label>
-              <Input
-                type="number"
-                required
-                min="1"
-                value={formData.area}
-                onChange={(e) => setFormData((prev) => ({ ...prev, area: Number(e.target.value) }))}
-                className="bg-gray-800 border-gray-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Bedrooms</label>
-              <Input
-                type="number"
-                min="0"
-                value={formData.bedrooms || 0}
-                onChange={(e) => setFormData((prev) => ({ ...prev, bedrooms: Number(e.target.value) }))}
-                className="bg-gray-800 border-gray-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Bathrooms</label>
-              <Input
-                type="number"
-                min="0"
-                value={formData.bathrooms || 0}
-                onChange={(e) => setFormData((prev) => ({ ...prev, bathrooms: Number(e.target.value) }))}
-                className="bg-gray-800 border-gray-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Floors</label>
-              <Input
-                type="number"
-                min="1"
-                value={formData.floors || 1}
-                onChange={(e) => setFormData((prev) => ({ ...prev, floors: Number(e.target.value) }))}
-                className="bg-gray-800 border-gray-700"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Coordinates */}
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Location Coordinates</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">
-                Latitude <span className="text-red-400">*</span>
-              </label>
-              <Input
-                type="number"
-                required
-                step="any"
-                value={formData.coordinates.lat}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    coordinates: { ...prev.coordinates, lat: Number(e.target.value) },
-                  }))
-                }
-                className="bg-gray-800 border-gray-700"
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">
-                Longitude <span className="text-red-400">*</span>
-              </label>
-              <Input
-                type="number"
-                required
-                step="any"
-                value={formData.coordinates.lng}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    coordinates: { ...prev.coordinates, lng: Number(e.target.value) },
-                  }))
-                }
-                className="bg-gray-800 border-gray-700"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Images */}
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Images</h2>
-          <div className="flex gap-2 mb-4">
-            <Input
-              type="url"
-              value={newImage}
-              onChange={(e) => setNewImage(e.target.value)}
-              placeholder="Image URL"
-              className="bg-gray-800 border-gray-700"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addItem("images", newImage);
-                }
-              }}
-            />
-            <Button
-              type="button"
-              onClick={() => addItem("images", newImage)}
-              variant="secondary"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {formData.images?.map((img, idx) => (
-              <div key={idx} className="relative group">
-                <img
-                  src={img}
-                  alt={`Property ${idx + 1}`}
-                  className="w-24 h-24 object-cover rounded border border-gray-700"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "https://via.placeholder.com/150";
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeItem("images", idx)}
-                  className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
-                >
-                  <X className="h-3 w-3" />
-                </button>
+          {/* ... existing tabs ... */}
+          {/* (I will replace the whole Tabs children to be safe and clean) */}
+          
+          <TabsContent value="general" className="space-y-6">
+            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">Identity & Descriptions</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-gray-400 mb-1">Title *</label>
+                  <Input
+                    required
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    className="bg-gray-800 border-gray-700"
+                    placeholder="Luxury 3BHK Apartment..."
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-gray-400 mb-1">Subtitle</label>
+                  <Input
+                    value={formData.subtitle}
+                    onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Listing Type</label>
+                  <select
+                    value={formData.listing_type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, listing_type: e.target.value }))}
+                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white"
+                  >
+                    <option value="SALE">Sale</option>
+                    <option value="RENT">Rent</option>
+                    <option value="LEASE">Lease</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Property Type</label>
+                  <select
+                    value={formData.property_type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, property_type: e.target.value }))}
+                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white"
+                  >
+                    <option value="PLOT">Plot</option>
+                    <option value="VILLA">Villa</option>
+                    <option value="APARTMENT">Apartment</option>
+                    <option value="FARM_HOUSE">Farm House</option>
+                    <option value="COMMERCIAL">Commercial</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Status</label>
+                  <select
+                    value={formData.status}
+                    onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
+                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white"
+                  >
+                    <option value="AVAILABLE">Available</option>
+                    <option value="SOLD">Sold</option>
+                    <option value="RESERVED">Reserved</option>
+                    <option value="UNDER_CONTRACT">Under Contract</option>
+                  </select>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-gray-400 mb-1">Short Description</label>
+                  <textarea
+                    value={formData.description_short}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description_short: e.target.value }))}
+                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 min-h-[80px] text-white"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm text-gray-400 mb-1">Long Description</label>
+                  <textarea
+                    value={formData.description_long}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description_long: e.target.value }))}
+                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 min-h-[150px] text-white"
+                  />
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Amenities */}
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Amenities</h2>
-          <div className="flex gap-2 mb-4">
-            <Input
-              type="text"
-              value={newAmenity}
-              onChange={(e) => setNewAmenity(e.target.value)}
-              placeholder="Add amenity"
-              className="bg-gray-800 border-gray-700"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addItem("amenities", newAmenity);
-                }
-              }}
-            />
-            <Button
-              type="button"
-              onClick={() => addItem("amenities", newAmenity)}
-              variant="secondary"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {formData.amenities?.map((amenity, idx) => (
-              <span
-                key={idx}
-                className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm flex items-center gap-2"
-              >
-                {amenity}
-                <button
-                  type="button"
-                  onClick={() => removeItem("amenities", idx)}
-                  className="hover:text-red-400"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Features */}
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Features</h2>
-          <div className="flex gap-2 mb-4">
-            <Input
-              type="text"
-              value={newFeature}
-              onChange={(e) => setNewFeature(e.target.value)}
-              placeholder="Add feature"
-              className="bg-gray-800 border-gray-700"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addItem("features", newFeature);
-                }
-              }}
-            />
-            <Button
-              type="button"
-              onClick={() => addItem("features", newFeature)}
-              variant="secondary"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {formData.features?.map((feature, idx) => (
-              <span
-                key={idx}
-                className="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm flex items-center gap-2"
-              >
-                {feature}
-                <button
-                  type="button"
-                  onClick={() => removeItem("features", idx)}
-                  className="hover:text-red-400"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Tags */}
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Tags</h2>
-          <div className="flex gap-2 mb-4">
-            <select
-              value={selectedTag}
-              onChange={(e) => setSelectedTag(e.target.value)}
-              className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
-            >
-              <option value="">Select tag</option>
-              {PROPERTY_TAGS.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-            <Button
-              type="button"
-              onClick={() => {
-                if (selectedTag) {
-                  addItem("tags", selectedTag);
-                  setSelectedTag("");
-                }
-              }}
-              variant="secondary"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {formData.tags?.map((tag, idx) => (
-              <span
-                key={idx}
-                className="bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full text-sm flex items-center gap-2"
-              >
-                {tag}
-                <button
-                  type="button"
-                  onClick={() => removeItem("tags", idx)}
-                  className="hover:text-red-400"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Additional Information */}
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Additional Information</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">About Project</label>
-              <textarea
-                value={formData.aboutProject || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, aboutProject: e.target.value }))}
-                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white min-h-[100px]"
-                placeholder="Information about the project..."
-              />
             </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Property Management</label>
-              <textarea
-                value={formData.propertyManagement || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, propertyManagement: e.target.value }))}
-                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white min-h-[100px]"
-                placeholder="Property management details..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Financial Returns</label>
-              <textarea
-                value={formData.financialReturns || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, financialReturns: e.target.value }))}
-                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white min-h-[100px]"
-                placeholder="Financial returns information..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">Construction Status</label>
-              <select
-                value={formData.constructionStatus || ""}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, constructionStatus: e.target.value }))
-                }
-                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
-              >
-                <option value="">Select construction status</option>
-                {CONSTRUCTION_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">EMI Options</label>
-              <Input
-                type="text"
-                value={formData.emiOptions || ""}
-                onChange={(e) => setFormData((prev) => ({ ...prev, emiOptions: e.target.value }))}
-                className="bg-gray-800 border-gray-700"
-                placeholder="EMI options details..."
-              />
-            </div>
-          </div>
-        </div>
+          </TabsContent>
 
-        {/* Options */}
-        <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
-          <h2 className="text-lg font-semibold mb-4">Options</h2>
-          <div className="space-y-3">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.featured}
-                onChange={(e) => setFormData((prev) => ({ ...prev, featured: e.target.checked }))}
-                className="w-4 h-4 rounded bg-gray-800 border-gray-700"
-              />
-              <span>Featured Property</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.active}
-                onChange={(e) => setFormData((prev) => ({ ...prev, active: e.target.checked }))}
-                className="w-4 h-4 rounded bg-gray-800 border-gray-700"
-              />
-              <span>Active</span>
-            </label>
-          </div>
-        </div>
+          <TabsContent value="location" className="space-y-6">
+            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">Location Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                   <label className="block text-sm text-gray-400 mb-1">Location Selection</label>
+                   <select
+                    value={formData.location_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, location_id: e.target.value }))}
+                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white"
+                  >
+                    <option value="">Select location</option>
+                    {locations.map((loc) => (
+                      <option key={loc._id} value={loc._id}>{loc.name || loc.city || loc._id}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="md:col-span-2 border-t border-gray-700 pt-4 mt-2">
+                  <h3 className="text-sm font-medium mb-3">Address Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <Input
+                      placeholder="Street"
+                      value={formData.specificAddress?.street || ""}
+                      onChange={(e) => setFormData(prev => ({ ...prev, specificAddress: { ...prev.specificAddress, street: e.target.value } }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                    <Input
+                      placeholder="Area/Region"
+                      value={formData.specificAddress?.area || ""}
+                      onChange={(e) => setFormData(prev => ({ ...prev, specificAddress: { ...prev.specificAddress, area: e.target.value } }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                    <Input
+                      placeholder="City"
+                      value={formData.specificAddress?.city || ""}
+                      onChange={(e) => setFormData(prev => ({ ...prev, specificAddress: { ...prev.specificAddress, city: e.target.value } }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                </div>
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-700 pt-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Latitude</label>
+                    <Input
+                      type="number" step="any"
+                      value={formData.location?.coordinates?.latitude}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        location: { ...prev.location, coordinates: { ...prev.location.coordinates, latitude: Number(e.target.value) } } 
+                      }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Longitude</label>
+                    <Input
+                      type="number" step="any"
+                      value={formData.location?.coordinates?.longitude}
+                      onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        location: { ...prev.location, coordinates: { ...prev.location.coordinates, longitude: Number(e.target.value) } } 
+                      }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="pricing" className="space-y-6">
+            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">Pricing</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Total Price (Value)</label>
+                  <Input
+                    type="number"
+                    value={formData.pricing?.total_price?.value}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      pricing: { ...prev.pricing, total_price: { ...prev.pricing.total_price, value: Number(e.target.value), display_value: `₹${e.target.value}` } } 
+                    }))}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Price Per Unit</label>
+                  <Input
+                    type="number"
+                    value={formData.pricing?.price_per_sqft?.value}
+                    onChange={(e) => setFormData(prev => ({ 
+                      ...prev, 
+                      pricing: { ...prev.pricing, price_per_sqft: { ...prev.pricing.price_per_sqft, value: Number(e.target.value) } } 
+                    }))}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                 <div>
+                  <label className="block text-sm text-gray-400 mb-1">Original Price (Before Discount)</label>
+                  <Input
+                    type="number"
+                    value={formData.pricing?.original_price}
+                    onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        pricing: { ...prev.pricing, original_price: Number(e.target.value) } 
+                    }))}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Discount %</label>
+                  <Input
+                    type="number"
+                    value={formData.pricing?.discount_percentage}
+                    onChange={(e) => setFormData(prev => ({ 
+                        ...prev, 
+                        pricing: { ...prev.pricing, discount_percentage: Number(e.target.value) } 
+                    }))}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="specs" className="space-y-6">
+             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+               <h2 className="text-lg font-semibold mb-4">Specifications</h2>
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                 <div>
+                   <label className="block text-sm text-gray-400 mb-1">Bedrooms</label>
+                   <Input type="number" 
+                    value={formData.specifications?.bedrooms || 0}
+                    onChange={(e) => setFormData(prev => ({ ...prev, specifications: { ...prev.specifications, bedrooms: Number(e.target.value) } }))}
+                    className="bg-gray-800 border-gray-700" />
+                 </div>
+                 <div>
+                   <label className="block text-sm text-gray-400 mb-1">Bathrooms</label>
+                   <Input type="number"
+                    value={formData.specifications?.bathrooms || 0}
+                    onChange={(e) => setFormData(prev => ({ ...prev, specifications: { ...prev.specifications, bathrooms: Number(e.target.value) } }))}
+                    className="bg-gray-800 border-gray-700" />
+                 </div>
+                 <div>
+                   <label className="block text-sm text-gray-400 mb-1">Parking Spaces</label>
+                   <Input type="number"
+                    value={formData.specifications?.parking_spaces || 0}
+                    onChange={(e) => setFormData(prev => ({ ...prev, specifications: { ...prev.specifications, parking_spaces: Number(e.target.value) } }))}
+                    className="bg-gray-800 border-gray-700" />
+                 </div>
+                 <div>
+                   <label className="block text-sm text-gray-400 mb-1">Carpet Area</label>
+                   <Input type="number"
+                    value={formData.spatialDetails?.area?.carpet}
+                    onChange={(e) => setFormData(prev => ({ ...prev, spatialDetails: { ...prev.spatialDetails, area: { ...prev.spatialDetails.area, carpet: Number(e.target.value) } } }))}
+                    className="bg-gray-800 border-gray-700" />
+                 </div>
+                 <div>
+                   <label className="block text-sm text-gray-400 mb-1">Built-up Area</label>
+                   <Input type="number"
+                    value={formData.spatialDetails?.area?.builtUp}
+                    onChange={(e) => setFormData(prev => ({ ...prev, spatialDetails: { ...prev.spatialDetails, area: { ...prev.spatialDetails.area, builtUp: Number(e.target.value) } } }))}
+                    className="bg-gray-800 border-gray-700" />
+                 </div>
+                 <div>
+                   <label className="block text-sm text-gray-400 mb-1">Facing</label>
+                   <Input 
+                    value={formData.spatialDetails?.facing}
+                    onChange={(e) => setFormData(prev => ({ ...prev, spatialDetails: { ...prev.spatialDetails, facing: e.target.value } }))}
+                    className="bg-gray-800 border-gray-700" />
+                 </div>
+                 <div>
+                   <label className="block text-sm text-gray-400 mb-1">Floors</label>
+                   <Input type="number"
+                    value={formData.specifications?.floors || 0}
+                    onChange={(e) => setFormData(prev => ({ ...prev, specifications: { ...prev.specifications, floors: Number(e.target.value) } }))}
+                    className="bg-gray-800 border-gray-700" />
+                 </div>
+                 <div>
+                   <label className="block text-sm text-gray-400 mb-1">Year Built</label>
+                   <Input type="number"
+                    value={formData.specifications?.year_built}
+                    onChange={(e) => setFormData(prev => ({ ...prev, specifications: { ...prev.specifications, year_built: Number(e.target.value) } }))}
+                    className="bg-gray-800 border-gray-700" />
+                 </div>
+                  <div>
+                   <label className="block text-sm text-gray-400 mb-1">Property Age (Years)</label>
+                   <Input type="number"
+                    value={formData.specifications?.property_age}
+                    onChange={(e) => setFormData(prev => ({ ...prev, specifications: { ...prev.specifications, property_age: Number(e.target.value) } }))}
+                    className="bg-gray-800 border-gray-700" />
+                 </div>
+               </div>
+             </div>
+          </TabsContent>
+
+          <TabsContent value="media" className="space-y-6">
+            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">Media Assets</h2>
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Add Image URL"
+                    value={newImage}
+                    onChange={(e) => setNewImage(e.target.value)}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                  <Button type="button" onClick={() => addItem("images", newImage)} variant="secondary">Add</Button>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                  {formData.visual_assets?.images?.map((img, idx) => (
+                    <div key={idx} className="relative group aspect-square">
+                      <img src={img.src} alt="Property" className="w-full h-full object-cover rounded border border-gray-700" />
+                      <button type="button" onClick={() => removeItem("images", idx)} className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"><X className="h-3 w-3" /></button>
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-700 pt-4">
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Thumbnail URL</label>
+                    <Input
+                      value={formData.visual_assets?.thumbnail_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, visual_assets: { ...prev.visual_assets, thumbnail_url: e.target.value } }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Main Image URL</label>
+                    <Input
+                      value={formData.visual_assets?.main_image_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, visual_assets: { ...prev.visual_assets, main_image_url: e.target.value } }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Video URL</label>
+                    <Input
+                      value={formData.visual_assets?.video_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, visual_assets: { ...prev.visual_assets, video_url: e.target.value } }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-400 mb-1">Virtual Tour URL</label>
+                    <Input
+                      value={formData.visual_assets?.virtual_tour_url}
+                      onChange={(e) => setFormData(prev => ({ ...prev, visual_assets: { ...prev.visual_assets, virtual_tour_url: e.target.value } }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="amenities" className="space-y-6">
+            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">Amenities & Features</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm text-gray-400 mb-2">Primary Amenities</label>
+                  <div className="flex gap-2 mb-3">
+                    <Input value={newAmenity} onChange={e => setNewAmenity(e.target.value)} className="bg-gray-800 border-gray-700" />
+                    <Button type="button" onClick={() => addItem("amenities", newAmenity)} variant="secondary">Add</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.amenities_summary?.primary_amenities?.map((a, i) => (
+                      <span key={i} className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded-md text-xs flex items-center gap-1">
+                        {a} <X className="h-3 w-3 cursor-pointer" onClick={() => removeItem("amenities", i)} />
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                   <label className="block text-sm text-gray-400 mb-2">Property Features</label>
+                  <div className="flex gap-2 mb-3">
+                    <Input value={newFeature} onChange={e => setNewFeature(e.target.value)} className="bg-gray-800 border-gray-700" />
+                    <Button type="button" onClick={() => addItem("features", newFeature)} variant="secondary">Add</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.features?.map((f, i) => (
+                      <span key={i} className="bg-green-500/20 text-green-400 px-2 py-1 rounded-md text-xs flex items-center gap-1">
+                        {f} <X className="h-3 w-3 cursor-pointer" onClick={() => removeItem("features", i)} />
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="project" className="space-y-6">
+            <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+              <h2 className="text-lg font-semibold mb-4">Project & Developer</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div>
+                  <label className="flex items-center gap-2 cursor-pointer mb-4">
+                    <input type="checkbox" checked={formData.project_info?.is_part_of_project} onChange={e => setFormData(prev => ({ ...prev, project_info: { ...prev.project_info, is_part_of_project: e.target.checked } }))} />
+                    <span className="text-sm font-medium">Part of a Project</span>
+                  </label>
+                </div>
+                <div />
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Project Name</label>
+                  <Input
+                    value={formData.project_info?.project_name}
+                    onChange={(e) => setFormData(prev => ({ ...prev, project_info: { ...prev.project_info, project_name: e.target.value } }))}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Project Type</label>
+                  <Input
+                    value={formData.project_info?.project_type}
+                    onChange={(e) => setFormData(prev => ({ ...prev, project_info: { ...prev.project_info, project_type: e.target.value } }))}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Project Status</label>
+                  <Input
+                    value={formData.project_info?.project_status}
+                    onChange={(e) => setFormData(prev => ({ ...prev, project_info: { ...prev.project_info, project_status: e.target.value } }))}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                   <label className="block text-sm text-gray-400 mb-1">RERA Number</label>
+                  <Input
+                    value={formData.project_info?.rarera_number}
+                    onChange={(e) => setFormData(prev => ({ ...prev, project_info: { ...prev.project_info, rarera_number: e.target.value } }))}
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div className="md:col-span-2 pt-4 border-t border-gray-700">
+                  <h3 className="text-sm font-medium mb-3">Developer Info</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Input
+                      placeholder="Developer Name"
+                      value={formData.developer?.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, developer: { ...prev.developer, name: e.target.value } }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                    <Input
+                      placeholder="Developer ID"
+                      value={formData.developer?.developer_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, developer: { ...prev.developer, developer_id: e.target.value } }))}
+                      className="bg-gray-800 border-gray-700"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="financials" className="space-y-6">
+             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+               <h2 className="text-lg font-semibold mb-4">Financial Projections</h2>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="space-y-4">
+                   <h3 className="text-sm font-medium">Capital Appreciation</h3>
+                   <div className="space-y-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={formData.capital_appreciation?.has_high_appreciation_potential} onChange={e => setFormData(prev => ({ ...prev, capital_appreciation: { ...prev.capital_appreciation, has_high_appreciation_potential: e.target.checked } }))} />
+                        <span className="text-sm">High Appreciation Potential</span>
+                      </label>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Projected Rate (%)</label>
+                        <Input type="number" value={formData.capital_appreciation?.projected_appreciation_rate} onChange={e => setFormData(prev => ({ ...prev, capital_appreciation: { ...prev.capital_appreciation, projected_appreciation_rate: Number(e.target.value) } }))} className="bg-gray-800 border-gray-700" />
+                      </div>
+                      <textarea
+                        placeholder="Appreciation Prospects"
+                        value={formData.capital_appreciation?.prospects}
+                        onChange={e => setFormData(prev => ({ ...prev, capital_appreciation: { ...prev.capital_appreciation, prospects: e.target.value } }))}
+                        className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-xs text-white"
+                      />
+                   </div>
+                 </div>
+                 <div className="space-y-4">
+                   <h3 className="text-sm font-medium">Rental Potential</h3>
+                   <div className="space-y-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={formData.rental_potential?.has_high_rental_yield} onChange={e => setFormData(prev => ({ ...prev, rental_potential: { ...prev.rental_potential, has_high_rental_yield: e.target.checked } }))} />
+                        <span className="text-sm">High Rental Yield</span>
+                      </label>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Yield Percentage (%)</label>
+                        <Input type="number" value={formData.rental_potential?.yield_percentage} onChange={e => setFormData(prev => ({ ...prev, rental_potential: { ...prev.rental_potential, yield_percentage: Number(e.target.value) } }))} className="bg-gray-800 border-gray-700" />
+                      </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+          </TabsContent>
+
+          <TabsContent value="metadata" className="space-y-6">
+             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
+               <h2 className="text-lg font-semibold mb-4">Metadata & Tags</h2>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div>
+                    <label className="block text-sm text-gray-400 mb-2">Property Tags</label>
+                    <div className="flex gap-2 mb-3">
+                      <Input value={newTag} onChange={e => setNewTag(e.target.value)} className="bg-gray-800 border-gray-700" />
+                      <Button type="button" onClick={() => addItem("tags", newTag)} variant="secondary">Add</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {formData.property_tags?.map((t, i) => (
+                        <span key={i} className="bg-purple-500/20 text-purple-400 px-2 py-1 rounded-md text-xs flex items-center gap-1">
+                          {t} <X className="h-3 w-3 cursor-pointer" onClick={() => removeItem("tags", i)} />
+                        </span>
+                      ))}
+                    </div>
+                 </div>
+                 <div>
+                    <label className="block text-sm text-gray-400 mb-2">Investment Highlights</label>
+                    {/* Simplified for now */}
+                    <p className="text-xs text-gray-500">Add key selling points for investors.</p>
+                 </div>
+                 <div className="md:col-span-2 space-y-3 pt-4 border-t border-gray-700">
+                    <h3 className="text-sm font-medium">Status & Visibility</h3>
+                    <div className="flex flex-wrap gap-6">
+                       <label className="flex items-center gap-2 cursor-pointer">
+                         <input type="checkbox" checked={formData.badges?.is_new_listing} onChange={e => setFormData(prev => ({ ...prev, badges: { ...prev.badges, is_new_listing: e.target.checked } }))} />
+                         <span className="text-sm">New Listing</span>
+                       </label>
+                       <label className="flex items-center gap-2 cursor-pointer">
+                         <input type="checkbox" checked={formData.badges?.is_pre_launch} onChange={e => setFormData(prev => ({ ...prev, badges: { ...prev.badges, is_pre_launch: e.target.checked } }))} />
+                         <span className="text-sm">Pre-Launch</span>
+                       </label>
+                    </div>
+                 </div>
+               </div>
+             </div>
+          </TabsContent>
+
+        </Tabs>
 
         {/* Submit Buttons */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-gray-800">
           <Button
             type="button"
             variant="secondary"
@@ -659,7 +695,8 @@ const CreatePropertyPage: React.FC = () => {
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+          <Button type="submit" disabled={loading} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
+            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
             {loading ? "Creating..." : "Create Property"}
           </Button>
         </div>

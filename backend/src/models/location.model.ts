@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 // Location Schema
 const locationSchema = new mongoose.Schema(
   {
+    _id: String,
     name: { type: String, required: true, index: true },
     slug: { type: String, required: true, unique: true, index: true },
     description: { type: String, required: true },
@@ -22,6 +23,15 @@ const locationSchema = new mongoose.Schema(
     featured: { type: Boolean, default: false, index: true },
     propertyCount: { type: Number, default: 0 },
     active: { type: Boolean, default: true, index: true },
+    coreLocationEntity: { type: mongoose.Schema.Types.Mixed },
+    locationMetrics: { type: mongoose.Schema.Types.Mixed },
+    tourismAndMarketData: { type: mongoose.Schema.Types.Mixed },
+    subMarkets: { type: mongoose.Schema.Types.Mixed },
+    performanceAnalytics: { type: mongoose.Schema.Types.Mixed },
+    monthlyPerformance: { type: mongoose.Schema.Types.Mixed },
+    propertyTypeDistribution: { type: mongoose.Schema.Types.Mixed },
+    investmentHighlights: { type: mongoose.Schema.Types.Mixed },
+    originalSchemaData: { type: mongoose.Schema.Types.Mixed },
   },
   {
     timestamps: true,

@@ -255,31 +255,33 @@ const PropertiesPage: React.FC = () => {
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-white truncate">{property.title}</h3>
-                  <p className="text-sm text-gray-400 mt-1">{property.description.substring(0, 60)}...</p>
-                  <p className="text-sm text-gray-500 mt-1">₹{property.price}</p>
+                  <p className="text-sm text-gray-400 mt-1">{(property.description_short || "").substring(0, 60)}...</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {property.pricing?.total_price?.display_value || (property.pricing?.total_price?.value ? `₹${property.pricing.total_price.value}` : "Price on Request")}
+                  </p>
                 </div>
                 <div className="flex flex-col gap-2 ml-2">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium shrink-0 ${getStatusColor(property.status)}`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium shrink-0 ${getStatusColor(property.project_info?.project_status || "AVAILABLE")}`}
                   >
-                    {property.status}
+                    {property.project_info?.project_status || "Available"}
                   </span>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium shrink-0 ${getTypeColor(property.propertyType)}`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium shrink-0 ${getTypeColor(property.property_type || property.propertyType)}`}
                   >
-                    {property.propertyType}
+                    {property.property_type || property.propertyType || "Type"}
                   </span>
                 </div>
               </div>
               <div className="flex justify-between items-center text-sm mb-3">
                 <div>
                   <span className="text-gray-500">Area:</span>
-                  <span className="text-gray-300 ml-1 font-medium">{property.area} sq.ft</span>
+                  <span className="text-gray-300 ml-1 font-medium">{property.spatialDetails?.area?.carpet_area_sqft || 0} sq.ft</span>
                 </div>
-                {property.bedrooms && (
+                {property.specifications?.bedrooms && (
                   <div>
                     <span className="text-gray-500">Bedrooms:</span>
-                    <span className="text-gray-300 ml-1 font-medium">{property.bedrooms}</span>
+                    <span className="text-gray-300 ml-1 font-medium">{property.specifications.bedrooms}</span>
                   </div>
                 )}
               </div>
@@ -344,25 +346,28 @@ const PropertiesPage: React.FC = () => {
                 >
                   <td className="p-3 font-medium">{property.title}</td>
                   <td className="p-3">
-                    <span className={`px-2 py-1 rounded text-xs ${getTypeColor(property.propertyType)}`}>
-                      {property.propertyType}
-                    </span>
-                  </td>
-                  <td className="p-3">₹{property.price}</td>
-                  <td className="p-3">{property.area} sq.ft</td>
-                  <td className="p-3">
-                    <span className={`px-2 py-1 rounded text-xs ${getStatusColor(property.status)}`}>
-                      {property.status}
+                    <span className={`px-2 py-1 rounded text-xs ${getTypeColor(property.property_type || property.propertyType)}`}>
+                      {property.property_type || property.propertyType || "N/A"}
                     </span>
                   </td>
                   <td className="p-3">
-                    {property.featured ? (
+                    {property.pricing?.total_price?.display_value || (property.pricing?.total_price?.value ? `₹${property.pricing.total_price.value}` : "N/A")}
+                  </td>
+                  <td className="p-3">{property.spatialDetails?.area?.carpet_area_sqft || 0} sq.ft</td>
+                  <td className="p-3">
+                    <span className={`px-2 py-1 rounded text-xs ${getStatusColor(property.project_info?.project_status || "AVAILABLE")}`}
+                    >
+                      {property.project_info?.project_status || "Available"}
+                    </span>
+                  </td>
+                  <td className="p-3">
+                    {property.badges?.is_featured ? (
                       <span className="text-yellow-400">★</span>
                     ) : (
                       <span className="text-gray-500">-</span>
                     )}
                   </td>
-                  <td className="p-3">{property.views || 0}</td>
+                  <td className="p-3">{property.engagement?.views_count || 0}</td>
                   <td className="p-3">
                     <div className="flex gap-2">
                       <Button
