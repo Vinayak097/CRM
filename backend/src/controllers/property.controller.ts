@@ -5,6 +5,9 @@ import {
   updatePropertySchema,
   queryPropertySchema,
   type Property,
+  type CreatePropertyInput,
+  type QueryPropertyInput,
+  type UpdatePropertyInput,
 } from "../schemas/property.schema.js";
 import { PropertyService } from "../services/property.service.js";
 import { AppError } from "../utils/errorHandler.js";

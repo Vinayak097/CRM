@@ -16,7 +16,19 @@ export class PropertyService {
   }
 
   async createProperty(data: CreatePropertyInput): Promise<Property> {
+    if (data.listing_id) {
+      const existing = await this.propertyRepository.findByListingId(
+        data.listing_id,
+      );
+      if (existing) {
+        throw new Error(`Property with listing ID ${data.listing_id} already exists`);
+      }
+    }
     return this.propertyRepository.create(data);
+  }
+
+  async getPropertyByListingId(listingId: string): Promise<Property | null> {
+    return this.propertyRepository.findByListingId(listingId);
   }
 
   async getPropertyById(id: string): Promise<Property | null> {

@@ -179,11 +179,27 @@ export const propertySchema = z
         viewQuality: z.string().nullable().optional(),
     }).optional().nullable(),
 
+    amenities: z.object({
+        indoor_amenities: z.array(z.string()).optional(),
+        outdoor_amenities: z.array(z.string()).optional(),
+        security_amenities: z.array(z.string()).optional(),
+        parking_amenities: z.array(z.string()).optional(),
+        other_amenities: z.array(z.string()).optional(),
+    }).optional().nullable(),
+
     amenities_summary: z.object({
         total_amenities_count: z.number().optional(),
         primary_amenities: z.array(z.string()).optional(),
         additional_amenities_count: z.number().optional(),
         primary_amenities_images: z.array(z.string()).optional(),
+    }).optional().nullable(),
+
+    features: z.object({
+        construction_quality: z.string().nullable().optional(),
+        design_features: z.array(z.string()).optional(),
+        special_features: z.array(z.string()).optional(),
+        fittings_quality: z.string().nullable().optional(),
+        window_features: z.string().nullable().optional(),
     }).optional().nullable(),
 
     // Media
