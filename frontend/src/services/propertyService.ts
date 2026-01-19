@@ -1,60 +1,7 @@
 import api from "./api";
-import type { PropertyStatus } from "../types";
+import type { Property, PropertyStatus } from "../types/property";
 
-export interface Property {
-  _id?: string;
-  title: string;
-  slug: string;
-  description: string;
-  price: string;
-  locationName?: string;
-  locationId: string;
-  propertyType: "PLOT" | "VILLA" | "APARTMENT" | "FARM_HOUSE" | "COMMERCIAL";
-  bedrooms?: number;
-  bathrooms?: number;
-  area: number;
-  floors?: number;
-  images: string[];
-  amenities: string[];
-  features: string[];
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-  status: PropertyStatus;
-  featured: boolean;
-  active: boolean;
-  unitConfiguration?: {
-    type: string;
-    size: string;
-    price: string;
-  };
-  aboutProject?: string;
-  legalApprovals?: {
-    type: string;
-    details: string;
-  };
-  registrationCosts?: {
-    stampDuty: string;
-    registration: string;
-  };
-  propertyManagement?: string;
-  financialReturns?: string;
-  investmentBenefits?: string[];
-  nearbyInfrastructure?: {
-    education: string;
-    healthcare: string;
-    shopping: string;
-    transport: string;
-  };
-  plotSize?: string;
-  constructionStatus?: string;
-  emiOptions?: string;
-  tags?: string[];
-  views?: number;
-  createdAt?: string;
-  updatedAt?: string;
-}
+export type { Property, PropertyStatus };
 
 export interface QueryPropertyParams {
   page?: number;
@@ -82,55 +29,7 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export interface CreatePropertyData {
-  title: string;
-  slug: string;
-  description: string;
-  price: string;
-  locationId: string;
-  propertyType: "PLOT" | "VILLA" | "APARTMENT" | "FARM_HOUSE" | "COMMERCIAL";
-  bedrooms?: number;
-  bathrooms?: number;
-  area: number;
-  floors?: number;
-  images: string[];
-  amenities: string[];
-  features: string[];
-  coordinates: {
-    lat: number;
-    lng: number;
-  };
-  status: PropertyStatus;
-  featured?: boolean;
-  active?: boolean;
-  unitConfiguration?: {
-    type: string;
-    size: string;
-    price: string;
-  };
-  aboutProject?: string;
-  legalApprovals?: {
-    type: string;
-    details: string;
-  };
-  registrationCosts?: {
-    stampDuty: string;
-    registration: string;
-  };
-  propertyManagement?: string;
-  financialReturns?: string;
-  investmentBenefits?: string[];
-  nearbyInfrastructure?: {
-    education: string;
-    healthcare: string;
-    shopping: string;
-    transport: string;
-  };
-  plotSize?: string;
-  constructionStatus?: string;
-  emiOptions?: string;
-  tags?: string[];
-}
+export type CreatePropertyData = Omit<Property, "_id" | "created_at" | "updated_at" | "createdAt" | "updatedAt">;
 
 export const propertyService = {
   getProperties: async (

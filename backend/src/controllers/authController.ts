@@ -14,6 +14,7 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     const user = await User.findOne({ email }).select("+password");
+    console.log("user :", user , email )
     if (!user) {
       res.status(401).json({ error: "Invalid credentials" });
       return;

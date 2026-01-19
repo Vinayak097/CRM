@@ -111,3 +111,5 @@ export const leadZodSchema = z.object({
       investmentScore: 0,
     }),
 });
+
+export type LeadInput = z.infer<typeof leadZodSchema>;

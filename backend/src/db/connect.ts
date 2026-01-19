@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 
 export const connectDB = async (): Promise<void> => {
   try {
+    
     const mongoUri =
       process.env.MONGODB_URI || "mongodb://localhost:27017/avacasa-crm";
     console.log("env file mongo url", process.env.MONGODB_URI);
