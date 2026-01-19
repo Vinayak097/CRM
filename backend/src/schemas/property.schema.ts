@@ -179,13 +179,7 @@ export const propertySchema = z
         viewQuality: z.string().nullable().optional(),
     }).optional().nullable(),
 
-    amenities: z.object({
-        indoor_amenities: z.array(z.string()).optional(),
-        outdoor_amenities: z.array(z.string()).optional(),
-        security_amenities: z.array(z.string()).optional(),
-        parking_amenities: z.array(z.string()).optional(),
-        other_amenities: z.array(z.string()).optional(),
-    }).optional().nullable(),
+    amenities: z.any().optional().nullable(),
 
     amenities_summary: z.object({
         total_amenities_count: z.number().optional(),
@@ -194,13 +188,7 @@ export const propertySchema = z
         primary_amenities_images: z.array(z.string()).optional(),
     }).optional().nullable(),
 
-    features: z.object({
-        construction_quality: z.string().nullable().optional(),
-        design_features: z.array(z.string()).optional(),
-        special_features: z.array(z.string()).optional(),
-        fittings_quality: z.string().nullable().optional(),
-        window_features: z.string().nullable().optional(),
-    }).optional().nullable(),
+    features: z.any().optional().nullable(),
 
     // Media
     visual_assets: z.object({
@@ -256,8 +244,8 @@ export const propertySchema = z
         listingId: z.string().optional(),
     }).optional().nullable(),
     
-    created_at: z.string().optional(),
-    updated_at: z.string().optional(),
+    created_at: z.string().nullable().optional(),
+    updated_at: z.string().nullable().optional(),
     published_at: z.string().nullable().optional(),
     
     // Loose/Legacy Fields (Keep but make optional)
@@ -280,12 +268,11 @@ export const propertySchema = z
     property_management: z.record(z.string(), z.any()).optional(),
     financial_metrics: z.record(z.string(), z.any()).optional(),
     lastPriceUpdate: z.any().optional(),
-    listedDate: z.string().optional(),
+    listedDate: z.string().nullable().optional(),
     
     // Remaining Original Fields (Overwritten or Merged)
     views: z.number().int().min(0).default(0),
-  })
-  .strict();
+  });
 
 // Schema for creating new property
 export const createPropertySchema = propertySchema.omit({
@@ -293,7 +280,15 @@ export const createPropertySchema = propertySchema.omit({
 });
 
 // Schema for updating property
-export const updatePropertySchema = createPropertySchema.partial();
+export const updatePropertySchema = createPropertySchema
+  .extend({
+    _id: z.any().optional(),
+    createdAt: z.any().optional(),
+    updatedAt: z.any().optional(),
+    __v: z.any().optional(),
+    views: z.any().optional(),
+  })
+  .partial();
 
 // Schema for query/filter properties
 export const queryPropertySchema = z.object({
