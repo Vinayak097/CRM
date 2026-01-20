@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, X, Loader2 } from "lucide-react";
 import { propertyService } from "../../services/propertyService";
-import { locationService } from "../../services/locationService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PropertyFormData } from "../../types/propertyFormData";
 import { getDefaultFormData } from "../../types/propertyFormData";
+import { LocationSearch } from "../../components/property/LocationSearch";
 
 const EditPropertyPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,27 +15,14 @@ const EditPropertyPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [locations, setLocations] = useState<any[]>([]);
-  
+  // No longer needed: vestigial locations state removed
   const [formData, setFormData] = useState<PropertyFormData>(getDefaultFormData());
 
   const [newImage, setNewImage] = useState("");
   const [newAmenity, setNewAmenity] = useState("");
   const [newFeature, setNewFeature] = useState("");
   const [newTag, setNewTag] = useState("");
-
-  // Fetch locations on mount
-  useEffect(() => {
-    const fetchLocations = async () => {
-      try {
-        const data = await locationService.getAllLocations();
-        setLocations(Array.isArray(data) ? data : data.data || []);
-      } catch (err) {
-        console.error("Failed to fetch locations:", err);
-      }
-    };
-    fetchLocations();
-  }, []);
+  const [newAttraction, setNewAttraction] = useState("");
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -135,6 +122,15 @@ const EditPropertyPage: React.FC = () => {
             property_tags: [...(prev.property_tags || []), value]
         }));
         setNewTag("");
+    } else if ((field as string) === "attractions") {
+        setFormData(prev => ({
+            ...prev,
+            location_details: {
+                ...prev.location_details,
+                nearby_attractions: [...(prev.location_details.nearby_attractions || []), value]
+            }
+        }));
+        setNewAttraction("");
     }
   };
 
@@ -164,6 +160,14 @@ const EditPropertyPage: React.FC = () => {
         setFormData(prev => ({
             ...prev,
             property_tags: prev.property_tags.filter((_, i) => i !== index)
+        }));
+    } else if ((field as string) === "attractions") {
+        setFormData(prev => ({
+            ...prev,
+            location_details: {
+                ...prev.location_details,
+                nearby_attractions: prev.location_details.nearby_attractions.filter((_, i) => i !== index)
+            }
         }));
     }
   };
@@ -321,18 +325,13 @@ const EditPropertyPage: React.FC = () => {
             <div className="bg-gray-900 border border-gray-700 rounded-lg p-6">
               <h2 className="text-lg font-semibold mb-4">Location Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                 <div>
                    <label className="block text-sm text-gray-400 mb-1">Location Selection</label>
-                   <select
+                   <LocationSearch 
                     value={formData.location_id}
-                    onChange={(e) => setFormData(prev => ({ ...prev, location_id: e.target.value }))}
-                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white"
-                  >
-                    <option value="">Select location</option>
-                    {locations.map((loc) => (
-                      <option key={loc._id} value={loc._id}>{loc.name || loc.city || loc._id}</option>
-                    ))}
-                  </select>
+                    onSelect={(id) => setFormData(prev => ({ ...prev, location_id: id }))}
+                    placeholder="Search for a location (e.g. Nachinola, Vagator...)"
+                   />
                 </div>
                 <div className="md:col-span-2 border-t border-gray-700 pt-4 mt-2">
                   <h3 className="text-sm font-medium mb-3">Address Information</h3>
@@ -365,7 +364,7 @@ const EditPropertyPage: React.FC = () => {
                       value={formData.location?.coordinates?.latitude}
                       onChange={(e) => setFormData(prev => ({ 
                         ...prev, 
-                        location: { ...prev.location, coordinates: { ...prev.location.coordinates, latitude: Number(e.target.value) } } 
+                        location: { ...prev.location, coordinates: { ...prev.location?.coordinates, latitude: Number(e.target.value) } } 
                       }))}
                       className="bg-gray-800 border-gray-700"
                     />
@@ -377,7 +376,7 @@ const EditPropertyPage: React.FC = () => {
                       value={formData.location?.coordinates?.longitude}
                       onChange={(e) => setFormData(prev => ({ 
                         ...prev, 
-                        location: { ...prev.location, coordinates: { ...prev.location.coordinates, longitude: Number(e.target.value) } } 
+                        location: { ...prev.location, coordinates: { ...prev.location?.coordinates, longitude: Number(e.target.value) } } 
                       }))}
                       className="bg-gray-800 border-gray-700"
                     />

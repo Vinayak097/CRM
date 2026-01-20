@@ -17,6 +17,8 @@ import { Role } from "./models/User.js";
 import propertyRoutes from "./routes/property.routes.js";
 import { errorHandler } from "./utils/errorHandler.js";
 import locationRoutes from "./routes/location.routes.js";
+import developerRoutes from "./routes/developer.routes.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app: Express = express();
@@ -67,6 +69,8 @@ app.use(
 app.use("/api/users", userRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/locations", locationRoutes);
+app.use("/api/developers", developerRoutes);
+
 // Health check
 app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "OK" });

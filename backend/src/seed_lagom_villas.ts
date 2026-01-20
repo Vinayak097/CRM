@@ -312,7 +312,7 @@ async function seed() {
             status: "AVAILABLE",
             locationId: lagomVillasData.location_id,
             amenities: lagomVillasData.amenities.other_amenities,
-            images: lagomVillasData.visual_assets.images.map(img => img.src),
+            images: lagomVillasData.visual_assets.images.map((img: any) => img.src),
         };
 
         const existingProp = await mongoose.model("Property").findOne({ listing_id: lagomVillasData.listing_id });

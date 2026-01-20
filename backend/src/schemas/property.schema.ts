@@ -257,7 +257,11 @@ export const propertySchema = z
     furnishing: z.record(z.string(), z.any()).optional(),
     inUnitFeatures: z.record(z.string(), z.any()).optional(),
     legal_info: z.record(z.string(), z.any()).optional(),
-    location_details: z.record(z.string(), z.any()).optional(),
+    location_details: z.object({
+        highways: z.string().nullable().optional(),
+        major_markets: z.string().nullable().optional(),
+        nearby_attractions: z.any().nullable().optional(),
+    }).optional().nullable(),
     luxuryAmenities: z.record(z.string(), z.any()).optional(),
     marketMetrics: z.record(z.string(), z.any()).optional(),
     microLocationPremium: z.any().optional(),

@@ -175,7 +175,11 @@ export interface PropertyFormData {
   furnishing: any;
   inUnitFeatures: any;
   legal_info: any;
-  location_details: any;
+  location_details: {
+    highways: string;
+    major_markets: string;
+    nearby_attractions: string[];
+  };
   luxuryAmenities: any;
   marketMetrics: any;
   microLocationPremium: any;
@@ -346,7 +350,11 @@ export const getDefaultFormData = (): PropertyFormData => ({
   furnishing: {},
   inUnitFeatures: {},
   legal_info: {},
-  location_details: {},
+  location_details: {
+    highways: "",
+    major_markets: "",
+    nearby_attractions: [],
+  },
   luxuryAmenities: {},
   marketMetrics: {},
   microLocationPremium: {},

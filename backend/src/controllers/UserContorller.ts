@@ -109,6 +109,7 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
     }
 
     const users = await User.find(filter)
+    console.log("users " , users)
       .select("-password")
       .sort({ createdAt: -1 })
       .skip(skip)

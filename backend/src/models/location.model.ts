@@ -6,7 +6,6 @@ const locationSchema = new mongoose.Schema(
   {
     _id: String,
     name: { type: String, required: true, index: true },
-    slug: { type: String, required: true, unique: true, index: true },
     description: { type: String, required: true },
     image: { type: String },
     coordinates: {
@@ -23,15 +22,6 @@ const locationSchema = new mongoose.Schema(
     featured: { type: Boolean, default: false, index: true },
     propertyCount: { type: Number, default: 0 },
     active: { type: Boolean, default: true, index: true },
-    coreLocationEntity: { type: mongoose.Schema.Types.Mixed },
-    locationMetrics: { type: mongoose.Schema.Types.Mixed },
-    tourismAndMarketData: { type: mongoose.Schema.Types.Mixed },
-    subMarkets: { type: mongoose.Schema.Types.Mixed },
-    performanceAnalytics: { type: mongoose.Schema.Types.Mixed },
-    monthlyPerformance: { type: mongoose.Schema.Types.Mixed },
-    propertyTypeDistribution: { type: mongoose.Schema.Types.Mixed },
-    investmentHighlights: { type: mongoose.Schema.Types.Mixed },
-    originalSchemaData: { type: mongoose.Schema.Types.Mixed },
   },
   {
     timestamps: true,
@@ -45,7 +35,6 @@ export const LocationModel = mongoose.model("Location", locationSchema);
 export interface Location {
   _id?: string;
   name: string;
-  slug: string;
   description: string;
   image?: string;
   coordinates: {
@@ -64,9 +53,9 @@ export interface Location {
   updatedAt?: Date;
 }
 
+
 export interface CreateLocationInput {
   name: string;
-  slug: string;
   description: string;
   image?: string;
   coordinates: {
@@ -81,6 +70,7 @@ export interface CreateLocationInput {
   featured?: boolean;
   active?: boolean;
 }
+
 
 export interface UpdateLocationInput extends Partial<CreateLocationInput> {}
 
@@ -106,11 +96,7 @@ export class LocationRepository {
     return location ? this.toDomain(location) : null;
   }
 
-  // Find location by slug
-  async findBySlug(slug: string): Promise<Location | null> {
-    const location = await LocationModel.findOne({ slug });
-    return location ? this.toDomain(location) : null;
-  }
+
 
   // Find locations with filters
   async find(
@@ -228,7 +214,6 @@ export class LocationRepository {
     return {
       _id: doc._id?.toString(),
       name: doc.name,
-      slug: doc.slug,
       description: doc.description,
       image: doc.image,
       coordinates: doc.coordinates,
@@ -241,4 +226,5 @@ export class LocationRepository {
       updatedAt: doc.updatedAt,
     };
   }
+
 }
