@@ -6,6 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getDefaultFormData, type PropertyFormData } from "../../types/propertyFormData";
 
+import { developerService } from "../../services/developerService";
+import type { Developer } from "../../types/developer";
+
 interface PropertyFormProps {
     initialData?: Partial<PropertyFormData>;
     onSubmit: (data: PropertyFormData) => Promise<void>;
@@ -29,6 +32,24 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
     }));
 
     const [validationError, setValidationError] = useState<string | null>(null);
+
+    const [developers, setDevelopers] = useState<Developer[]>([]);
+
+    useEffect(() => {
+        const loadDevelopers = async () => {
+            try {
+                const data = await developerService.getAll({ active: true });
+                if (Array.isArray(data)) {
+                    setDevelopers(data);
+                } else if (data && Array.isArray(data.data)) {
+                    setDevelopers(data.data);
+                }
+            } catch (err) {
+                console.error("Failed to load developers", err);
+            }
+        };
+        loadDevelopers();
+    }, []);
 
     // Update formData when initialData changes (important for Edit page fetching logic)
     useEffect(() => {
@@ -771,18 +792,44 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                                 <div className="md:col-span-2 pt-4 border-t border-gray-700">
                                     <h3 className="text-sm font-medium mb-3">Developer Info</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <Input
-                                            placeholder="Developer Name"
-                                            value={formData.developer?.name}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, developer: { ...prev.developer, name: e.target.value } }))}
-                                            className="bg-gray-800 border-gray-700"
-                                        />
-                                        <Input
-                                            placeholder="Developer ID"
-                                            value={formData.developer?.developer_id}
-                                            onChange={(e) => setFormData(prev => ({ ...prev, developer: { ...prev.developer, developer_id: e.target.value } }))}
-                                            className="bg-gray-800 border-gray-700"
-                                        />
+                                        <div className="md:col-span-2">
+                                            <label className="block text-sm text-gray-400 mb-1">Select Developer</label>
+                                            <select
+                                                value={formData.developer?.developer_id || ""}
+                                                onChange={(e) => {
+                                                    const selectedDev = developers.find(d => (d.id || d._id) === e.target.value);
+                                                    if (selectedDev) {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            developer: {
+                                                                ...prev.developer,
+                                                                name: selectedDev.developer_name,
+                                                                developer_id: selectedDev.id || selectedDev._id
+                                                            }
+                                                        }));
+                                                    } else {
+                                                        if (e.target.value === "") {
+                                                            setFormData(prev => ({ ...prev, developer: { name: "", developer_id: "" } }));
+                                                        }
+                                                    }
+                                                }}
+                                                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white"
+                                            >
+                                                <option value="">-- Choose Developer --</option>
+                                                {developers.map(dev => (
+                                                    <option key={dev._id || dev.id} value={dev.id || dev._id}>
+                                                        {dev.developer_name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {/* Display selected info */}
+                                        {formData.developer?.name && (
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                Selected: {formData.developer.name} (ID: {formData.developer.developer_id})
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
