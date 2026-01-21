@@ -5,7 +5,7 @@ export interface Property {
   subtitle?: string;
   description_short?: string;
   description_full?: string;
-  
+
   listing_type?: string;
   property_type?: string; // "Managed Farmland" etc.
   propertyType?: string; // Legacy enum value if needed
@@ -55,6 +55,8 @@ export interface Property {
       value?: number | string;
       display_value?: string;
     };
+    original_price?: number;
+    discount_percentage?: number;
   };
 
   specifications?: {
@@ -63,7 +65,7 @@ export interface Property {
     parking_spaces?: number;
     floors?: number;
   };
-  
+
   spatialDetails?: {
     area?: {
       carpet_area_sqft?: number;
@@ -76,7 +78,7 @@ export interface Property {
     total_amenities_count?: number;
     primary_amenities?: string[];
   };
-  
+
   visual_assets?: {
     images?: Array<{
       src: string;
@@ -91,7 +93,7 @@ export interface Property {
 
   badges?: {
     is_featured?: boolean;
-    is_new_listing?: boolean; 
+    is_new_listing?: boolean;
     is_premium?: boolean;
     is_verified?: boolean;
   };
@@ -102,7 +104,7 @@ export interface Property {
   };
 
   property_tags?: string[];
-  
+
   // Legacy fields (kept for backward compatibility if needed)
   price?: string;
   images?: string[];
@@ -112,7 +114,7 @@ export interface Property {
     lat: number;
     lng: number;
   };
-  
+
   created_at?: string;
   updated_at?: string;
   createdAt?: string;

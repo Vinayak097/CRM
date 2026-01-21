@@ -18,6 +18,9 @@ interface PropertyFormProps {
     onCancel: () => void;
 }
 
+const CURRENCIES = ["INR", "USD", "EUR", "GBP", "AED"];
+const AREA_UNITS = ["sqft", "sqm", "sqyd", "acre", "hectare"];
+
 export const PropertyForm: React.FC<PropertyFormProps> = ({
     initialData,
     onSubmit,
@@ -387,28 +390,73 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                             <h2 className="text-lg font-semibold mb-4">Pricing</h2>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Total Price (Value)</label>
-                                    <Input
-                                        type="number"
-                                        value={formData.pricing?.total_price?.value}
-                                        onChange={(e) => setFormData(prev => ({
-                                            ...prev,
-                                            pricing: { ...prev.pricing, total_price: { ...prev.pricing.total_price, value: Number(e.target.value), display_value: `₹${e.target.value}` } }
-                                        }))}
-                                        className="bg-gray-800 border-gray-700"
-                                    />
+                                    <div className="flex gap-2">
+                                        <div className="w-[100px] shrink-0">
+                                            <label className="block text-sm text-gray-400 mb-1">Currency</label>
+                                            <select
+                                                value={formData.pricing?.total_price?.currency}
+                                                onChange={(e) => setFormData(prev => ({
+                                                    ...prev,
+                                                    pricing: {
+                                                        ...prev.pricing,
+                                                        total_price: { ...prev.pricing.total_price, currency: e.target.value },
+                                                        price_per_sqft: { ...prev.pricing.price_per_sqft, currency: e.target.value }
+                                                    }
+                                                }))}
+                                                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white"
+                                            >
+                                                {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="block text-sm text-gray-400 mb-1">Total Price (Value)</label>
+                                            <Input
+                                                type="number"
+                                                value={formData.pricing?.total_price?.value}
+                                                onChange={(e) => setFormData(prev => ({
+                                                    ...prev,
+                                                    pricing: { ...prev.pricing, total_price: { ...prev.pricing.total_price, value: Number(e.target.value), display_value: `₹${e.target.value}` } }
+                                                }))}
+                                                className="bg-gray-800 border-gray-700"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Price Per Unit</label>
-                                    <Input
-                                        type="number"
-                                        value={formData.pricing?.price_per_sqft?.value}
-                                        onChange={(e) => setFormData(prev => ({
-                                            ...prev,
-                                            pricing: { ...prev.pricing, price_per_sqft: { ...prev.pricing.price_per_sqft, value: Number(e.target.value) } }
-                                        }))}
-                                        className="bg-gray-800 border-gray-700"
-                                    />
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <label className="block text-sm text-gray-400 mb-1">Price Per Unit</label>
+                                            <Input
+                                                type="number"
+                                                value={formData.pricing?.price_per_sqft?.value}
+                                                onChange={(e) => setFormData(prev => ({
+                                                    ...prev,
+                                                    pricing: { ...prev.pricing, price_per_sqft: { ...prev.pricing.price_per_sqft, value: Number(e.target.value) } }
+                                                }))}
+                                                className="bg-gray-800 border-gray-700"
+                                            />
+                                        </div>
+                                        <div className="w-[100px] shrink-0">
+                                            <label className="block text-sm text-gray-400 mb-1">Unit</label>
+                                            <select
+                                                value={formData.pricing?.price_per_sqft?.unit || "sqft"}
+                                                onChange={(e) => setFormData(prev => ({
+                                                    ...prev,
+                                                    pricing: {
+                                                        ...prev.pricing,
+                                                        price_per_sqft: { ...prev.pricing.price_per_sqft, unit: e.target.value }
+                                                    },
+                                                    spatialDetails: {
+                                                        ...prev.spatialDetails,
+                                                        area: { ...prev.spatialDetails.area, unit: e.target.value }
+                                                    }
+                                                }))}
+                                                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white"
+                                            >
+                                                {AREA_UNITS.map(u => <option key={u} value={u}>/{u}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-1">Original Price (Before Discount)</label>
@@ -471,11 +519,35 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                                         className="bg-gray-800 border-gray-700" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Built-up Area</label>
-                                    <Input type="number"
-                                        value={formData.spatialDetails?.area?.builtUp}
-                                        onChange={(e) => setFormData(prev => ({ ...prev, spatialDetails: { ...prev.spatialDetails, area: { ...prev.spatialDetails.area, builtUp: Number(e.target.value) } } }))}
-                                        className="bg-gray-800 border-gray-700" />
+                                    <div className="flex gap-2">
+                                        <div className="flex-1">
+                                            <label className="block text-sm text-gray-400 mb-1">Built-up Area</label>
+                                            <Input type="number"
+                                                value={formData.spatialDetails?.area?.builtUp}
+                                                onChange={(e) => setFormData(prev => ({ ...prev, spatialDetails: { ...prev.spatialDetails, area: { ...prev.spatialDetails.area, builtUp: Number(e.target.value) } } }))}
+                                                className="bg-gray-800 border-gray-700" />
+                                        </div>
+                                        <div className="w-[100px] shrink-0">
+                                            <label className="block text-sm text-gray-400 mb-1">Unit</label>
+                                            <select
+                                                value={formData.spatialDetails?.area?.unit || "sqft"}
+                                                onChange={(e) => setFormData(prev => ({
+                                                    ...prev,
+                                                    spatialDetails: {
+                                                        ...prev.spatialDetails,
+                                                        area: { ...prev.spatialDetails.area, unit: e.target.value }
+                                                    },
+                                                    pricing: {
+                                                        ...prev.pricing,
+                                                        price_per_sqft: { ...prev.pricing.price_per_sqft, unit: e.target.value }
+                                                    }
+                                                }))}
+                                                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white"
+                                            >
+                                                {AREA_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm text-gray-400 mb-1">Facing</label>
@@ -804,7 +876,8 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                                                             developer: {
                                                                 ...prev.developer,
                                                                 name: selectedDev.developer_name,
-                                                                developer_id: selectedDev.id || selectedDev._id
+                                                                developer_id: selectedDev.id || selectedDev._id,
+                                                                logo: selectedDev.developer_logo_url || ""
                                                             }
                                                         }));
                                                     } else {
