@@ -7,11 +7,11 @@ export interface PropertyFormData {
   listing_type: string;
   property_type: string;
   status: string;
-  
+
   // Descriptions
   description_short: string;
   description_long: string;
-  
+
   // Location
   location_id: string;
   specificAddress: {
@@ -35,7 +35,7 @@ export interface PropertyFormData {
       longitude: number;
     };
   };
-  
+
   // Project & Developer
   project_info: {
     is_part_of_project: boolean;
@@ -52,7 +52,7 @@ export interface PropertyFormData {
     name: string;
     logo: string;
   };
-  
+
   // Pricing
   pricing: {
     total_price: {
@@ -71,7 +71,7 @@ export interface PropertyFormData {
     original_price: number;
     discount_percentage: number;
   };
-  
+
   // Specifications
   specifications: {
     bedrooms: number;
@@ -82,7 +82,7 @@ export interface PropertyFormData {
     year_built: number;
     floors: number;
   };
-  
+
   // Spatial Details
   spatialDetails: {
     bedrooms: number;
@@ -99,7 +99,7 @@ export interface PropertyFormData {
     layoutType: string;
     viewQuality: string;
   };
-  
+
   // Amenities
   amenities_summary: {
     total_amenities_count: number;
@@ -107,7 +107,7 @@ export interface PropertyFormData {
     additional_amenities_count: number;
     primary_amenities_images: string[];
   };
-  
+
   // Visual Assets
   visual_assets: {
     images: Array<{
@@ -122,7 +122,7 @@ export interface PropertyFormData {
     video_url: string;
     virtual_tour_url: string;
   };
-  
+
   // Badges
   badges: {
     is_featured: boolean;
@@ -131,7 +131,7 @@ export interface PropertyFormData {
     is_premium: boolean;
     is_verified: boolean;
   };
-  
+
   // Engagement
   engagement: {
     views_count: number;
@@ -140,12 +140,12 @@ export interface PropertyFormData {
     share_count: number;
     last_viewed_at: string;
   };
-  
+
   // Tags & Features
   property_tags: string[];
   features: string[];
   investment_highlights: string[];
-  
+
   // Financial
   capital_appreciation: {
     has_high_appreciation_potential: boolean;
@@ -160,13 +160,13 @@ export interface PropertyFormData {
   property_management: any;
   financial_benefits: any;
   financial_metrics: any;
-  
+
   // Listing Details
   listingDetails: {
     listedBy: string;
     listingId: string;
   };
-  
+
   // Complex/JSON Fields
   accessibility: any;
   age: any;
@@ -187,7 +187,7 @@ export interface PropertyFormData {
   possession: any;
   rental_info: any;
   specialConsiderations: any;
-  
+
   // Dates
   listedDate: string;
   published_at: string;
@@ -202,10 +202,10 @@ export const getDefaultFormData = (): PropertyFormData => ({
   listing_type: "SALE",
   property_type: "APARTMENT",
   status: "AVAILABLE",
-  
+
   description_short: "",
   description_long: "",
-  
+
   location_id: "",
   specificAddress: {
     street: "",
@@ -228,7 +228,7 @@ export const getDefaultFormData = (): PropertyFormData => ({
       longitude: 0,
     },
   },
-  
+
   project_info: {
     is_part_of_project: false,
     project_id: "",
@@ -244,7 +244,7 @@ export const getDefaultFormData = (): PropertyFormData => ({
     name: "",
     logo: "",
   },
-  
+
   pricing: {
     total_price: {
       value: 0,
@@ -262,7 +262,7 @@ export const getDefaultFormData = (): PropertyFormData => ({
     original_price: 0,
     discount_percentage: 0,
   },
-  
+
   specifications: {
     bedrooms: 0,
     bathrooms: 0,
@@ -272,7 +272,7 @@ export const getDefaultFormData = (): PropertyFormData => ({
     year_built: new Date().getFullYear(),
     floors: 1,
   },
-  
+
   spatialDetails: {
     bedrooms: 0,
     bathrooms: 0,
@@ -288,14 +288,14 @@ export const getDefaultFormData = (): PropertyFormData => ({
     layoutType: "",
     viewQuality: "",
   },
-  
+
   amenities_summary: {
     total_amenities_count: 0,
     primary_amenities: [],
     additional_amenities_count: 0,
     primary_amenities_images: [],
   },
-  
+
   visual_assets: {
     images: [],
     main_image_url: "",
@@ -303,7 +303,7 @@ export const getDefaultFormData = (): PropertyFormData => ({
     video_url: "",
     virtual_tour_url: "",
   },
-  
+
   badges: {
     is_featured: false,
     is_new_listing: false,
@@ -311,7 +311,7 @@ export const getDefaultFormData = (): PropertyFormData => ({
     is_premium: false,
     is_verified: false,
   },
-  
+
   engagement: {
     views_count: 0,
     views_this_week: 0,
@@ -319,11 +319,11 @@ export const getDefaultFormData = (): PropertyFormData => ({
     share_count: 0,
     last_viewed_at: "",
   },
-  
+
   property_tags: [],
   features: [],
   investment_highlights: [],
-  
+
   capital_appreciation: {
     has_high_appreciation_potential: false,
     projected_appreciation_rate: 0,
@@ -337,12 +337,12 @@ export const getDefaultFormData = (): PropertyFormData => ({
   property_management: {},
   financial_benefits: {},
   financial_metrics: {},
-  
+
   listingDetails: {
     listedBy: "",
     listingId: "",
   },
-  
+
   accessibility: {},
   age: {},
   calculator_data: {},
@@ -362,7 +362,7 @@ export const getDefaultFormData = (): PropertyFormData => ({
   possession: {},
   rental_info: {},
   specialConsiderations: {},
-  
+
   listedDate: "",
   published_at: "",
   lastPriceUpdate: {},
