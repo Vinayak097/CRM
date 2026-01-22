@@ -75,9 +75,7 @@ async function seed() {
           buyingCountryFocus: "India",
           targetStatesRegions: ["Karnataka", "Tamil Nadu"],
           targetLocations: ["Bangalore", "Mysore", "Coorg"],
-          preferredClimate: ["Cool / Pleasant year-round"],
           locationPriorities: ["Easy flight access", "Good road connectivity"],
-          areaTypePreference: ["Suburban", "Semi-rural / Countryside"],
         },
         property: {
           assetTypeInterest: ["Villa / Independent house", "Farmhouse"],
@@ -124,7 +122,6 @@ async function seed() {
           buyingCountryFocus: "India",
           targetStatesRegions: ["Karnataka"],
           targetLocations: ["Bangalore"],
-          areaTypePreference: ["Urban city center", "Suburban"],
         },
         property: {
           assetTypeInterest: ["Apartment / Flat"],
@@ -165,10 +162,7 @@ async function seed() {
           buyingCountryFocus: "India",
           targetStatesRegions: ["Karnataka", "Goa", "Kerala"],
           targetLocations: ["Coorg", "Goa", "Wayanad"],
-          climateRiskAvoidance: ["Flooding / Waterlogging", "Extreme heat"],
-          preferredClimate: ["Cool / Pleasant year-round", "Coastal / Humid"],
           locationPriorities: ["Scenic Beauty", "Privacy"],
-          areaTypePreference: ["Semi-rural / Countryside", "Hill station / Mountains"],
           naturalFeatureClosest: ["Mountain view", "Forest / Jungle", "Lake view / Lakefront"],
         },
         property: {

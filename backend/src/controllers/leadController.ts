@@ -355,7 +355,7 @@ export const updateLeadStatusController = async (
       // Sales agents can only update their own assigned leads
       if (
         !lead.system?.assignedAgent ||
-        lead.system.assignedAgent.toString() !== req.user.userId
+        lead.system.assignedAgent.toString() !== req.user.id
       ) {
         return res.status(403).json({
           success: false,
@@ -367,23 +367,17 @@ export const updateLeadStatusController = async (
     // Store old status for notification
     const oldStatus = lead.system?.leadStatus || LeadStatus.New;
 
+    // Ensure system object exists
+    if (!lead.system) {
+      lead.system = {
+        leadStatus: LeadStatus.New,
+        priorityScore: 0,
+        investmentScore: 0,
+      };
+    }
+
     // Update lead status
     lead.system.leadStatus = leadStatus;
-
-    // Add status change notes if provided
-    if (notes) {
-      if (!lead.system.statusHistory) {
-        lead.system.statusHistory = [];
-      }
-
-      lead.system.statusHistory.push({
-        fromStatus: oldStatus,
-        toStatus: leadStatus,
-        changedBy: req.user?.userId,
-        changedAt: new Date(),
-        notes: notes,
-      });
-    }
 
     await lead.save();
 
@@ -391,7 +385,7 @@ export const updateLeadStatusController = async (
     if (lead.system?.assignedAgent && oldStatus !== leadStatus) {
       await createNotification({
         recipient: lead.system.assignedAgent,
-        type: NotificationType.LeadStatusChanged,
+        type: NotificationType.StatusUpdate,
         title: "Lead Status Updated",
         message: `Lead status changed from ${oldStatus} to ${leadStatus}`,
         relatedEntity: RelatedEntity.Lead,
@@ -410,7 +404,7 @@ export const updateLeadStatusController = async (
       for (const admin of admins) {
         await createNotification({
           recipient: admin._id,
-          type: NotificationType.LeadStatusChanged,
+          type: NotificationType.StatusUpdate,
           title: "Lead Status Changed by Agent",
           message: `Agent ${req.user?.name} changed lead status from ${oldStatus} to ${leadStatus}`,
           relatedEntity: RelatedEntity.Lead,

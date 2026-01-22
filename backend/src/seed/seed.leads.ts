@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 
 import { LeadStatus } from "../types/lead.types.js";
-import { Lead } from "@/models/Lead.js";
+import Lead from "@/models/Lead.js";
 import { connectDB } from "@/db/connect.js";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";

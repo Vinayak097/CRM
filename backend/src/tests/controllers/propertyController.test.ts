@@ -61,13 +61,14 @@ describe('Property Controller Tests', () => {
     it('should retrieve property by ID and increment views', async () => {
       const property = await PropertyModel.create(createTestPropertyData());
 
-      const response = await request(app).get(`/api/properties/${property._id}`);
+      const propertyId = (property as any)._id?.toString();
+      const response = await request(app).get(`/api/properties/${propertyId}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.data._id).toBe(property._id.toString());
+      expect(response.body.data._id || response.body.data.id).toBe(propertyId);
       
       // Check views increment (might need a short delay or check DB directly)
-      const after = await PropertyModel.findById(property._id);
+      const after = await PropertyModel.findById(propertyId);
       expect(after?.analytics?.views).toBeGreaterThan(0);
     });
 

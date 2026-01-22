@@ -83,21 +83,20 @@ async function seed() {
         console.log("Seeding Locations...");
         for (const locData of rawLocations) {
              try {
-                const exist = await LocationModel.findOne({ slug: locData.slug });
+                const exist = await LocationModel.findById(locData._id);
                 if (!exist) {
-                     await LocationModel.create({
+                     const location = new LocationModel({
                          _id: locData._id,
                          name: locData["CORE LOCATION ENTITY"].name,
-                         slug: locData.slug,
                          description: locData["LOCATION METRICS"].description,
                          coordinates: {
                              lat: locData["CORE LOCATION ENTITY"].coordinates.latitude,
                              lng: locData["CORE LOCATION ENTITY"].coordinates.longitude
                          },
-                         coreLocationEntity: locData["CORE LOCATION ENTITY"],
-                         locationMetrics: locData["LOCATION METRICS"],
+                         highlights: locData["LOCATION METRICS"].highlights || [],
                          active: true
                      });
+                     await location.save();
                      console.log(`Created location: ${locData["CORE LOCATION ENTITY"].name}`);
                 } else {
                      console.log(`Location ${locData["CORE LOCATION ENTITY"].name} exists`);

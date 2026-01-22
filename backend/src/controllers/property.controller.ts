@@ -90,6 +90,9 @@ export class PropertyController {
   updateProperty = async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
+      if (!id) {
+        throw new AppError("Property ID is required", 400);
+      }
       const updatedProperty = await this.propertyService.updateProperty(
         id,
         req.body as unknown as UpdatePropertyInput,
