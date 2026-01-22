@@ -60,6 +60,8 @@ console.log('Cookie settings:', {
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
 });
 
+app.set("trust proxy", 1);
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your_session_secret",
