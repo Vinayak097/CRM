@@ -1,17 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import "express-session";
 import { Role } from "../models/User.js";
-
-declare module "express-session" {
-  interface SessionData {
-    userId?: string;
-    userEmail?: string;
-    userRole?: string;
-    userName?: string;
-  }
-}
-
 export interface AuthUser {
   id: string;
   email: string;
@@ -28,42 +17,34 @@ export const authenticateToken = (
   res: Response,
   next: NextFunction
 ): void => {
-    // 1. Check for session
-    if (req.session?.userId) {
+  let token = req.cookies?.token;
+
+  // Check for Bearer token if no cookie
+  const authHeader = req.headers.authorization;
+  if (!token && authHeader?.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+  }
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || "your_jwt_secret_key_change_this"
+      ) as any;
+
       req.user = {
-        id: req.session.userId,
-        email: req.session.userEmail!,
-        role: req.session.userRole as Role,
-        name: req.session.userName,
+        id: decoded.id || decoded.userId,
+        email: decoded.email || decoded.userEmail,
+        role: (decoded.role || decoded.userRole) as Role,
+        name: decoded.name || decoded.userName,
       };
       return next();
+    } catch (err) {
+      // Token invalid
     }
+  }
 
-    // 2. Check for Bearer token
-    const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.split(" ")[1];
-      if (token) {
-        try {
-          const decoded = jwt.verify(
-            token,
-            process.env.JWT_SECRET || "your_jwt_secret_key_change_this"
-          ) as any;
-          
-          req.user = {
-            id: decoded.id || decoded.userId,
-            email: decoded.email || decoded.userEmail,
-            role: (decoded.role || decoded.userRole) as Role,
-            name: decoded.name || decoded.userName,
-          };
-          return next();
-        } catch (err) {
-          // Token invalid, fall through to 401
-        }
-      }
-    }
-
-    res.status(401).json({ error: "Not authenticated" });
+  res.status(401).json({ error: "Not authenticated" });
 };
 
 export const requireRole = (allowedRoles: Role[]) => {

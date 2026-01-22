@@ -3,7 +3,7 @@ import express from "express";
 import type { Express, Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import session from "express-session";
+
 import { connectDB } from "./db/connect.js";
 import authRoutes from "./routes/auth.js";
 import leadRoutes from "./routes/leadRoutes.js";
@@ -53,28 +53,7 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
-// Debug: Log session configuration
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('Cookie settings:', {
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
-});
-
-app.set("trust proxy", 1);
-
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "your_session_secret",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    },
-  }),
-);
+// Session middleware removed for stateless JWT authentication
 
 // Debug middleware
 app.use((req, res, next) => {

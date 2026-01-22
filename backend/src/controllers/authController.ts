@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import type { AuthRequest } from "../middlewares/auth.js";
 
 export const login = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -14,7 +15,7 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
     }
 
     const user = await User.findOne({ email }).select("+password");
-    console.log("user :", user , email )
+    console.log("user :", user, email)
     if (!user) {
       res.status(401).json({ error: "Invalid credentials" });
       return;
@@ -26,10 +27,24 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
     //   return;
     // }
 
-    req.session.userId = user._id.toString();
-    req.session.userEmail = user.email;
-    req.session.userRole = user.role;
-    req.session.userName = user.name;
+    const token = jwt.sign(
+      {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+      },
+      process.env.JWT_SECRET || "your_jwt_secret_key_change_this",
+      { expiresIn: "24h" }
+    );
+
+    // Set token in HTTP-only cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    });
 
     user.lastLogin = new Date();
     await user.save();
@@ -88,19 +103,12 @@ export const logout = async (
   res: Response,
 ): Promise<void> => {
   try {
-    if (!req.session) {
-      res.json({ message: "Logout successful" });
-      return;
-    }
-
-    req.session.destroy((err) => {
-      if (err) {
-        res.status(500).json({ error: "Logout failed" });
-        return;
-      }
-      res.clearCookie("connect.sid");
-      res.json({ message: "Logout successful" });
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     });
+    res.json({ message: "Logout successful" });
   } catch (error) {
     console.error("Logout Error:", error);
     res.status(500).json({
@@ -114,9 +122,31 @@ export const verifySess = async (
   res: Response,
 ): Promise<void> => {
   try {
+    // Check if user is attached to request (done by middleware verifying JWT)
     if (!req.user) {
-      res.status(401).json({ error: "No active session" });
-      return;
+      // Try to re-verify token from cookie if not already attached
+      const token = req.cookies?.token;
+      if (!token) {
+        res.status(401).json({ error: "No active session" });
+        return;
+      }
+
+      try {
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET || "your_jwt_secret_key_change_this"
+        ) as any;
+
+        req.user = {
+          id: decoded.id,
+          email: decoded.email,
+          role: decoded.role,
+          name: decoded.name
+        };
+      } catch (err) {
+        res.status(401).json({ error: "Invalid session" });
+        return;
+      }
     }
 
     const user = await User.findById(req.user.id);
