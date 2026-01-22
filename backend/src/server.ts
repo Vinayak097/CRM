@@ -22,6 +22,7 @@ import developerRoutes from "./routes/developer.routes.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app: Express = express();
+app.set("trust proxy", 1); // Critical for Render/Vercel to recognize HTTPS
 
 // Connect to database
 connectDB().catch((error) => {
