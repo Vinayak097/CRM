@@ -45,7 +45,7 @@ export const login = async (req: AuthRequest, res: Response): Promise<void> => {
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     });
-
+    console.log("cookies sent")
     user.lastLogin = new Date();
     await user.save();
 
