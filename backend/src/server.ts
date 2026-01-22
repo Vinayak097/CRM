@@ -53,6 +53,13 @@ app.use(
 );
 app.use(express.json());
 app.use(cookieParser());
+// Debug: Log session configuration
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('Cookie settings:', {
+  secure: process.env.NODE_ENV === "production",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax"
+});
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your_session_secret",
