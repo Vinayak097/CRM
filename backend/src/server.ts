@@ -34,8 +34,10 @@ connectDB().catch((error) => {
 
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://crm-mu-rosy.vercel.app"
-];
+  "https://crm-mu-rosy.vercel.app",
+  // Add your Render frontend URL here when deployed
+  process.env.FRONTEND_URL,
+].filter(Boolean); // Remove undefined values
 
 app.use(
   cors({
