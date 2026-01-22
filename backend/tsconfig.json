@@ -1,7 +1,5 @@
 {
-  // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
-    // File Layout
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -10,41 +8,19 @@
     },
     "rootDir": "./src",
     "outDir": "./dist",
-    // Environment Settings
-    // See also https://aka.ms/tsconfig/module
-    "module": "nodenext",
-    "target": "esnext",
-    // Types are automatically included from node_modules/@types
-    // No need to explicitly list them unless you want to restrict which types are included
-    // For nodejs:
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2022",
     "lib": [
-      "esnext"
+      "ES2022"
     ],
-    "types": [
-      "node",
-    ],
-    // and npm install -D @types/node
-    // Other Outputs
     "sourceMap": true,
-    "declaration": true,
-    "declarationMap": true,
-    // Stricter Typechecking Options
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    // Style Options
-    // "noImplicitReturns": true,
-    // "noImplicitOverride": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
-    // "noFallthroughCasesInSwitch": true,
-    // "noPropertyAccessFromIndexSignature": true,
-    // Recommended Options
+    "declaration": false,
     "strict": true,
-    "jsx": "react-jsx",
-    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
     "isolatedModules": true,
-    "noUncheckedSideEffectImports": true,
+    "verbatimModuleSyntax": true,
     "moduleDetection": "force",
-    "skipLibCheck": true,
+    "skipLibCheck": true
   }
 }
