@@ -14,6 +14,10 @@
     // See also https://aka.ms/tsconfig/module
     "module": "nodenext",
     "target": "esnext",
+    "types": [
+      "node",
+      "express"
+    ],
     // Types are automatically included from node_modules/@types
     // No need to explicitly list them unless you want to restrict which types are included
     // For nodejs:
