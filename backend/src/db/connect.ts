@@ -1,9 +1,12 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import dns from "dns";
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
+dotenv.config();
 export const connectDB = async (): Promise<void> => {
   try {
-    
+
     const mongoUri =
       process.env.MONGODB_URI || "mongodb://localhost:27017/avacasa-crm";
     console.log("env file mongo url", process.env.MONGODB_URI);

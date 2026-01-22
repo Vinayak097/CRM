@@ -25,7 +25,10 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen = false, onClose }) =>
       items: [
         { name: 'Leads', icon: '📋' , route:'/leads', allowedRoles: ['admin', 'sales_agent'] as Role[] },
         { name: 'Users', icon: '👥' ,route:'/users', allowedRoles: ['admin'] as Role[] },
-        { name: 'Properties', icon: '🏠' ,route:'/property', allowedRoles: ['admin', 'developer'] as Role[] }
+        { name: 'Properties', icon: '🏠' ,route:'/property', allowedRoles: ['admin', 'developer'] as Role[] },
+        { name: 'Locations', icon: '📍' ,route:'/locations', allowedRoles: ['admin'] as Role[] },
+        { name: 'Developers', icon: '🏗️' ,route:'/developers', allowedRoles: ['admin', 'developer'] as Role[] }
+
       ],
     },
   ];

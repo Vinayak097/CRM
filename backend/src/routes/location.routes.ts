@@ -1,22 +1,15 @@
 import express from "express";
-import { LocationModel } from "@/models/location.model.js";
+import { LocationController } from "../controllers/locations.controller.js";
+
 const router = express.Router();
+const locationController = new LocationController();
 
-router.get("/search", async (req, res) => {
-  const q = String(req.query.q || "").trim();
-  const limit = Math.min(
-    req.query.limit ? parseInt(String(req.query.limit)) : 10,
-    100
-  );
+router.get("/", (req, res) => locationController.getAll(req, res));
+router.get("/search", (req, res) => locationController.searchLocations(req, res));
+router.get("/:id", (req, res) => locationController.getById(req, res));
+router.post("/", (req, res) => locationController.create(req, res));
+router.put("/:id", (req, res) => locationController.update(req, res));
+router.delete("/:id", (req, res) => locationController.delete(req, res));
 
-  const locations = await LocationModel.find({
-    name: { $regex: q, $options: "i" },
-    active: true,
-  })
-    .select("_id name")
-    .limit(limit);
-
-  res.json(locations);
-});
 
 export default router;

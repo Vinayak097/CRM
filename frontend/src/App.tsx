@@ -14,6 +14,13 @@ import UsersPage from './pages/UsersPage';
 import PropertiesPage from './pages/Property/PropertiesPage';
 import CreatePropertyPage from './pages/Property/CreatePropertyPage';
 import EditPropertyPage from './pages/Property/EditPropertyPage';
+import LocationsPage from './pages/Location/LocationsPage';
+import CreateLocationPage from './pages/Location/CreateLocationPage';
+import EditLocationPage from './pages/Location/EditLocationPage';
+import DevelopersPage from './pages/Developer/DevelopersPage';
+import CreateDeveloperPage from './pages/Developer/CreateDeveloperPage';
+import EditDeveloperPage from './pages/Developer/EditDeveloperPage';
+
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -113,6 +120,55 @@ const AppContent: React.FC = () => {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/locations"
+              element={
+                <ProtectedRoute>
+                  <LocationsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/locations/create"
+              element={
+                <ProtectedRoute>
+                  <CreateLocationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/locations/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditLocationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/developers"
+              element={
+                <ProtectedRoute>
+                  <DevelopersPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/developers/create"
+              element={
+                <ProtectedRoute>
+                  <CreateDeveloperPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/developers/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditDeveloperPage />
+                </ProtectedRoute>
+              }
+            />
+
             <Route path="*" element={<Navigate to="/leads" replace />} />
           </Routes>
         </main>

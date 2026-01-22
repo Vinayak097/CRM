@@ -17,6 +17,8 @@ import { Role } from "./models/User.js";
 import propertyRoutes from "./routes/property.routes.js";
 import { errorHandler } from "./utils/errorHandler.js";
 import locationRoutes from "./routes/location.routes.js";
+import developerRoutes from "./routes/developer.routes.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const app: Express = express();
@@ -28,11 +30,26 @@ connectDB().catch((error) => {
 });
 
 // Middleware
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://crm-mu-rosy.vercel.app"
+];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: function (origin, callback) {
+      // allow requests with no origin (Postman, mobile apps)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
-  }),
+  })
 );
 app.use(express.json());
 app.use(cookieParser());
@@ -67,6 +84,8 @@ app.use(
 app.use("/api/users", userRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/locations", locationRoutes);
+app.use("/api/developers", developerRoutes);
+
 // Health check
 app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "OK" });
