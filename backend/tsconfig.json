@@ -11,9 +11,6 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "allowJs": true,
-    "types": [
-      "node"
-    ], // fixes Node globals (process, fs, path, console)
     "lib": [
       "ESNext"
     ],
