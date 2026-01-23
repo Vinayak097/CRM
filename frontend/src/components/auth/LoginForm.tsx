@@ -4,8 +4,8 @@ import { useAuth } from '../../hooks/useAuth';
 
 export const LoginForm: React.FC = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: 'admin@avacasa.com',
+    password: 'admin@123',
   });
   const [localError, setLocalError] = useState('');
   const { login, isLoading, error } = useAuth();
@@ -90,9 +90,10 @@ export const LoginForm: React.FC = () => {
         >
           {isLoading ? 'Signing in...' : 'Sign In'}
         </button>
+
       </form>
 
-    
+
     </div>
   );
 };
