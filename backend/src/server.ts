@@ -9,7 +9,7 @@ import authRoutes from "./routes/auth.js";
 import leadRoutes from "./routes/leadRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import fs from "fs";
-
+import projectRoutes from "./routes/project.routes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 import { authenticateToken, requireRole } from "./middlewares/auth.js";
@@ -74,9 +74,10 @@ app.use(
 );
 app.use("/api/users", userRoutes);
 app.use("/api/properties", propertyRoutes);
+app.use("/api/projects", projectRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/developers", developerRoutes);
-
+app.use("/api/project", projectRoutes)
 // Health check
 app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "OK" });
