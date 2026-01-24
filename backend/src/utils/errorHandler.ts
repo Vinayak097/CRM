@@ -25,10 +25,26 @@ export const errorHandler = (err: any, req: any, res: any, next: any) => {
   // If a Zod error bubbles up, format it into a friendly shape
   if (err && (err.name === "ZodError" || Array.isArray(err?.errors))) {
     const rawErrors = err?.errors || [];
-    const errors = rawErrors.map((e: any) => ({
-      path: Array.isArray(e.path) ? e.path.join(".") : e.path || "",
-      message: e.message || String(e),
-    }));
+    const errors = rawErrors.map((e: any) => {
+      let message = e.message;
+
+      // Enhance message for common Zod issues
+      if (e.code === 'invalid_type') {
+        message = `${e.path.join('.')} expected ${e.expected}, received ${e.received}`;
+      } else if (e.code === 'too_small') {
+        message = `${e.path.join('.')} must be at least ${e.minimum} ${e.type === 'string' ? 'characters' : 'units'}`;
+      } else if (e.code === 'too_big') {
+        message = `${e.path.join('.')} must be at most ${e.maximum} ${e.type === 'string' ? 'characters' : 'units'}`;
+      }
+
+      return {
+        path: Array.isArray(e.path) ? e.path.join(".") : e.path || "",
+        message: message,
+        code: e.code,
+        ...(e.expected && { expected: e.expected }),
+        ...(e.received && { received: e.received })
+      };
+    });
 
     return res.status(400).json({
       success: false,

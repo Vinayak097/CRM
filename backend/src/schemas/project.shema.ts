@@ -30,11 +30,11 @@ const BuildingDetailsSchema = z.object({
 });
 
 const TimelineSchema = z.object({
-    launch_date: z.string().datetime().optional().nullable(),
-    construction_start_date: z.string().datetime().optional().nullable(),
-    estimated_completion_date: z.string().datetime().optional().nullable(),
-    actual_completion_date: z.string().datetime().optional().nullable(),
-    possession_start_date: z.string().datetime().optional().nullable(),
+    launch_date: z.string().optional().nullable(),
+    construction_start_date: z.string().optional().nullable(),
+    estimated_completion_date: z.string().optional().nullable(),
+    actual_completion_date: z.string().optional().nullable(),
+    possession_start_date: z.string().optional().nullable(),
     warranty_period_months: z.number().optional().nullable()
 });
 

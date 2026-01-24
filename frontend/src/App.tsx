@@ -20,6 +20,9 @@ import EditLocationPage from './pages/Location/EditLocationPage';
 import DevelopersPage from './pages/Developer/DevelopersPage';
 import CreateDeveloperPage from './pages/Developer/CreateDeveloperPage';
 import EditDeveloperPage from './pages/Developer/EditDeveloperPage';
+import ProjectsPage from './pages/Project/ProjectsPage';
+import CreateProjectPage from './pages/Project/CreateProjectPage';
+import EditProjectPage from './pages/Project/EditProjectPage';
 
 
 const AppContent: React.FC = () => {
@@ -165,6 +168,30 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <EditDeveloperPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects"
+              element={
+                <ProtectedRoute>
+                  <ProjectsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/create"
+              element={
+                <ProtectedRoute>
+                  <CreateProjectPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:id/edit"
+              element={
+                <ProtectedRoute>
+                  <EditProjectPage />
                 </ProtectedRoute>
               }
             />

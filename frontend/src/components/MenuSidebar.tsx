@@ -14,7 +14,7 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen = false, onClose }) =>
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userRole = user?.role as Role;
 
-  function handlClick(route:any){
+  function handlClick(route: any) {
     navigate(route)
 
   }
@@ -23,11 +23,12 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen = false, onClose }) =>
     {
       title: 'MANAGEMENT',
       items: [
-        { name: 'Leads', icon: '📋' , route:'/leads', allowedRoles: ['admin', 'sales_agent'] as Role[] },
-        { name: 'Users', icon: '👥' ,route:'/users', allowedRoles: ['admin'] as Role[] },
-        { name: 'Properties', icon: '🏠' ,route:'/property', allowedRoles: ['admin', 'developer'] as Role[] },
-        { name: 'Locations', icon: '📍' ,route:'/locations', allowedRoles: ['admin'] as Role[] },
-        { name: 'Developers', icon: '🏗️' ,route:'/developers', allowedRoles: ['admin', 'developer'] as Role[] }
+        { name: 'Leads', icon: '📋', route: '/leads', allowedRoles: ['admin', 'sales_agent'] as Role[] },
+        { name: 'Users', icon: '👥', route: '/users', allowedRoles: ['admin'] as Role[] },
+        { name: 'Projects', icon: '📁', route: '/projects', allowedRoles: ['admin', 'developer'] as Role[] },
+        { name: 'Properties', icon: '🏠', route: '/property', allowedRoles: ['admin', 'developer'] as Role[] },
+        { name: 'Locations', icon: '📍', route: '/locations', allowedRoles: ['admin'] as Role[] },
+        { name: 'Developers', icon: '🏗️', route: '/developers', allowedRoles: ['admin', 'developer'] as Role[] }
 
       ],
     },
