@@ -9,10 +9,10 @@ interface LocationSearchProps {
   placeholder?: string;
 }
 
-export const LocationSearch: React.FC<LocationSearchProps> = ({ 
-  value, 
-  onSelect, 
-  placeholder = "Search location..." 
+export const LocationSearch: React.FC<LocationSearchProps> = ({
+  value,
+  onSelect,
+  placeholder = "Search location..."
 }) => {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -23,10 +23,24 @@ export const LocationSearch: React.FC<LocationSearchProps> = ({
 
   // When value changes from outside (e.g. on edit page load)
   useEffect(() => {
-    if (value && !selectedName) {
-        // We might want to fetch the name if we only have ID, 
-        // but for now let's assume it's handled or we'll just show the ID
-    }
+    const fetchLocationName = async () => {
+      if (value && !selectedName) {
+        try {
+          const response = await locationService.getById(value);
+          const loc = response.data;
+          if (loc) {
+            setSelectedName(loc.display_name);
+            setQuery(loc.display_name);
+          }
+        } catch (err) {
+          console.error("Failed to fetch location name", err);
+        }
+      } else if (!value) {
+        setSelectedName("");
+        setQuery("");
+      }
+    };
+    fetchLocationName();
   }, [value]);
 
   useEffect(() => {
