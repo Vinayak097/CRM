@@ -8,6 +8,7 @@ import MenuSidebar from './components/MenuSidebar';
 import LoginPage from './pages/LoginPage';
 import LeadProfilePage from './pages/LeadProfilePage';
 import LeadsPage from './pages/Lead/LeadPage';
+import DashboardPage from './pages/Dashboard/DashboardPage';
 import CreateLeadPage from './pages/Lead/CreateLeadPage';
 import EditLeadPage from './pages/Lead/EditLeadPage';
 import UsersPage from './pages/UsersPage';
@@ -59,6 +60,15 @@ const AppContent: React.FC = () => {
         <main className="flex-1 overflow-auto">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route
               path="/leads"
               element={
@@ -196,7 +206,7 @@ const AppContent: React.FC = () => {
               }
             />
 
-            <Route path="*" element={<Navigate to="/leads" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
       </div>

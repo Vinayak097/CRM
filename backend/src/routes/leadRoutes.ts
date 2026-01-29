@@ -37,7 +37,7 @@ router.patch("/:id/status", updateLeadStatusController);
 // Assign agent to lead (admin/sales manager only)
 router.patch(
   "/:id/assign-agent",
-  requireRole([Role.Admin, Role.salesAgent]),
+  requireRole([Role.Admin, Role.SalesManager]),
   assignAgentToLeadController
 );
 

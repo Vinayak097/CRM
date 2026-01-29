@@ -32,7 +32,7 @@ function createTestApp(): Express {
   app.use(
     '/api/leads',
     authenticateToken,
-    requireRole([Role.Admin, Role.salesAgent]),
+    requireRole([Role.Admin, Role.SalesAgent]),
     leadRoutes
   );
   
@@ -48,7 +48,7 @@ describe('Lead Controller Tests', () => {
 
   describe('POST /api/leads - Create Lead', () => {
     it('should create a new lead with valid data', async () => {
-      const { token, user } = await createAuthenticatedUser(Role.salesAgent);
+      const { token, user } = await createAuthenticatedUser(Role.SalesAgent);
       const leadData = createTestLeadData();
 
       const response = await request(app)
@@ -64,7 +64,7 @@ describe('Lead Controller Tests', () => {
     });
 
     it('should create a lead with minimal required data', async () => {
-      const { token } = await createAuthenticatedUser(Role.salesAgent);
+      const { token } = await createAuthenticatedUser(Role.SalesAgent);
       const minimalData = {
         identity: {
           firstName: 'Minimal',
@@ -84,7 +84,7 @@ describe('Lead Controller Tests', () => {
     });
 
     it('should fail with invalid phone number', async () => {
-      const { token } = await createAuthenticatedUser(Role.salesAgent);
+      const { token } = await createAuthenticatedUser(Role.SalesAgent);
       const invalidData = createTestLeadData({
         identity: {
           phone: 'invalid-phone',
@@ -141,8 +141,8 @@ describe('Lead Controller Tests', () => {
     });
 
     it('should restrict sales agent to their own leads', async () => {
-      const { token, user } = await createAuthenticatedUser(Role.salesAgent);
-      const otherAgent = await createTestUser(Role.salesAgent);
+      const { token, user } = await createAuthenticatedUser(Role.SalesAgent);
+      const otherAgent = await createTestUser(Role.SalesAgent);
       
       await Lead.create(createTestLeadData({ 
         identity: { phone: '+5555555555' },
@@ -178,8 +178,8 @@ describe('Lead Controller Tests', () => {
     });
 
     it('should deny access to sales agent for unassigned lead', async () => {
-      const { token } = await createAuthenticatedUser(Role.salesAgent);
-      const otherAgent = await createTestUser(Role.salesAgent);
+      const { token } = await createAuthenticatedUser(Role.SalesAgent);
+      const otherAgent = await createTestUser(Role.SalesAgent);
       const lead = await Lead.create(createTestLeadData({ system: { assignedAgent: (otherAgent as any)._id } }));
 
       const leadId = (lead as any)._id?.toString();
@@ -229,7 +229,7 @@ describe('Lead Controller Tests', () => {
   describe('PATCH /api/leads/:id/assign-agent - Assign Agent', () => {
     it('should allow admin to assign agent', async () => {
       const { token } = await createAuthenticatedUser(Role.Admin);
-      const agent = await createTestUser(Role.salesAgent);
+      const agent = await createTestUser(Role.SalesAgent);
       const lead = await Lead.create(createTestLeadData());
 
       const leadId = (lead as any)._id?.toString();

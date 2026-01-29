@@ -3,12 +3,33 @@ import User, { Role } from "../models/User.js";
 import bcrypt from "bcryptjs";
 import type { AuthRequest } from "../middlewares/auth.js";
 
+// Helper to check user creation permission
+const canCreateRole = (requesterRole: Role, targetRole: Role): boolean => {
+  if (requesterRole === Role.Admin) return true;
+  if (requesterRole === Role.SalesManager && targetRole === Role.SalesAgent) return true;
+  if (requesterRole === Role.BusinessHead && targetRole === Role.OnboardingAgent) return true;
+  return false;
+};
+
+// Helper to check user management permission (update/delete)
+const canManageUser = (requesterRole: Role, targetUserRole: Role): boolean => {
+  if (requesterRole === Role.Admin) return true;
+  if (requesterRole === Role.SalesManager && targetUserRole === Role.SalesAgent) return true;
+  if (requesterRole === Role.BusinessHead && targetUserRole === Role.OnboardingAgent) return true;
+  return false;
+};
+
 export const createUser = async (req: AuthRequest, res: Response) => {
   const { password, name, role, email, phone } = req.body;
 
   if (!password || !name || !email || !role) {
     res.status(400).json({ message: "Missing required fields" });
     return;
+  }
+
+  // RBAC for user creation
+  if (!req.user || !canCreateRole(req.user.role, role as Role)) {
+    return res.status(403).json({ message: "Access denied. You cannot create this role." });
   }
 
   try {
@@ -59,6 +80,16 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     if (!existUser) {
       res.status(404).json({ message: "User not found" });
       return;
+    }
+
+    // RBAC for update
+    if (!req.user || !canManageUser(req.user.role, existUser.role)) {
+      return res.status(403).json({ message: "Access denied. You cannot manage this user." });
+    }
+
+    // Prevent role escalation: Non-admins cannot change role
+    if (req.user.role !== Role.Admin && role && role !== existUser.role) {
+      return res.status(403).json({ message: "Access denied. You cannot change user roles." });
     }
 
     if (email && email !== existUser.email) {
@@ -147,6 +178,11 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
       return;
     }
 
+    // RBAC for delete
+    if (!req.user || !canManageUser(req.user.role, existUser.role)) {
+      return res.status(403).json({ message: "Access denied. You cannot delete this user." });
+    }
+
     if (req.user?.id === userId) {
       res.status(400).json({ message: "Cannot delete yourself" });
       return;
@@ -168,6 +204,19 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
     const search = (req.query.search as string) || "";
 
     const filter: Record<string, unknown> = {};
+
+    // RBAC for listing users
+    if (req.user?.role === Role.SalesManager) {
+      filter.role = Role.SalesAgent;
+    } else if (req.user?.role === Role.BusinessHead) {
+      filter.role = Role.OnboardingAgent;
+    } else if (req.user?.role !== Role.Admin) {
+      // Sales agents and others cannot see user list (or maybe only themselves? for now deny)
+      // If Sales Agent needs to see profile, they use getUserById with their own ID. 
+      // Listing is usually for management.
+      return res.status(403).json({ message: "Access denied" });
+    }
+
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: "i" } },

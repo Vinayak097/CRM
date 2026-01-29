@@ -1,4 +1,5 @@
 import api from "./api";
+import { Role } from "../types";
 
 export interface LoginRequest {
   email: string;
@@ -10,7 +11,7 @@ export interface RegisterRequest {
   email: string;
   phone: string;
   password: string;
-  role?: "Admin" | "Developer" | "Sales Agent";
+  role?: Role;
 }
 
 export interface User {
@@ -18,7 +19,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
-  role: "Admin" | "Developer" | "Sales Agent";
+  role: Role;
   isActive?: boolean;
   lastLogin?: string | null;
   createdAt?: string;

@@ -41,7 +41,7 @@ describe('Authentication Controller Tests', () => {
   describe('POST /api/auth/login', () => {
     it('should login successfully with valid credentials', async () => {
       const password = 'password123';
-      const user = await createTestUser(Role.salesAgent, { password });
+      const user = await createTestUser(Role.SalesAgent, { password });
 
       const response = await request(app)
         .post('/api/auth/login')
@@ -84,7 +84,7 @@ describe('Authentication Controller Tests', () => {
   describe('GET /api/auth/me', () => {
     it('should return current user when authenticated', async () => {
       const password = 'password123';
-      const user = await createTestUser(Role.salesAgent, { password });
+      const user = await createTestUser(Role.SalesAgent, { password });
 
       // First login to get session cookie
       const loginResponse = await request(app)
@@ -113,7 +113,7 @@ describe('Authentication Controller Tests', () => {
   describe('POST /api/auth/logout', () => {
     it('should logout successfully', async () => {
       const password = 'password123';
-      const user = await createTestUser(Role.salesAgent, { password });
+      const user = await createTestUser(Role.SalesAgent, { password });
 
       const loginResponse = await request(app)
         .post('/api/auth/login')

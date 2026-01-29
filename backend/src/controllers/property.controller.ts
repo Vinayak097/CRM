@@ -11,6 +11,8 @@ import {
 } from "../schemas/property.schema.js";
 import { PropertyService } from "../services/property.service.js";
 import { AppError } from "../utils/errorHandler.js";
+import { AuthRequest } from "../middlewares/auth.js";
+import { Role } from "../models/User.js";
 
 export class PropertyController {
   private propertyService: PropertyService;
@@ -20,8 +22,15 @@ export class PropertyController {
   }
 
   // Create a new property
-  createProperty = async (req: Request, res: Response) => {
+  createProperty = async (req: AuthRequest, res: Response) => {
     try {
+      // RBAC: Only Admin and OnboardingAgent can create properties
+      if (
+        req.user?.role !== Role.Admin &&
+        req.user?.role !== Role.OnboardingAgent
+      ) {
+        throw new AppError("Access denied", 403);
+      }
       // Request is validated by `validateRequest` middleware; use body directly
       const property = await this.propertyService.createProperty(
         req.body as unknown as CreatePropertyInput,
@@ -87,8 +96,15 @@ export class PropertyController {
   };
 
   // Update property
-  updateProperty = async (req: Request, res: Response) => {
+  updateProperty = async (req: AuthRequest, res: Response) => {
     try {
+      // RBAC: Only Admin and OnboardingAgent can update properties
+      if (
+        req.user?.role !== Role.Admin &&
+        req.user?.role !== Role.OnboardingAgent
+      ) {
+        throw new AppError("Access denied", 403);
+      }
       const { id } = req.params;
       if (!id) {
         throw new AppError("Property ID is required", 400);
@@ -114,8 +130,15 @@ export class PropertyController {
   };
 
   // Delete property
-  deleteProperty = async (req: Request, res: Response) => {
+  deleteProperty = async (req: AuthRequest, res: Response) => {
     try {
+      // RBAC: Only Admin and OnboardingAgent can delete properties
+      if (
+        req.user?.role !== Role.Admin &&
+        req.user?.role !== Role.OnboardingAgent
+      ) {
+        throw new AppError("Access denied", 403);
+      }
       const { id } = req.params;
       if (!id) {
         throw new AppError("Property ID is required", 400);

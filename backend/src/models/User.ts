@@ -2,8 +2,10 @@ import mongoose, { Schema, Document } from "mongoose";
 import bcrypt from "bcryptjs";
 export enum Role {
   Admin = "admin",
-  salesAgent = "sales_agent",
-  Developer = "developer",
+  SalesAgent = "sales_agent",
+  OnboardingAgent = "onboarding_agent",
+  SalesManager = "sales_manager",
+  BusinessHead = "business_head",
 }
 export interface IUser extends Document {
   name: string;

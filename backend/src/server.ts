@@ -69,7 +69,7 @@ app.use("/api/auth", authRoutes);
 app.use(
   "/api/leads",
   authenticateToken,
-  requireRole([Role.Admin, Role.salesAgent]),
+  requireRole([Role.Admin, Role.SalesAgent]),
   leadRoutes,
 );
 app.use("/api/users", userRoutes);

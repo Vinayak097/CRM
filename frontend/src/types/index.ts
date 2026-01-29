@@ -106,5 +106,7 @@ export interface Lead {
 export enum Role {
   Admin = "admin",
   SalesAgent = "sales_agent",
-  Developer = "developer",
+  OnboardingAgent = "onboarding_agent",
+  SalesManager = "sales_manager",
+  BusinessHead = "business_head",
 }

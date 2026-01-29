@@ -1,7 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from './ui/button';
 
-type Role = 'admin' | 'sales_agent' | 'developer';
+import { Role } from '../types';
+// Remove local Role type definition since we import it
+// type Role = 'admin' | 'sales_agent' | 'developer';
 
 interface MenuSidebarProps {
   isOpen?: boolean;
@@ -21,14 +24,50 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen = false, onClose }) =>
 
   const allMenuSections = [
     {
+      title: 'OVERVIEW',
+      items: [
+        { name: 'Dashboard', icon: '📊', route: '/dashboard', allowedRoles: Object.values(Role) },
+      ]
+    },
+    {
       title: 'MANAGEMENT',
       items: [
-        { name: 'Leads', icon: '📋', route: '/leads', allowedRoles: ['admin', 'sales_agent'] as Role[] },
-        { name: 'Users', icon: '👥', route: '/users', allowedRoles: ['admin'] as Role[] },
-        { name: 'Projects', icon: '📁', route: '/projects', allowedRoles: ['admin', 'developer'] as Role[] },
-        { name: 'Properties', icon: '🏠', route: '/property', allowedRoles: ['admin', 'developer'] as Role[] },
-        { name: 'Locations', icon: '📍', route: '/locations', allowedRoles: ['admin'] as Role[] },
-        { name: 'Developers', icon: '🏗️', route: '/developers', allowedRoles: ['admin', 'developer'] as Role[] }
+        {
+          name: 'Leads',
+          icon: '📋',
+          route: '/leads',
+          allowedRoles: [Role.Admin, Role.SalesAgent, Role.SalesManager]
+        },
+        {
+          name: 'Users',
+          icon: '👥',
+          route: '/users',
+          allowedRoles: [Role.Admin, Role.SalesManager, Role.BusinessHead]
+        },
+        {
+          name: 'Projects',
+          icon: '📁',
+          route: '/projects',
+          allowedRoles: Object.values(Role)
+        },
+        {
+          name: 'Properties',
+          icon: '🏠',
+          route: '/property',
+          allowedRoles: Object.values(Role)
+        },
+        {
+          name: 'Locations',
+          icon: '📍',
+          route: '/locations',
+          allowedRoles: [Role.Admin, Role.OnboardingAgent, Role.SalesManager] // SalesAgent doesn't need to manage locations usually
+        },
+        {
+          name: 'Developers',
+          icon: '🏗️',
+          route: '/developers',
+          allowedRoles: [Role.Admin, Role.OnboardingAgent, Role.BusinessHead, Role.SalesManager]
+        }
 
       ],
     },
@@ -157,6 +196,12 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen = false, onClose }) =>
             </div>
           ))}
         </nav>
+        <div>
+          <p>Symobl</p>
+          <Button onClick={() => handleItemClick('/login')}>
+            LOGOUT
+          </Button>
+        </div>
       </div>
     </>
   );

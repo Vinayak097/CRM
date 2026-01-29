@@ -1,23 +1,25 @@
 import type { Request, Response } from "express";
 import { DeveloperModel } from "../models/developer.model.js";
 import { v4 as uuidv4 } from "uuid";
+import { AuthRequest } from "../middlewares/auth.js";
+import { Role } from "../models/User.js";
 
 export class DeveloperController {
   async getAll(req: Request, res: Response) {
     try {
       const { search, active } = req.query;
       const query: any = {};
-      
+
       if (search) {
         query.developer_name = { $regex: search, $options: "i" };
       }
-      
+
       if (active !== undefined) {
         query.active = active === "true";
       }
 
       const developers = await DeveloperModel.find(query).sort({ developer_name: 1 });
-      
+
       res.json({
         status: "success",
         data: developers,
@@ -52,8 +54,17 @@ export class DeveloperController {
     }
   }
 
-  async create(req: Request, res: Response) {
+  async create(req: AuthRequest, res: Response) {
     try {
+      if (
+        req.user?.role !== Role.Admin &&
+        req.user?.role !== Role.OnboardingAgent
+      ) {
+        return res.status(403).json({
+          status: "error",
+          message: "Access denied",
+        });
+      }
       const id = uuidv4();
       const developerData = {
         ...req.body,
@@ -62,10 +73,10 @@ export class DeveloperController {
       };
 
 
-      
+
       const developer = new DeveloperModel(developerData);
       await developer.save();
-      
+
       res.status(201).json({
         status: "success",
         data: developer
@@ -78,21 +89,30 @@ export class DeveloperController {
     }
   }
 
-  async update(req: Request, res: Response) {
+  async update(req: AuthRequest, res: Response) {
     try {
+      if (
+        req.user?.role !== Role.Admin &&
+        req.user?.role !== Role.OnboardingAgent
+      ) {
+        return res.status(403).json({
+          status: "error",
+          message: "Access denied",
+        });
+      }
       const developer = await DeveloperModel.findByIdAndUpdate(
         req.params.id,
         { $set: req.body },
         { new: true, runValidators: true }
       );
-      
+
       if (!developer) {
         return res.status(404).json({
           status: "error",
           message: "Developer not found"
         });
       }
-      
+
       res.json({
         status: "success",
         data: developer
@@ -105,8 +125,17 @@ export class DeveloperController {
     }
   }
 
-  async delete(req: Request, res: Response) {
+  async delete(req: AuthRequest, res: Response) {
     try {
+      if (
+        req.user?.role !== Role.Admin &&
+        req.user?.role !== Role.OnboardingAgent
+      ) {
+        return res.status(403).json({
+          status: "error",
+          message: "Access denied",
+        });
+      }
       const developer = await DeveloperModel.findByIdAndDelete(req.params.id);
       if (!developer) {
         return res.status(404).json({

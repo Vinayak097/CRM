@@ -33,14 +33,14 @@ async function seed() {
         email: "rohit@avacasa.com",
         password: "Agent@123",
         phone: "9876543210",
-        role: Role.salesAgent,
+        role: Role.SalesAgent,
       },
       {
         name: "Anjali Mehta",
         email: "anjali@avacasa.com",
         password: "Agent@123",
         phone: "9876543211",
-        role: Role.salesAgent,
+        role: Role.SalesAgent,
       },
     ]);
 

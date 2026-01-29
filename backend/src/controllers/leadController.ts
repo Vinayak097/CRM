@@ -14,7 +14,7 @@ import Lead from "@/models/Lead.js";
 import mongoose from "mongoose";
 
 const getAgentIdForLead = (user?: AuthUser | null): string | null => {
-  if (user && user.role === Role.salesAgent) {
+  if (user && user.role === Role.SalesAgent) {
     return user.id;
   }
   return null;
@@ -22,6 +22,17 @@ const getAgentIdForLead = (user?: AuthUser | null): string | null => {
 
 export async function createLeadController(req: AuthRequest, res: Response) {
   try {
+    // RBAC: Deny access to OnboardingAgent and BusinessHead
+    if (
+      req.user?.role === Role.OnboardingAgent ||
+      req.user?.role === Role.BusinessHead
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Role cannot create leads.",
+      });
+    }
+
     const validationResult = leadZodSchema.safeParse(req.body);
 
     if (!validationResult.success) {
@@ -63,6 +74,17 @@ export async function createLeadController(req: AuthRequest, res: Response) {
 }
 export const updateLeadController = async (req: AuthRequest, res: Response) => {
   try {
+    // RBAC: Deny access to OnboardingAgent and BusinessHead
+    if (
+      req.user?.role === Role.OnboardingAgent ||
+      req.user?.role === Role.BusinessHead
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied.",
+      });
+    }
+
     const { id } = req.params;
     console.log("id enter update controller");
 
@@ -84,7 +106,7 @@ export const updateLeadController = async (req: AuthRequest, res: Response) => {
     }
 
     // Check sales agent access
-    if (req.user?.role === Role.salesAgent) {
+    if (req.user?.role === Role.SalesAgent) {
       const isAssigned = lead.system?.assignedAgent?.toString() === req.user.id;
       if (!isAssigned) {
         return res.status(403).json({
@@ -188,10 +210,22 @@ export const getAllLeadsController = async (req: AuthRequest, res: Response) => 
 
     const filter: any = {};
 
-    // Role-based access control: agents can only see their assigned leads
-    if (req.user?.role === Role.salesAgent) {
+    // Role-based access control
+    // Block unrelated roles
+    if (
+      req.user?.role === Role.OnboardingAgent ||
+      req.user?.role === Role.BusinessHead
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied.",
+      });
+    }
+
+    // Agents can only see their assigned leads
+    if (req.user?.role === Role.SalesAgent) {
       filter["system.assignedAgent"] = new mongoose.Types.ObjectId(req.user.id);
-    } 
+    }
     // Admin can filter by assignedAgent if provided
     else if (assignedAgent) {
       if (mongoose.Types.ObjectId.isValid(assignedAgent as string)) {
@@ -237,7 +271,7 @@ export const getAllLeadsController = async (req: AuthRequest, res: Response) => 
       data: {
         leads,
         pagination: {
-        page: pageNum,
+          page: pageNum,
           limit: limitNum,
           total,
           pages: Math.ceil(total / limitNum),
@@ -277,7 +311,7 @@ export const getLeadByIdController = async (
     }
 
     if (
-      req.user?.role === Role.salesAgent &&
+      req.user?.role === Role.SalesAgent &&
       lead.system?.assignedAgent?.toString() !== req.user.id
     ) {
       res.status(403).json({ message: "Access denied" });
@@ -292,6 +326,14 @@ export const getLeadByIdController = async (
 };
 
 export const deleteLeadController = async (req: AuthRequest, res: Response) => {
+  // RBAC
+  if (
+    req.user?.role === Role.OnboardingAgent ||
+    req.user?.role === Role.BusinessHead
+  ) {
+    return res.status(403).json({ message: "Access denied" });
+  }
+
   const { id } = req.params;
 
   try {
@@ -302,7 +344,7 @@ export const deleteLeadController = async (req: AuthRequest, res: Response) => {
     }
 
     if (
-      req.user?.role === Role.salesAgent &&
+      req.user?.role === Role.SalesAgent &&
       lead.system?.assignedAgent?.toString() !== req.user.id
     ) {
       res.status(403).json({ message: "Access denied" });
@@ -351,7 +393,7 @@ export const updateLeadStatusController = async (
     }
 
     // Check role-based access
-    if (req.user?.role === Role.salesAgent) {
+    if (req.user?.role === Role.SalesAgent) {
       // Sales agents can only update their own assigned leads
       if (
         !lead.system?.assignedAgent ||
@@ -395,7 +437,7 @@ export const updateLeadStatusController = async (
     }
 
     // Create notification for admin/sales manager
-    if (req.user?.role !== Role.Admin && req.user?.role !== Role.salesAgent) {
+    if (req.user?.role !== Role.Admin && req.user?.role !== Role.SalesManager && req.user?.role !== Role.SalesAgent) {
       // Find admin/sales manager to notify
       const admins = await User.find({
         role: { $in: [Role.Admin] },
@@ -450,7 +492,14 @@ export const assignAgentToLeadController = async (
       return res.status(404).json({ message: "Lead not found" });
     }
 
-    if (req.user?.role === Role.salesAgent) {
+    if (
+      req.user?.role === Role.OnboardingAgent ||
+      req.user?.role === Role.BusinessHead
+    ) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    if (req.user?.role === Role.SalesAgent) {
       return res.status(403).json({ message: "Access denied" });
     }
 

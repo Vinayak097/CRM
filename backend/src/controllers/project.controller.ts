@@ -6,12 +6,21 @@ import {
 } from "../schemas/project.shema.js";
 import PropertyProject from "../models/project.model.js";
 import { AppError } from "../utils/errorHandler.js";
+import { AuthRequest } from "../middlewares/auth.js";
+import { Role } from "../models/User.js";
 
 export class PropertyProjectController {
 
     // CREATE - Create new property project
-    createProject = async (req: Request, res: Response) => {
+    createProject = async (req: AuthRequest, res: Response) => {
         try {
+            // RBAC: Only Admin and OnboardingAgent can create projects
+            if (
+                req.user?.role !== Role.Admin &&
+                req.user?.role !== Role.OnboardingAgent
+            ) {
+                throw new AppError("Access denied", 403);
+            }
             // Create new project - data already validated by middleware
             const project = new PropertyProject(req.body);
             await project.save();
@@ -117,8 +126,15 @@ export class PropertyProjectController {
     }
 
     // UPDATE - Update project by ID
-    updateProject = async (req: Request, res: Response) => {
+    updateProject = async (req: AuthRequest, res: Response) => {
         try {
+            // RBAC: Only Admin and OnboardingAgent can update projects
+            if (
+                req.user?.role !== Role.Admin &&
+                req.user?.role !== Role.OnboardingAgent
+            ) {
+                throw new AppError("Access denied", 403);
+            }
             const { id } = req.params;
 
             // Data already validated by middleware
@@ -143,8 +159,15 @@ export class PropertyProjectController {
     }
 
     // DELETE - Delete project by ID (soft delete by updating status)
-    deleteProject = async (req: Request, res: Response) => {
+    deleteProject = async (req: AuthRequest, res: Response) => {
         try {
+            // RBAC: Only Admin and OnboardingAgent can delete projects
+            if (
+                req.user?.role !== Role.Admin &&
+                req.user?.role !== Role.OnboardingAgent
+            ) {
+                throw new AppError("Access denied", 403);
+            }
             const { id } = req.params;
             const { permanent } = req.query;
 
@@ -220,8 +243,15 @@ export class PropertyProjectController {
     }
 
     // ADDITIONAL - Bulk create projects
-    bulkCreateProjects = async (req: Request, res: Response) => {
+    bulkCreateProjects = async (req: AuthRequest, res: Response) => {
         try {
+            // RBAC
+            if (
+                req.user?.role !== Role.Admin &&
+                req.user?.role !== Role.OnboardingAgent
+            ) {
+                throw new AppError("Access denied", 403);
+            }
             const { projects } = req.body;
 
             if (!Array.isArray(projects) || projects.length === 0) {
