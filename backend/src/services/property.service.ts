@@ -63,7 +63,7 @@ export class PropertyService {
   ): Promise<Property | null> {
     return this.propertyRepository.update(id, {
       ...data,
-      updatedAt: new Date(),
+      updated_at: new Date(),
     });
   }
 
@@ -80,7 +80,7 @@ export class PropertyService {
       { featured: true, active: true },
       0,
       limit,
-      { createdAt: -1 }
+      { created_at: -1 }
     );
   }
 
@@ -92,7 +92,7 @@ export class PropertyService {
       { locationId, active: true },
       0,
       limit,
-      { createdAt: -1 }
+      { created_at: -1 }
     );
   }
 

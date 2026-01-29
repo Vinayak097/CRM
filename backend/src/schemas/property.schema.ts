@@ -81,6 +81,8 @@ export const nearbyInfrastructureSchema = z
 export const propertySchema = z
   .object({
     // Key Identity Fields
+    _id: z.string().optional(),
+    id: z.string().optional(),
     listing_id: z.string().optional(),
     listing_type: z.string().optional(),
     title: z.string().optional(),
@@ -91,7 +93,17 @@ export const propertySchema = z
     description_short: z.string().optional(),
     description_long: z.string().optional(),
     investment_highlights: z.array(z.string()).optional(),
-    
+
+    area: z.object({
+      carpet_area_sqft: z.number().or(z.string()).nullable().optional(),
+      built_up_area_sqft: z.number().or(z.string()).nullable().optional(),
+      balcony_area_sqft: z.number().or(z.string()).nullable().optional(),
+      living_area_sqft: z.number().or(z.string()).nullable().optional(),
+      living_area_sqm: z.number().or(z.string()).nullable().optional(),
+      plot_area_sqft: z.number().or(z.string()).nullable().optional(),
+      total_area_sqft: z.number().or(z.string()).nullable().optional(),
+    }).optional().nullable(),
+
     // Core Location & Address
     specificAddress: z.object({
       street: z.string().nullable().optional(),
@@ -101,179 +113,212 @@ export const propertySchema = z
       country: z.string().nullable().optional(),
       pincode: z.string().nullable().optional(),
     }).optional().nullable(),
-    
+
     location: z.object({
-        city: z.string().nullable().optional(),
-        region: z.string().nullable().optional(),
-        state: z.string().nullable().optional(),
-        country: z.string().nullable().optional(),
-        coordinates: z.object({
-            latitude: z.number().nullable().optional(),
-            longitude: z.number().nullable().optional(),
-        }).optional().nullable(),
-        full_address: z.string().nullable().optional(),
-        timezone: z.string().nullable().optional(),
-        zip_code: z.string().nullable().optional(),
+      city: z.string().nullable().optional(),
+      region: z.string().nullable().optional(),
+      state: z.string().nullable().optional(),
+      country: z.string().nullable().optional(),
+      coordinates: z.object({
+        latitude: z.number().nullable().optional(),
+        longitude: z.number().nullable().optional(),
+      }).optional().nullable(),
+      full_address: z.string().nullable().optional(),
+      timezone: z.string().nullable().optional(),
+      zip_code: z.string().nullable().optional(),
     }).optional().nullable(),
 
     // Project & Developer
     project_info: z.object({
-        is_part_of_project: z.boolean().optional(),
-        project_id: z.string().nullable().optional(),
-        project_name: z.string().nullable().optional(),
-        project_type: z.string().nullable().optional(),
-        project_status: z.string().nullable().optional(),
-        possession_date: z.string().nullable().optional(),
-        completion_date: z.string().nullable().optional(),
-        rarera_number: z.string().nullable().optional(),
+      is_part_of_project: z.boolean().optional(),
+      project_id: z.string().nullable().optional(),
+      project_name: z.string().nullable().optional(),
+      project_type: z.string().nullable().optional(),
+      project_status: z.string().nullable().optional(),
+      possession_date: z.string().nullable().optional(),
+      completion_date: z.string().nullable().optional(),
+      rarera_number: z.string().nullable().optional(),
     }).optional().nullable(),
-    
+
     developer: z.object({
-        developer_id: z.string().optional(),
-        name: z.string().optional(),
-        logo: z.string().optional(),
+      developer_id: z.string().optional(),
+      name: z.string().optional(),
+      logo: z.string().optional(),
     }).optional().nullable(),
 
     // Detailed Pricing
     pricing: z.object({
-        total_price: z.object({
-            value: z.number().or(z.string()).optional(),
-            currency: z.string().optional(),
-            display_value: z.string().optional(),
-            unit: z.string().nullable().optional(),
-            is_price_on_request: z.boolean().optional(),
-        }).optional().nullable(),
-        price_per_sqft: z.object({
-            value: z.number().or(z.string()).optional(),
-            currency: z.string().optional(),
-            display_value: z.string().optional(),
-            unit: z.string().optional(),
-        }).optional().nullable(),
-        original_price: z.number().or(z.string()).nullable().optional(),
-        discount_percentage: z.number().or(z.string()).nullable().optional(),
+      total_price: z.object({
+        value: z.number().or(z.string()).optional(),
+        currency: z.string().optional(),
+        display_value: z.string().optional(),
+        unit: z.string().nullable().optional(),
+        is_price_on_request: z.boolean().optional(),
+      }).optional().nullable(),
+      price_per_sqft: z.object({
+        value: z.number().or(z.string()).optional(),
+        currency: z.string().optional(),
+        display_value: z.string().optional(),
+        unit: z.string().optional(),
+      }).optional().nullable(),
+      original_price: z.number().or(z.string()).nullable().optional(),
+      discount_percentage: z.number().or(z.string()).nullable().optional(),
     }).optional().nullable(),
 
     // Physical Specs
     specifications: z.object({
-        bedrooms: z.number().nullable().optional(),
-        bathrooms: z.number().nullable().optional(),
-        half_bathrooms: z.number().nullable().optional(),
-        parking_spaces: z.number().nullable().optional(),
-        property_age: z.number().nullable().optional(),
-        year_built: z.number().nullable().optional(),
-        floors: z.number().nullable().optional(),
-    }).optional().nullable(),
-    
-    spatialDetails: z.object({
-        bedrooms: z.number().nullable().optional(),
-        bathrooms: z.number().nullable().optional(),
-        balconies: z.number().nullable().optional(),
-        area: z.object({
-             carpet: z.number().or(z.string()).nullable().optional(),
-             builtUp: z.number().or(z.string()).nullable().optional(),
-             unit: z.string().optional(),
-        }).optional().nullable(),
-        facing: z.string().nullable().optional(),
-        floorNumber: z.number().or(z.string()).nullable().optional(),
-        layoutType: z.string().nullable().optional(),
-        viewQuality: z.string().nullable().optional(),
+      bedrooms: z.number().nullable().optional(),
+      bathrooms: z.number().nullable().optional(),
+      half_bathrooms: z.number().nullable().optional(),
+      parking_spaces: z.number().nullable().optional(),
+      property_age: z.number().nullable().optional(),
+      year_built: z.number().nullable().optional(),
+      floors: z.number().nullable().optional(),
     }).optional().nullable(),
 
-    amenities: z.any().optional().nullable(),
+    spatialDetails: z.object({
+      bedrooms: z.number().nullable().optional(),
+      bathrooms: z.number().nullable().optional(),
+      balconies: z.number().nullable().optional(),
+      half_bathrooms: z.number().optional(),
+      area: z.object({
+        carpet: z.number().or(z.string()).nullable().optional(),
+        builtUp: z.number().or(z.string()).nullable().optional(),
+        unit: z.string().optional(),
+      }).optional().nullable(),
+      facing: z.string().nullable().optional(),
+      floorNumber: z.number().or(z.string()).nullable().optional(),
+      layoutType: z.string().nullable().optional(),
+      viewQuality: z.string().nullable().optional(),
+    }).optional().nullable(),
+
+    amenities: z.object({
+      indoor_amenities: z.array(z.string()).optional(),
+      outdoor_amenities: z.array(z.any()).optional(),
+      security_amenities: z.array(z.any()).optional(),
+      parking_amenities: z.array(z.any()).optional(),
+      other_amenities: z.array(z.string()).optional(),
+    }).optional().nullable(),
 
     amenities_summary: z.object({
-        total_amenities_count: z.number().optional(),
-        primary_amenities: z.array(z.string()).optional(),
-        additional_amenities_count: z.number().optional(),
-        primary_amenities_images: z.array(z.string()).optional(),
+      total_amenities_count: z.number().optional(),
+      primary_amenities: z.array(z.string()).optional(),
+      additional_amenities_count: z.number().optional(),
+      primary_amenities_images: z.array(z.string()).optional(),
     }).optional().nullable(),
 
-    features: z.any().optional().nullable(),
+    features: z.object({
+      construction_quality: z.string().nullable().optional(),
+      design_features: z.array(z.any()).optional(),
+      special_features: z.array(z.any()).optional(),
+      fittings_quality: z.string().nullable().optional(),
+      window_features: z.string().nullable().optional(),
+    }).optional().nullable(),
 
     // Media
     visual_assets: z.object({
-        images: z.array(z.object({
-            src: z.string(),
-            title: z.string().optional(),
-            type: z.string().optional(),
-            description: z.string().optional(),
-            alt: z.string().optional(),
-            settings: z.record(z.string(), z.any()).optional(),
-        })).optional(),
-        main_image_url: z.string().optional(),
-        thumbnail_url: z.string().optional(),
-        video_url: z.string().optional(),
-        virtual_tour_url: z.string().optional(),
+      images: z.array(z.object({
+        src: z.string(),
+        title: z.string().nullable().optional(),
+        slug: z.string().nullable().optional(),
+        type: z.string().nullable().optional(),
+        alt: z.string().nullable().optional(),
+        description: z.string().nullable().optional(),
+        settings: z.object({}).catchall(z.any()).optional().default({}),
+      })).optional(),
+      main_image_url: z.string().nullable().optional(),
+      thumbnail_url: z.string().nullable().optional(),
+      video_url: z.string().nullable().optional(),
+      virtual_tour_url: z.string().nullable().optional(),
+      floor_plan_url: z.string().nullable().optional(),
     }).optional().nullable(),
-    
+
     // Status & Engagement
     badges: z.object({
-        is_featured: z.boolean().optional(),
-        is_new_listing: z.boolean().optional(),
-        is_pre_launch: z.boolean().optional(),
-        is_premium: z.boolean().optional(),
-        is_verified: z.boolean().optional(),
+      is_featured: z.boolean().optional(),
+      is_new_listing: z.boolean().optional(),
+      is_pre_launch: z.boolean().optional(),
+      is_premium: z.boolean().optional(),
+      is_verified: z.boolean().optional(),
     }).optional().nullable(),
-    
+
     engagement: z.object({
-        views_count: z.number().optional(),
-        views_this_week: z.number().optional(),
-        saved_count: z.number().optional(),
-        share_count: z.number().optional(),
-        last_viewed_at: z.string().optional(),
+      views_count: z.number().optional(),
+      views_this_week: z.number().optional(),
+      saved_count: z.number().optional(),
+      share_count: z.number().optional(),
+      last_viewed_at: z.string().optional(),
     }).optional().nullable(),
-    
+
     property_tags: z.array(z.string()).optional(),
-    
+
     // Financials
     capital_appreciation: z.object({
-        has_high_appreciation_potential: z.boolean().optional(),
-        projected_appreciation_rate: z.number().or(z.string()).nullable().optional(),
-        prospects: z.string().nullable().optional(),
+      has_high_appreciation_potential: z.boolean().optional(),
+      projected_appreciation_rate: z.number().or(z.string()).nullable().optional(),
+      prospects: z.string().nullable().optional(),
     }).optional().nullable(),
-    
+
     rental_potential: z.object({
-        has_high_rental_yield: z.boolean().optional(),
-        yield_percentage: z.number().or(z.string()).nullable().optional(),
-        seasonal_demand: z.record(z.string(), z.any()).optional(),
+      has_high_rental_yield: z.boolean().optional(),
+      yield_percentage: z.number().or(z.string()).nullable().optional(),
+      seasonal_demand: z.object({
+        peak_season: z.string().nullable().optional(),
+        off_season: z.string().nullable().optional(),
+        peak_season_occupancy: z.number().nullable().optional(),
+        off_season_occupancy: z.number().nullable().optional(),
+      }).optional().nullable(),
     }).optional().nullable(),
 
     // Additional Sections
     listingDetails: z.object({
-        listedBy: z.string().optional(),
-        listingId: z.string().optional(),
+      listedBy: z.string().optional(),
+      listingId: z.string().optional(),
     }).optional().nullable(),
-    
-    created_at: z.string().nullable().optional(),
-    updated_at: z.string().nullable().optional(),
-    published_at: z.string().nullable().optional(),
-    
+
+    created_at: z.string().or(z.date()).nullable().optional(),
+    updated_at: z.string().or(z.date()).nullable().optional(),
+    published_at: z.string().or(z.date()).nullable().optional(),
+
     // Loose/Legacy Fields (Keep but make optional)
-    accessibility: z.record(z.string(), z.any()).optional(),
-    age: z.record(z.string(), z.any()).optional(),
-    calculator_data: z.record(z.string(), z.any()).optional(),
-    documentation: z.record(z.string(), z.any()).optional(),
-    financial_benefits: z.record(z.string(), z.any()).optional(),
-    furnishing: z.record(z.string(), z.any()).optional(),
-    inUnitFeatures: z.record(z.string(), z.any()).optional(),
-    legal_info: z.record(z.string(), z.any()).optional(),
+    accessibility: z.record(z.string(), z.any()).optional().default({}),
+    age: z.record(z.string(), z.any()).optional().default({}),
+    calculator_data: z.record(z.string(), z.any()).optional().default({}),
+    documentation: z.record(z.string(), z.any()).optional().default({}),
+    financial_benefits: z.record(z.string(), z.any()).optional().default({}),
+    furnishing: z.record(z.string(), z.any()).optional().default({}),
+    inUnitFeatures: z.record(z.string(), z.any()).optional().default({}),
+    legal_info: z.object({
+      reraApproved: z.boolean().optional(),
+      reraNumber: z.string().nullable().optional(),
+      occupancyCertificate: z.boolean().optional(),
+      fireNOC: z.boolean().optional(),
+      permits: z.array(z.any()).optional(),
+    }).optional().nullable(),
     location_details: z.object({
-        highways: z.string().nullable().optional(),
-        major_markets: z.string().nullable().optional(),
-        nearby_attractions: z.any().nullable().optional(),
+      highways: z.string().nullable().optional(),
+      major_markets: z.string().nullable().optional(),
+      nearby_attractions: z.any().nullable().optional(),
     }).optional().nullable(),
     luxuryAmenities: z.record(z.string(), z.any()).optional(),
     marketMetrics: z.record(z.string(), z.any()).optional(),
     microLocationPremium: z.any().optional(),
-    parking: z.record(z.string(), z.any()).optional(),
+    parking: z.object({
+      covered: z.boolean().optional(),
+      open: z.boolean().optional(),
+      visitorParking: z.boolean().optional(),
+      evCharging: z.boolean().optional(),
+    }).optional().nullable(),
     possession: z.record(z.string(), z.any()).optional(),
     rental_info: z.record(z.string(), z.any()).optional(),
-    specialConsiderations: z.record(z.string(), z.any()).optional(),
-    property_management: z.record(z.string(), z.any()).optional(),
-    financial_metrics: z.record(z.string(), z.any()).optional(),
+    specialConsiderations: z.record(z.string(), z.any()).optional().default({}),
+    property_management: z.record(z.string(), z.any()).optional().default({}),
+    financial_metrics: z.object({
+      roi_percentage: z.number().optional()
+    }).optional().nullable(),
     lastPriceUpdate: z.any().optional(),
     listedDate: z.string().nullable().optional(),
-    
+
     // Remaining Original Fields (Overwritten or Merged)
     views: z.number().int().min(0).default(0),
   });
@@ -287,9 +332,8 @@ export const createPropertySchema = propertySchema.omit({
 export const updatePropertySchema = createPropertySchema
   .extend({
     _id: z.any().optional(),
-    createdAt: z.any().optional(),
-    updatedAt: z.any().optional(),
-    __v: z.any().optional(),
+    created_at: z.any().optional(),
+    updated_at: z.any().optional(),
     views: z.any().optional(),
   })
   .partial();
@@ -328,8 +372,8 @@ export const queryPropertySchema = z.object({
 // Types
 export type Property = z.infer<typeof propertySchema> & {
   _id?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  created_at?: Date;
+  updated_at?: Date;
 };
 
 export type CreatePropertyInput = z.infer<typeof createPropertySchema>;

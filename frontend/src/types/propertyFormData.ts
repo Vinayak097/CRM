@@ -83,15 +83,26 @@ export interface PropertyFormData {
     floors: number;
   };
 
+  // Area
+  area: {
+    carpet_area_sqft: number;
+    built_up_area_sqft: number;
+    balcony_area_sqft: number;
+    living_area_sqft: number;
+    living_area_sqm: number;
+    plot_area_sqft: number;
+    total_area_sqft: number;
+  };
+
   // Spatial Details
   spatialDetails: {
     bedrooms: number;
     bathrooms: number;
     balconies: number;
+    half_bathrooms: number;
     area: {
       carpet: number;
       builtUp: number;
-      carpet_area_sqft: number;
       unit: string;
     };
     facing: string;
@@ -101,6 +112,13 @@ export interface PropertyFormData {
   };
 
   // Amenities
+  amenities: {
+    indoor_amenities: string[];
+    outdoor_amenities: any[];
+    parking_amenities: any[];
+    security_amenities: any[];
+    other_amenities: string[];
+  };
   amenities_summary: {
     total_amenities_count: number;
     primary_amenities: string[];
@@ -116,11 +134,21 @@ export interface PropertyFormData {
       type: string;
       description: string;
       alt: string;
+      settings: {
+        width: number;
+        height: number;
+        duration: number;
+        focalPoint: number[];
+        posters: Array<{
+          url: string;
+        }>;
+      };
     }>;
     main_image_url: string;
     thumbnail_url: string;
     video_url: string;
     virtual_tour_url: string;
+    floor_plan_url: string;
   };
 
   // Badges
@@ -143,7 +171,13 @@ export interface PropertyFormData {
 
   // Tags & Features
   property_tags: string[];
-  features: string[];
+  features: {
+    construction_quality: string;
+    design_features: any[];
+    special_features: any[];
+    fittings_quality: string;
+    window_features: string;
+  };
   investment_highlights: string[];
 
   // Financial
@@ -155,11 +189,18 @@ export interface PropertyFormData {
   rental_potential: {
     has_high_rental_yield: boolean;
     yield_percentage: number;
-    seasonal_demand: any;
+    seasonal_demand: {
+      peak_season: string;
+      off_season: string;
+      peak_season_occupancy: number;
+      off_season_occupancy: number;
+    };
   };
   property_management: any;
   financial_benefits: any;
-  financial_metrics: any;
+  financial_metrics: {
+    roi_percentage: number;
+  };
 
   // Listing Details
   listingDetails: {
@@ -174,7 +215,13 @@ export interface PropertyFormData {
   documentation: any;
   furnishing: any;
   inUnitFeatures: any;
-  legal_info: any;
+  legal_info: {
+    reraApproved: boolean;
+    reraNumber: string;
+    fireNOC: boolean;
+    occupancyCertificate: boolean;
+    permits: any[];
+  };
   location_details: {
     highways: string;
     major_markets: string;
@@ -183,7 +230,12 @@ export interface PropertyFormData {
   luxuryAmenities: any;
   marketMetrics: any;
   microLocationPremium: any;
-  parking: any;
+  parking: {
+    covered: boolean;
+    open: boolean;
+    evCharging: boolean;
+    visitorParking: boolean;
+  };
   possession: any;
   rental_info: any;
   specialConsiderations: any;
@@ -273,14 +325,24 @@ export const getDefaultFormData = (): PropertyFormData => ({
     floors: 1,
   },
 
+  area: {
+    carpet_area_sqft: 0,
+    built_up_area_sqft: 0,
+    balcony_area_sqft: 0,
+    living_area_sqft: 0,
+    living_area_sqm: 0,
+    plot_area_sqft: 0,
+    total_area_sqft: 0,
+  },
+
   spatialDetails: {
     bedrooms: 0,
     bathrooms: 0,
     balconies: 0,
+    half_bathrooms: 0,
     area: {
       carpet: 0,
       builtUp: 0,
-      carpet_area_sqft: 0,
       unit: "sqft",
     },
     facing: "",
@@ -289,6 +351,13 @@ export const getDefaultFormData = (): PropertyFormData => ({
     viewQuality: "",
   },
 
+  amenities: {
+    indoor_amenities: [],
+    outdoor_amenities: [],
+    parking_amenities: [],
+    security_amenities: [],
+    other_amenities: [],
+  },
   amenities_summary: {
     total_amenities_count: 0,
     primary_amenities: [],
@@ -302,6 +371,7 @@ export const getDefaultFormData = (): PropertyFormData => ({
     thumbnail_url: "",
     video_url: "",
     virtual_tour_url: "",
+    floor_plan_url: "",
   },
 
   badges: {
@@ -321,7 +391,13 @@ export const getDefaultFormData = (): PropertyFormData => ({
   },
 
   property_tags: [],
-  features: [],
+  features: {
+    construction_quality: "",
+    design_features: [],
+    special_features: [],
+    fittings_quality: "",
+    window_features: "",
+  },
   investment_highlights: [],
 
   capital_appreciation: {
@@ -332,11 +408,18 @@ export const getDefaultFormData = (): PropertyFormData => ({
   rental_potential: {
     has_high_rental_yield: false,
     yield_percentage: 0,
-    seasonal_demand: {},
+    seasonal_demand: {
+      peak_season: "",
+      off_season: "",
+      peak_season_occupancy: 0,
+      off_season_occupancy: 0,
+    },
   },
   property_management: {},
   financial_benefits: {},
-  financial_metrics: {},
+  financial_metrics: {
+    roi_percentage: 0,
+  },
 
   listingDetails: {
     listedBy: "",
@@ -349,7 +432,13 @@ export const getDefaultFormData = (): PropertyFormData => ({
   documentation: {},
   furnishing: {},
   inUnitFeatures: {},
-  legal_info: {},
+  legal_info: {
+    reraApproved: false,
+    reraNumber: "",
+    fireNOC: false,
+    occupancyCertificate: false,
+    permits: [],
+  },
   location_details: {
     highways: "",
     major_markets: "",
@@ -358,7 +447,12 @@ export const getDefaultFormData = (): PropertyFormData => ({
   luxuryAmenities: {},
   marketMetrics: {},
   microLocationPremium: {},
-  parking: {},
+  parking: {
+    covered: false,
+    open: false,
+    evCharging: false,
+    visitorParking: false,
+  },
   possession: {},
   rental_info: {},
   specialConsiderations: {},

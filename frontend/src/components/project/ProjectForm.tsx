@@ -175,6 +175,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        console.log("ProjectForm submitting formData:", formData);
         onSubmit(formData);
     };
 

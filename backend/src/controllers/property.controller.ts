@@ -32,8 +32,8 @@ export class PropertyController {
         message: "Property created successfully",
       });
     } catch (error: any) {
-      if (error?.name === "ZodError") throw error;
-      throw new AppError("Failed to create property", 400, error);
+      if (error?.name === "ZodError" || error.code === 11000) throw error;
+      throw new AppError(error.message || "Failed to create property", 400, error);
     }
   };
 

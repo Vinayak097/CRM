@@ -56,6 +56,7 @@ export const projectService = {
     createProject: async (
         data: Partial<PropertyProject>,
     ): Promise<{ data: PropertyProject; message: string }> => {
+        console.log("projectService.createProject data:", data);
         const response = await api.post("/projects", data);
         return response.data;
     },

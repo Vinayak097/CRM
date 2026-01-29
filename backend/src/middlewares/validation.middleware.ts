@@ -8,9 +8,27 @@ export const validateRequest = (
   property: "body" | "query" | "params" = "body",
 ) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Use safeParse so we can return structured validation errors
-    const result = schema.safeParse(req[property]);
+    const dataToValidate = req[property];
+
+    // Check if data is undefined (e.g. missing body parser or empty body)
+    if (dataToValidate === undefined) {
+      console.error(`[Validation Error] ${property} is undefined!`, {
+        method: req.method,
+        path: req.path,
+        headers: req.headers
+      });
+      return res.status(400).json({
+        success: false,
+        message: `Validation failed: ${property} is missing`,
+        errors: [{ path: "", message: `${property} is required but received undefined` }]
+      });
+    }
+
+    const result = schema.safeParse(dataToValidate);
     if (!result.success) {
+      console.error(`[Validation Error] Property: ${property}`);
+      console.error(`[Data to Validate]:`, JSON.stringify(dataToValidate, null, 2));
+
       const raw = result.error?.issues || [];
       const errors = raw.map((e) => ({
         path: Array.isArray(e.path) && e.path.length ? e.path.join(".") : "",

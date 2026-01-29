@@ -22,7 +22,8 @@ export class PropertyProjectController {
                 data: project
             });
         } catch (error: any) {
-            throw new AppError('Error creating property project', 500, error);
+            if (error?.name === "ZodError" || error.code === 11000) throw error;
+            throw new AppError(error.message || 'Error creating property project', 500, error);
         }
     }
 

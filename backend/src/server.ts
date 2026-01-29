@@ -24,13 +24,16 @@ const __dirname = path.dirname(__filename);
 const app: Express = express();
 app.set("trust proxy", 1); // Critical for Render/Vercel to recognize HTTPS
 
+// Body Parsing Middleware (must be before routes)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+
 // Connect to database
 connectDB().catch((error) => {
   console.error("Failed to connect to database:", error);
   process.exit(1);
 });
-
-// Middleware
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -54,13 +57,31 @@ app.use(
     credentials: true,
   })
 );
-app.use(express.json());
-app.use(cookieParser());
+// express.json and cookieParser moved up
 // Session middleware removed for stateless JWT authentication
 
-// Debug middleware
+// Debug middleware with file logging
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
+  const logEntry = {
+    timestamp: new Date().toISOString(),
+    method: req.method,
+    path: req.path,
+    headers: req.headers,
+    body: req.body,
+    query: req.query,
+    params: req.params
+  };
+
+  if (req.method !== 'GET') {
+    try {
+      fs.appendFileSync('request_debug.log', JSON.stringify(logEntry, null, 2) + '\n---\n');
+    } catch (err) {
+      console.error('Failed to write to debug log:', err);
+    }
+    console.log(`${req.method} ${req.path}`);
+    console.log('Headers:', JSON.stringify(req.headers, null, 2));
+    console.log('Body:', JSON.stringify(req.body, null, 2));
+  }
   next();
 });
 

@@ -276,7 +276,7 @@ const PropertiesPage: React.FC = () => {
               <div className="flex justify-between items-center text-sm mb-3">
                 <div>
                   <span className="text-gray-500">Area:</span>
-                  <span className="text-gray-300 ml-1 font-medium">{property.spatialDetails?.area?.carpet_area_sqft || 0} sq.ft</span>
+                  <span className="text-gray-300 ml-1 font-medium">{property.area?.carpet_area_sqft || property.spatialDetails?.area?.carpet || 0} sq.ft</span>
                 </div>
                 {property.specifications?.bedrooms && (
                   <div>
@@ -353,7 +353,7 @@ const PropertiesPage: React.FC = () => {
                   <td className="p-3">
                     {property.pricing?.total_price?.display_value || (property.pricing?.total_price?.value ? `₹${property.pricing.total_price.value}` : "N/A")}
                   </td>
-                  <td className="p-3">{property.spatialDetails?.area?.carpet_area_sqft || 0} sq.ft</td>
+                  <td className="p-3">{property.area?.carpet_area_sqft || property.spatialDetails?.area?.carpet || 0} sq.ft</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded text-xs ${getStatusColor(property.project_info?.project_status || "AVAILABLE")}`}
                     >

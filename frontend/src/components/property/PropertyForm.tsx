@@ -83,7 +83,20 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                 ...prev,
                 visual_assets: {
                     ...prev.visual_assets,
-                    images: [...(prev.visual_assets.images || []), { src: value, title: "", type: "image", description: "", alt: "" }]
+                    images: [...(prev.visual_assets.images || []), {
+                        src: value,
+                        title: "",
+                        type: "image",
+                        description: "",
+                        alt: "",
+                        settings: {
+                            width: 0,
+                            height: 0,
+                            duration: 0,
+                            focalPoint: [],
+                            posters: []
+                        }
+                    }]
                 }
             }));
             setNewImage("");
@@ -99,7 +112,10 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         } else if (field === "features") {
             setFormData(prev => ({
                 ...prev,
-                features: [...(prev.features || []), value]
+                features: {
+                    ...prev.features,
+                    special_features: [...(prev.features?.special_features || []), value]
+                }
             }));
             setNewFeature("");
         } else if (field === "tags") {
@@ -140,7 +156,10 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
         } else if (field === "features") {
             setFormData(prev => ({
                 ...prev,
-                features: prev.features.filter((_, i) => i !== index)
+                features: {
+                    ...prev.features,
+                    special_features: prev.features?.special_features?.filter((_, i) => i !== index) || []
+                }
             }));
         } else if (field === "tags") {
             setFormData(prev => ({
@@ -807,7 +826,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                                         <Button type="button" onClick={() => addItem("features", newFeature)} variant="secondary">Add</Button>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-                                        {formData.features?.map((f, i) => (
+                                        {formData.features?.special_features?.map((f, i) => (
                                             <span key={i} className="bg-green-500/20 text-green-400 px-2 py-1 rounded-md text-xs flex items-center gap-1">
                                                 {f} <X className="h-3 w-3 cursor-pointer" onClick={() => removeItem("features", i)} />
                                             </span>
@@ -882,7 +901,7 @@ export const PropertyForm: React.FC<PropertyFormProps> = ({
                                                         }));
                                                     } else {
                                                         if (e.target.value === "") {
-                                                            setFormData(prev => ({ ...prev, developer: { name: "", developer_id: "" } }));
+                                                            setFormData(prev => ({ ...prev, developer: { name: "", developer_id: "", logo: "" } }));
                                                         }
                                                     }
                                                 }}

@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import mongoose from "mongoose";
 
 /* =====================================
@@ -6,7 +7,12 @@ import mongoose from "mongoose";
 
 const PropertySchema = new mongoose.Schema(
   {
-    id: { type: String },
+    id: {
+      type: String,
+      default: () => randomUUID(),
+      required: true,
+      index: true,
+    },
     listing_id: { type: String, index: true },
     title: { type: String },
     subtitle: { type: String },
@@ -36,51 +42,56 @@ const PropertySchema = new mongoose.Schema(
     features: { type: mongoose.Schema.Types.Mixed },
     investment_highlights: [{ type: String }],
 
-    capital_appreciation: { type: mongoose.Schema.Types.Mixed },
-    rental_potential: { type: mongoose.Schema.Types.Mixed },
-    property_management: { type: mongoose.Schema.Types.Mixed },
+    capital_appreciation: { type: mongoose.Schema.Types.Mixed, default: {} },
+    rental_potential: { type: mongoose.Schema.Types.Mixed, default: {} },
+    property_management: { type: mongoose.Schema.Types.Mixed, default: {} },
 
     badges: { type: mongoose.Schema.Types.Mixed },
     property_tags: [{ type: String }],
 
-    visual_assets: { type: mongoose.Schema.Types.Mixed },
+    visual_assets: { type: mongoose.Schema.Types.Mixed, default: {} },
 
-    accessibility: { type: mongoose.Schema.Types.Mixed },
-    age: { type: mongoose.Schema.Types.Mixed },
-    calculator_data: { type: mongoose.Schema.Types.Mixed },
-    documentation: { type: mongoose.Schema.Types.Mixed },
+    accessibility: { type: mongoose.Schema.Types.Mixed, default: {} },
+    age: { type: mongoose.Schema.Types.Mixed, default: {} },
+    calculator_data: { type: mongoose.Schema.Types.Mixed, default: {} },
+    documentation: { type: mongoose.Schema.Types.Mixed, default: {} },
 
-    engagement: { type: mongoose.Schema.Types.Mixed },
-    financial_benefits: { type: mongoose.Schema.Types.Mixed },
-    financial_metrics: { type: mongoose.Schema.Types.Mixed },
+    engagement: { type: mongoose.Schema.Types.Mixed, default: {} },
+    financial_benefits: { type: mongoose.Schema.Types.Mixed, default: {} },
+    financial_metrics: { type: mongoose.Schema.Types.Mixed, default: {} },
 
-    furnishing: { type: mongoose.Schema.Types.Mixed },
-    inUnitFeatures: { type: mongoose.Schema.Types.Mixed },
-    legal_info: { type: mongoose.Schema.Types.Mixed },
-    location_details: { type: mongoose.Schema.Types.Mixed },
-    luxuryAmenities: { type: mongoose.Schema.Types.Mixed },
-    marketMetrics: { type: mongoose.Schema.Types.Mixed },
+    furnishing: { type: mongoose.Schema.Types.Mixed, default: {} },
+    inUnitFeatures: { type: mongoose.Schema.Types.Mixed, default: {} },
+    legal_info: { type: mongoose.Schema.Types.Mixed, default: {} },
+    location_details: { type: mongoose.Schema.Types.Mixed, default: {} },
+    luxuryAmenities: { type: mongoose.Schema.Types.Mixed, default: {} },
+    marketMetrics: { type: mongoose.Schema.Types.Mixed, default: {} },
 
     microLocationPremium: { type: mongoose.Schema.Types.Mixed },
 
-    parking: { type: mongoose.Schema.Types.Mixed },
-    possession: { type: mongoose.Schema.Types.Mixed },
-    rental_info: { type: mongoose.Schema.Types.Mixed },
-    specialConsiderations: { type: mongoose.Schema.Types.Mixed },
+    parking: { type: mongoose.Schema.Types.Mixed, default: {} },
+    possession: { type: mongoose.Schema.Types.Mixed, default: {} },
+    rental_info: { type: mongoose.Schema.Types.Mixed, default: {} },
+    specialConsiderations: { type: mongoose.Schema.Types.Mixed, default: {} },
 
-    listingDetails: { type: mongoose.Schema.Types.Mixed },
+    listingDetails: { type: mongoose.Schema.Types.Mixed, default: {} },
 
     lastPriceUpdate: { type: mongoose.Schema.Types.Mixed },
 
-    created_at: { type: Date },
-    updated_at: { type: Date },
+    created_at: { type: Date, default: Date.now },
+    updated_at: { type: Date, default: Date.now },
     published_at: { type: Date },
 
     listedDate: { type: Date },
   },
   {
     strict: false, // 👈 REQUIRED for 100% mirroring
-    timestamps: true, // Mongo internal createdAt / updatedAt
+    minimize: false, // 👈 REQUIRED to keep empty objects like accessibility: {}
+    timestamps: {
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
+    },
+    versionKey: false
   }
 );
 
@@ -98,6 +109,7 @@ export const PropertyModel: mongoose.Model<any> =
 ===================================== */
 
 export class PropertyRepository {
+
   async create(data: any) {
     const doc = await PropertyModel.create(data);
     return (doc as any).toObject();
@@ -115,7 +127,7 @@ export class PropertyRepository {
     filters: Record<string, any> = {},
     skip = 0,
     limit = 20,
-    sort: Record<string, 1 | -1> = { createdAt: -1 }
+    sort: Record<string, 1 | -1> = { created_at: -1 }
   ) {
     return PropertyModel.find(filters)
       .skip(skip)

@@ -55,9 +55,16 @@ export const errorHandler = (err: any, req: any, res: any, next: any) => {
 
   // MongoDB duplicate key error
   if (err.code === 11000) {
+    const field = Object.keys(err.keyPattern || {}).join(", ") || "field";
+    const value = Object.values(err.keyValue || {}).join(", ") || "value";
+
     return res.status(400).json({
       success: false,
-      message: "Duplicate field value entered",
+      message: `Duplicate entry: A property with this ${field} (${value}) already exists.`,
+      error: "DuplicateKeyError",
+      field,
+      value,
+      rawError: process.env.NODE_ENV === "development" ? err : undefined
     });
   }
 
