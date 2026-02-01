@@ -8,7 +8,7 @@ import { LeadStatus } from '../../types/lead.types.js';
  * Create a test user with specified role
  */
 export async function createTestUser(
-  role: Role = Role.salesAgent,
+  role: Role = Role.SalesAgent,
   overrides: Partial<{
     email: string;
     password: string;
@@ -38,7 +38,7 @@ export function generateAuthToken(userId: string, role: Role): string {
 /**
  * Create authenticated user and return user + token
  */
-export async function createAuthenticatedUser(role: Role = Role.salesAgent) {
+export async function createAuthenticatedUser(role: Role = Role.SalesAgent) {
   const user = await createTestUser(role);
   const token = generateAuthToken(user._id.toString(), user.role);
   

@@ -6,26 +6,56 @@ import {
     PropertyProjectUpdateSchema,
     PropertyProjectQuerySchema
 } from '../schemas/project.shema.js';
+import { authenticateToken, requireRole } from '../middlewares/auth.js';
+import { Role } from '../models/User.js';
 
 const router = express.Router();
 const propertyProjectController = new PropertyProjectController();
 
-// CREATE
-router.post('/', validateRequest(PropertyProjectSchema), propertyProjectController.createProject);
-router.post('/bulk', propertyProjectController.bulkCreateProjects);
-
-// READ
+// READ - accessible to authenticated users
 router.get('/', validateRequest(PropertyProjectQuerySchema, "query"), propertyProjectController.getAllProjects);
 router.get('/luxury', propertyProjectController.getLuxuryProjects);
 router.get('/developer/:developerId', propertyProjectController.getProjectsByDeveloper);
 router.get('/:id', propertyProjectController.getProjectById);
 
-// UPDATE
-router.put('/:id', validateRequest(PropertyProjectUpdateSchema), propertyProjectController.updateProject);
-router.patch('/:id', validateRequest(PropertyProjectUpdateSchema), propertyProjectController.updateProject);
+// CREATE - only admin and onboarding agents
+router.post(
+    '/',
+    authenticateToken,
+    requireRole([Role.Admin, Role.OnboardingAgent, Role.Developer]),
+    validateRequest(PropertyProjectSchema),
+    propertyProjectController.createProject
+);
+router.post(
+    '/bulk',
+    authenticateToken,
+    requireRole([Role.Admin, Role.OnboardingAgent, Role.Developer]),
+    propertyProjectController.bulkCreateProjects
+);
 
-// DELETE
-router.delete('/:id', propertyProjectController.deleteProject);
+// UPDATE - only admin and onboarding agents
+router.put(
+    '/:id',
+    authenticateToken,
+    requireRole([Role.Admin, Role.OnboardingAgent, Role.Developer]),
+    validateRequest(PropertyProjectUpdateSchema),
+    propertyProjectController.updateProject
+);
+router.patch(
+    '/:id',
+    authenticateToken,
+    requireRole([Role.Admin, Role.OnboardingAgent, Role.Developer]),
+    validateRequest(PropertyProjectUpdateSchema),
+    propertyProjectController.updateProject
+);
+
+// DELETE - only admin and onboarding agents
+router.delete(
+    '/:id',
+    authenticateToken,
+    requireRole([Role.Admin, Role.OnboardingAgent, Role.Developer]),
+    propertyProjectController.deleteProject
+);
 
 export default router;
 

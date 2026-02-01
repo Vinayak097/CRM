@@ -18,6 +18,7 @@ import propertyRoutes from "./routes/property.routes.js";
 import { errorHandler } from "./utils/errorHandler.js";
 import locationRoutes from "./routes/location.routes.js";
 import developerRoutes from "./routes/developer.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,7 +91,7 @@ app.use("/api/auth", authRoutes);
 app.use(
   "/api/leads",
   authenticateToken,
-  requireRole([Role.Admin, Role.salesAgent]),
+  requireRole([Role.Admin, Role.SalesAgent, Role.SalesManager]),
   leadRoutes,
 );
 app.use("/api/users", userRoutes);
@@ -98,6 +99,7 @@ app.use("/api/properties", propertyRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/developers", developerRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/project", projectRoutes)
 // Health check
 app.get("/health", (req: Request, res: Response) => {

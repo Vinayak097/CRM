@@ -8,8 +8,13 @@ import { Input } from "@/components/ui/input";
 
 const PAGE_SIZE = 10;
 
+// Roles that can create/edit/delete projects
+const WRITE_ROLES = ['admin', 'onboarding_agent', 'developer'];
+
 const ProjectsPage: React.FC = () => {
     const navigate = useNavigate();
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    const canWrite = WRITE_ROLES.includes(user?.role);
     const [projects, setProjects] = useState<PropertyProject[]>([]);
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
@@ -117,10 +122,12 @@ const ProjectsPage: React.FC = () => {
                                 </span>
                             )}
                         </Button>
-                        <Button onClick={() => navigate("/projects/create")} className="sm:w-auto w-full">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Project
-                        </Button>
+                        {canWrite && (
+                            <Button onClick={() => navigate("/projects/create")} className="sm:w-auto w-full">
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Project
+                            </Button>
+                        )}
                     </div>
                 </div>
 
@@ -231,26 +238,28 @@ const ProjectsPage: React.FC = () => {
                                     </div>
                                 )}
                             </div>
-                            <div className="flex gap-2 pt-3 border-t border-gray-700">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="flex-1 text-blue-400 hover:text-blue-300"
-                                    onClick={() => navigate(`/projects/${project._id}/edit`)}
-                                >
-                                    <Edit2 className="h-4 w-4 mr-1" />
-                                    Edit
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="flex-1 text-red-400 hover:text-red-300"
-                                    onClick={() => handleDelete(project._id, project.name)}
-                                >
-                                    <Trash2 className="h-4 w-4 mr-1" />
-                                    Delete
-                                </Button>
-                            </div>
+                            {canWrite && (
+                                <div className="flex gap-2 pt-3 border-t border-gray-700">
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="flex-1 text-blue-400 hover:text-blue-300"
+                                        onClick={() => navigate(`/projects/${project._id}/edit`)}
+                                    >
+                                        <Edit2 className="h-4 w-4 mr-1" />
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="flex-1 text-red-400 hover:text-red-300"
+                                        onClick={() => handleDelete(project._id, project.name)}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-1" />
+                                        Delete
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     ))
                 )}
@@ -267,7 +276,7 @@ const ProjectsPage: React.FC = () => {
                             <th className="p-3">Price Range</th>
                             <th className="p-3">Avg Price</th>
                             <th className="p-3">Developer</th>
-                            <th className="p-3">Actions</th>
+                            {canWrite && <th className="p-3">Actions</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -310,26 +319,28 @@ const ProjectsPage: React.FC = () => {
                                     <td className="p-3 text-sm text-gray-400">
                                         {project.project_details?.developer_name || project.developer?.developer_id || "-"}
                                     </td>
-                                    <td className="p-3">
-                                        <div className="flex gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-blue-400 hover:text-blue-300"
-                                                onClick={() => navigate(`/projects/${project._id}/edit`)}
-                                            >
-                                                <Edit2 className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-red-400 hover:text-red-300"
-                                                onClick={() => handleDelete(project._id, project.name)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </td>
+                                    {canWrite && (
+                                        <td className="p-3">
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-blue-400 hover:text-blue-300"
+                                                    onClick={() => navigate(`/projects/${project._id}/edit`)}
+                                                >
+                                                    <Edit2 className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-red-400 hover:text-red-300"
+                                                    onClick={() => handleDelete(project._id, project.name)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    )}
                                 </tr>
                             ))
                         )}

@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 
-type Role = 'admin' | 'sales_agent' | 'developer';
+type Role = 'admin' | 'sales_agent' | 'onboarding_agent' | 'sales_manager' | 'business_head' | 'developer';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

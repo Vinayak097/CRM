@@ -23,6 +23,7 @@ import EditDeveloperPage from './pages/Developer/EditDeveloperPage';
 import ProjectsPage from './pages/Project/ProjectsPage';
 import CreateProjectPage from './pages/Project/CreateProjectPage';
 import EditProjectPage from './pages/Project/EditProjectPage';
+import DashboardPage from './pages/Dashboard/DashboardPage';
 
 
 const AppContent: React.FC = () => {
@@ -59,6 +60,14 @@ const AppContent: React.FC = () => {
         <main className="flex-1 overflow-auto">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/leads"
               element={
@@ -196,7 +205,7 @@ const AppContent: React.FC = () => {
               }
             />
 
-            <Route path="*" element={<Navigate to="/leads" replace />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
       </div>

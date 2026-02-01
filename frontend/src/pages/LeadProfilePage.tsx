@@ -8,11 +8,14 @@ import {
 import { leadService } from "../services/leadService";
 import { userService, type User } from "../services/userService";
 import { Button } from "@/components/ui/button";
-import type { Lead, LeadStatus } from "@/types";
+import { Role, type Lead, type LeadStatus } from "@/types";
+import {  useUser } from "../hooks/useAuth";
 
 const LeadProfilePage: React.FC = () => {
+  
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useUser();
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -207,7 +210,10 @@ const LeadProfilePage: React.FC = () => {
 
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={() => navigate(`/leads/${id}/edit`)}><Edit2 className="h-4 w-4 mr-1" />Edit</Button>
-              <Button variant="outline" size="sm" onClick={() => { fetchAgents(); setShowAssignModal(true); }}><UserPlus className="h-4 w-4 mr-1" />Assign</Button>
+              
+              {user?.role ===Role.Admin || user?.role === Role.SalesManager && (
+                <Button variant="outline" size="sm" onClick={() => { fetchAgents(); setShowAssignModal(true); }}><UserPlus className="h-4 w-4 mr-1" />Assign</Button>
+              )}
               <Button variant="outline" size="sm" onClick={() => {
                 setSelectedStatus(lead.system?.leadStatus || "New");
                 setShowStatusModal(true);

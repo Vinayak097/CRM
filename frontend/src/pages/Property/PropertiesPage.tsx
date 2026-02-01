@@ -7,8 +7,13 @@ import { Input } from "@/components/ui/input";
 
 const PAGE_SIZE = 10;
 
+// Roles that can create/edit/delete properties
+const WRITE_ROLES = ['admin', 'onboarding_agent', 'developer'];
+
 const PropertiesPage: React.FC = () => {
   const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const canWrite = WRITE_ROLES.includes(user?.role);
   const [properties, setProperties] = useState<Property[]>([]);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -133,10 +138,12 @@ const PropertiesPage: React.FC = () => {
                 </span>
               )}
             </Button>
-            <Button onClick={() => navigate("/property/create")} className="sm:w-auto w-full">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Property
-            </Button>
+            {canWrite && (
+              <Button onClick={() => navigate("/property/create")} className="sm:w-auto w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Property
+              </Button>
+            )}
           </div>
         </div>
 
@@ -285,26 +292,28 @@ const PropertiesPage: React.FC = () => {
                   </div>
                 )}
               </div>
-              <div className="flex gap-2 pt-3 border-t border-gray-700">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-1 text-blue-400 hover:text-blue-300"
-                  onClick={() => navigate(`/property/${property._id}/edit`)}
-                >
-                  <Edit2 className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-1 text-red-400 hover:text-red-300"
-                  onClick={() => handleDelete(property._id!, property.title)}
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
-                </Button>
-              </div>
+              {canWrite && (
+                <div className="flex gap-2 pt-3 border-t border-gray-700">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1 text-blue-400 hover:text-blue-300"
+                    onClick={() => navigate(`/property/${property._id}/edit`)}
+                  >
+                    <Edit2 className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="flex-1 text-red-400 hover:text-red-300"
+                    onClick={() => handleDelete(property._id!, property.title)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
+              )}
             </div>
           ))
         )}
@@ -322,7 +331,7 @@ const PropertiesPage: React.FC = () => {
               <th className="p-3">Status</th>
               <th className="p-3">Featured</th>
               <th className="p-3">Views</th>
-              <th className="p-3">Actions</th>
+              {canWrite && <th className="p-3">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -368,26 +377,28 @@ const PropertiesPage: React.FC = () => {
                     )}
                   </td>
                   <td className="p-3">{property.engagement?.views_count || 0}</td>
-                  <td className="p-3">
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-blue-400 hover:text-blue-300"
-                        onClick={() => navigate(`/property/${property._id}/edit`)}
-                      >
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-400 hover:text-red-300"
-                        onClick={() => handleDelete(property._id!, property.title)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
+                  {canWrite && (
+                    <td className="p-3">
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-blue-400 hover:text-blue-300"
+                          onClick={() => navigate(`/property/${property._id}/edit`)}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:text-red-300"
+                          onClick={() => handleDelete(property._id!, property.title)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}
