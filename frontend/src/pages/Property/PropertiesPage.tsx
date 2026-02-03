@@ -257,7 +257,8 @@ const PropertiesPage: React.FC = () => {
           properties.map((property) => (
             <div
               key={property._id}
-              className="bg-gray-900 border border-gray-700 rounded-xl p-4 shadow-sm"
+              className="bg-gray-900 border border-gray-700 rounded-xl p-4 shadow-sm cursor-pointer hover:bg-gray-800"
+              onClick={() => navigate(`/property/${property._id}`)}
             >
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1 min-w-0">
@@ -298,7 +299,7 @@ const PropertiesPage: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     className="flex-1 text-blue-400 hover:text-blue-300"
-                    onClick={() => navigate(`/property/${property._id}/edit`)}
+                    onClick={(e) => { e.stopPropagation(); navigate(`/property/${property._id}/edit`); }}
                   >
                     <Edit2 className="h-4 w-4 mr-1" />
                     Edit
@@ -307,7 +308,7 @@ const PropertiesPage: React.FC = () => {
                     variant="ghost"
                     size="sm"
                     className="flex-1 text-red-400 hover:text-red-300"
-                    onClick={() => handleDelete(property._id!, property.title)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(property._id, property.title); }}
                   >
                     <Trash2 className="h-4 w-4 mr-1" />
                     Delete
@@ -351,7 +352,8 @@ const PropertiesPage: React.FC = () => {
               properties.map((property) => (
                 <tr
                   key={property._id}
-                  className="border-t border-gray-700 hover:bg-gray-800"
+                  className="border-t border-gray-700 hover:bg-gray-800 cursor-pointer"
+                  onClick={() => navigate(`/property/${property._id}`)}
                 >
                   <td className="p-3 font-medium">{property.title}</td>
                   <td className="p-3">
@@ -384,7 +386,7 @@ const PropertiesPage: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           className="text-blue-400 hover:text-blue-300"
-                          onClick={() => navigate(`/property/${property._id}/edit`)}
+                          onClick={(e) => { e.stopPropagation(); navigate(`/property/${property._id}/edit`); }}
                         >
                           <Edit2 className="h-4 w-4" />
                         </Button>
@@ -392,7 +394,7 @@ const PropertiesPage: React.FC = () => {
                           variant="ghost"
                           size="sm"
                           className="text-red-400 hover:text-red-300"
-                          onClick={() => handleDelete(property._id!, property.title)}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(property._id, property.title); }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>

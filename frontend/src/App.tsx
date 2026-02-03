@@ -12,6 +12,7 @@ import CreateLeadPage from './pages/Lead/CreateLeadPage';
 import EditLeadPage from './pages/Lead/EditLeadPage';
 import UsersPage from './pages/UsersPage';
 import PropertiesPage from './pages/Property/PropertiesPage';
+import PropertyDetailPage from './pages/Property/PropertyDetailPage';
 import CreatePropertyPage from './pages/Property/CreatePropertyPage';
 import EditPropertyPage from './pages/Property/EditPropertyPage';
 import LocationsPage from './pages/Location/LocationsPage';
@@ -21,9 +22,12 @@ import DevelopersPage from './pages/Developer/DevelopersPage';
 import CreateDeveloperPage from './pages/Developer/CreateDeveloperPage';
 import EditDeveloperPage from './pages/Developer/EditDeveloperPage';
 import ProjectsPage from './pages/Project/ProjectsPage';
+import ProjectDetailPage from './pages/Project/ProjectDetailPage';
 import CreateProjectPage from './pages/Project/CreateProjectPage';
 import EditProjectPage from './pages/Project/EditProjectPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
+import CommunicationPage from './pages/Communication/CommunicationPage';
+import TasksPage from './pages/Tasks/TasksPage';
 
 
 const AppContent: React.FC = () => {
@@ -133,6 +137,14 @@ const AppContent: React.FC = () => {
               }
             />
             <Route
+              path="/property/:id"
+              element={
+                <ProtectedRoute>
+                  <PropertyDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/locations"
               element={
                 <ProtectedRoute>
@@ -201,6 +213,30 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <EditProjectPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/projects/:id"
+              element={
+                <ProtectedRoute>
+                  <ProjectDetailPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/communication"
+              element={
+                <ProtectedRoute>
+                  <CommunicationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tasks"
+              element={
+                <ProtectedRoute>
+                  <TasksPage />
                 </ProtectedRoute>
               }
             />

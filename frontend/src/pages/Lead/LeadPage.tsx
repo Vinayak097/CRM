@@ -4,7 +4,8 @@ import { Search, Plus, ChevronLeft, ChevronRight, Edit2, Trash2 } from "lucide-r
 import { leadService } from "../../services/leadService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Lead } from "@/types";
+import { Role, type Lead } from "@/types";
+import { useUser } from "@/hooks/useAuth";
 
 const PAGE_SIZE = 10;
 
@@ -18,6 +19,8 @@ const LeadsPage: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const user = useUser().user;
+  const isSalesAgent = user?.role === Role.SalesAgent;
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -176,15 +179,15 @@ const LeadsPage: React.FC = () => {
               <th className="p-3">Status</th>
               <th className="p-3">Budget</th>
               <th className="p-3">Journey Stage</th>
-              <th className="p-3">Assigned Agent</th>
+              {!isSalesAgent && <th className="p-3">Assigned Agent</th>}
               <th className="p-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={8} className="p-6 text-center text-gray-400">Loading...</td></tr>
+              <tr><td colSpan={isSalesAgent ? 7 : 8} className="p-6 text-center text-gray-400">Loading...</td></tr>
             ) : leads.length === 0 ? (
-              <tr><td colSpan={8} className="p-6 text-center text-gray-400">No leads found</td></tr>
+              <tr><td colSpan={isSalesAgent ? 7 : 8} className="p-6 text-center text-gray-400">No leads found</td></tr>
             ) : (
               leads.map((lead) => (
                 <tr key={lead._id} className="border-t border-gray-700 hover:bg-gray-800 cursor-pointer" onClick={() => navigate(`/leads/${lead._id}`)}>
@@ -196,7 +199,7 @@ const LeadsPage: React.FC = () => {
                   </td>
                   <td className="p-3">{lead.totalBudgetBandInr || "-"}</td>
                   <td className="p-3">{lead.buyingJourneyStage || "-"}</td>
-                  <td className="p-3">{lead.system?.assignedAgent?.name || "-"}</td>
+                  {!isSalesAgent && <td className="p-3">{lead.system?.assignedAgent?.name || "-"}</td>}
                   <td className="p-3">
                     <div className="flex gap-2">
                       <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300" onClick={(e) => { e.stopPropagation(); navigate(`/leads/${lead._id}/edit`); }}>

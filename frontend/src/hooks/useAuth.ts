@@ -2,7 +2,7 @@ import { useAuthStore } from "../store/authStore";
 
 export const useAuth = () => {
   const store = useAuthStore();
-
+  
   return {
     user: store.user,
     isAuthenticated: store.isAuthenticated,
@@ -15,3 +15,10 @@ export const useAuth = () => {
     clearError: store.clearError,
   };
 };
+
+export const useUser=()=>{
+  const store= useAuthStore();
+  return {
+    user:store.user
+  }
+}

@@ -215,7 +215,8 @@ const ProjectsPage: React.FC = () => {
                     projects.map((project) => (
                         <div
                             key={project._id}
-                            className="bg-gray-900 border border-gray-700 rounded-xl p-4 shadow-sm"
+                            className="bg-gray-900 border border-gray-700 rounded-xl p-4 shadow-sm cursor-pointer hover:bg-gray-800"
+                            onClick={() => navigate(`/projects/${project._id}`)}
                         >
                             <div className="flex justify-between items-start mb-3">
                                 <div className="flex-1 min-w-0">
@@ -244,7 +245,7 @@ const ProjectsPage: React.FC = () => {
                                         variant="ghost"
                                         size="sm"
                                         className="flex-1 text-blue-400 hover:text-blue-300"
-                                        onClick={() => navigate(`/projects/${project._id}/edit`)}
+                                        onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project._id}/edit`); }}
                                     >
                                         <Edit2 className="h-4 w-4 mr-1" />
                                         Edit
@@ -253,7 +254,7 @@ const ProjectsPage: React.FC = () => {
                                         variant="ghost"
                                         size="sm"
                                         className="flex-1 text-red-400 hover:text-red-300"
-                                        onClick={() => handleDelete(project._id, project.name)}
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(project._id, project.name); }}
                                     >
                                         <Trash2 className="h-4 w-4 mr-1" />
                                         Delete
@@ -296,7 +297,8 @@ const ProjectsPage: React.FC = () => {
                             projects.map((project) => (
                                 <tr
                                     key={project._id}
-                                    className="border-t border-gray-700 hover:bg-gray-800"
+                                    className="border-t border-gray-700 hover:bg-gray-800 cursor-pointer"
+                                    onClick={() => navigate(`/projects/${project._id}`)}
                                 >
                                     <td className="p-3 font-medium">
                                         <div>
@@ -326,7 +328,7 @@ const ProjectsPage: React.FC = () => {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="text-blue-400 hover:text-blue-300"
-                                                    onClick={() => navigate(`/projects/${project._id}/edit`)}
+                                                    onClick={(e) => { e.stopPropagation(); navigate(`/projects/${project._id}/edit`); }}
                                                 >
                                                     <Edit2 className="h-4 w-4" />
                                                 </Button>
@@ -334,7 +336,7 @@ const ProjectsPage: React.FC = () => {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="text-red-400 hover:text-red-300"
-                                                    onClick={() => handleDelete(project._id, project.name)}
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(project._id, project.name); }}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>

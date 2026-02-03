@@ -22,11 +22,13 @@ export const leadZodSchema = z.object({
       purchaseTimeline: z.string().optional(),
       aboutYouNotes: z.string().optional(),
       ownershipTimelineNotes: z.string().optional(),
-      household: {
-        hasSeniorCitizen: z.string().optional(),
-        hasChildren: z.string().optional(),
-        hasPets: z.string().optional(),
-      },
+      household: z
+        .object({
+          hasSeniorCitizen: z.string().optional(),
+          hasChildren: z.string().optional(),
+          hasPets: z.string().optional(),
+        })
+        .optional(),
     })
     .optional()
     .default({

@@ -19,8 +19,10 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen = false, onClose }) =>
   const menuItems = [
     { name: 'Dashboard', icon: '📊', route: '/dashboard', allowedRoles: ['admin', 'sales_agent', 'onboarding_agent', 'sales_manager', 'business_head', 'developer'] as Role[] },
     { name: 'Leads', icon: '📋', route: '/leads', allowedRoles: ['admin', 'sales_agent', 'sales_manager'] as Role[] },
-    { name: 'Projects', icon: '📁', route: '/projects', allowedRoles: ['admin', 'onboarding_agent', 'business_head', 'developer'] as Role[] },
-    { name: 'Properties', icon: '🏠', route: '/property', allowedRoles: ['admin', 'onboarding_agent', 'business_head', 'developer'] as Role[] },
+    { name: 'Tasks', icon: '✅', route: '/tasks', allowedRoles: ['admin', 'sales_agent', 'onboarding_agent', 'sales_manager', 'business_head', 'developer'] as Role[] },
+    { name: 'Communication', icon: '💬', route: '/communication', allowedRoles: ['admin', 'sales_agent', 'sales_manager'] as Role[] },
+    { name: 'Projects', icon: '📁', route: '/projects', allowedRoles: ['admin', 'sales_agent', 'onboarding_agent', 'business_head', 'developer'] as Role[] },
+    { name: 'Properties', icon: '🏠', route: '/property', allowedRoles: ['admin', 'sales_agent', 'onboarding_agent', 'business_head', 'developer'] as Role[] },
     { name: 'Developers', icon: '🏗️', route: '/developers', allowedRoles: ['admin', 'onboarding_agent', 'developer'] as Role[] },
     { name: 'Users', icon: '👥', route: '/users', allowedRoles: ['admin', 'sales_manager', 'business_head'] as Role[] },
     { name: 'Locations', icon: '📍', route: '/locations', allowedRoles: ['admin'] as Role[] },

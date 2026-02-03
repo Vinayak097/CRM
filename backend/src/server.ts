@@ -19,6 +19,9 @@ import { errorHandler } from "./utils/errorHandler.js";
 import locationRoutes from "./routes/location.routes.js";
 import developerRoutes from "./routes/developer.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import taskRoutes from "./routes/task.routes.js";
+import communicationRoutes from "./routes/communication.routes.js";
+import { initializeTaskScheduler } from "./workers/taskScheduler.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -100,7 +103,9 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/locations", locationRoutes);
 app.use("/api/developers", developerRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/project", projectRoutes)
+app.use("/api/tasks", taskRoutes);
+app.use("/api/communications", communicationRoutes);
+app.use("/api/project", projectRoutes);
 // Health check
 app.get("/health", (req: Request, res: Response) => {
   res.json({ status: "OK" });
@@ -126,6 +131,25 @@ app.post("/typeform", async (req, res) => {
 
 // Error handling middleware (must be last)
 app.use(errorHandler);
+
+// Initialize Task Scheduler
+// Runs every 2 minutes to process overdue tasks
+// Can be configured with environment variable TASK_SCHEDULER_INTERVAL_MINUTES
+const schedulerInterval = parseInt(process.env.TASK_SCHEDULER_INTERVAL_MINUTES || "2", 10);
+const taskSchedulerId = initializeTaskScheduler(schedulerInterval);
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("[SERVER] SIGTERM received, shutting down gracefully...");
+  clearInterval(taskSchedulerId);
+  process.exit(0);
+});
+
+process.on("SIGINT", () => {
+  console.log("[SERVER] SIGINT received, shutting down gracefully...");
+  clearInterval(taskSchedulerId);
+  process.exit(0);
+});
 
 // Start server
 const PORT = process.env.PORT || 3000;
