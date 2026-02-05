@@ -1,4 +1,5 @@
 import Task, { TaskStatus, TaskType, EntityType, type ITask } from "../models/Task.js";
+import Activity, { ActivityType, ActivityChannel, ActivityEntityType } from "../models/Activity.js";
 import type { 
   CreateTaskInput, 
   UpdateTaskInput, 
@@ -31,6 +32,31 @@ export class TaskService {
 
     const task = new Task(taskData);
     await task.save();
+
+    // Create activity entry for the task
+    try {
+      const entityType = input.entityType.toLowerCase() as ActivityEntityType;
+      const activity = new Activity({
+        activity_type: ActivityType.TASK_CREATED,
+        title: `Task created: ${input.title}`,
+        description: input.description || `${input.type} task due ${new Date(input.dueAt).toLocaleDateString()}`,
+        channel: ActivityChannel.SYSTEM,
+        related_to: {
+          type: entityType,
+          id: new mongoose.Types.ObjectId(input.entityId),
+        },
+        performed_by: new mongoose.Types.ObjectId(input.assignedAgentId),
+        meta: {
+          taskId: task._id,
+          taskType: input.type,
+          priority: input.priority,
+          dueAt: input.dueAt,
+        },
+      });
+      await activity.save();
+    } catch (err) {
+      console.error("Failed to create activity for task:", err);
+    }
     
     return task.toObject();
   }

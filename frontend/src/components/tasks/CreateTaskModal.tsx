@@ -166,7 +166,6 @@ const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
                 <option value="FOLLOW_UP">📞 Follow-up</option>
                 <option value="CALL">☎️ Call</option>
                 <option value="MEETING">👥 Meeting</option>
-                <option value="SYSTEM_CHECK">✓ System Check</option>
               </select>
             </div>
 

@@ -104,8 +104,8 @@ const TaskList: React.FC<TaskListProps> = ({
         return "Call";
       case "MEETING":
         return "Meeting";
-      case "SYSTEM_CHECK":
-        return "System Check";
+      default:
+        return type;
     }
   };
 

@@ -1,11 +1,16 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Plus, ChevronLeft, ChevronRight, Edit2, Trash2 } from "lucide-react";
+import { Search, Plus, ChevronLeft, ChevronRight, Edit2, Trash2, Filter } from "lucide-react";
 import { leadService } from "../../services/leadService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Role, type Lead } from "@/types";
+import { Role, type Lead, type LeadStatus } from "@/types";
 import { useUser } from "@/hooks/useAuth";
+
+const LEAD_STATUSES: LeadStatus[] = [
+  "New", "Contacted", "Qualified", "Shortlisted", "Site Visit", 
+  "Negotiation", "Booked", "Lost", "Converted"
+];
 
 const PAGE_SIZE = 10;
 
@@ -14,6 +19,7 @@ const LeadsPage: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
@@ -26,7 +32,7 @@ const LeadsPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await leadService.getLeads(page, PAGE_SIZE, search);
+      const response = await leadService.getLeads(page, PAGE_SIZE, search, statusFilter);
       setLeads(response.leads);
       setTotalPages(response.pagination.pages);
       setTotal(response.pagination.total);
@@ -35,7 +41,7 @@ const LeadsPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page, search, statusFilter]);
 
   useEffect(() => {
     fetchLeads();
@@ -108,6 +114,21 @@ const LeadsPage: React.FC = () => {
             <Button onClick={handleSearch} variant="secondary" size="icon" className="shrink-0">
               <Search className="h-4 w-4" />
             </Button>
+          </div>
+          
+          {/* Status Filter */}
+          <div className="relative">
+            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+            <select
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+              className="pl-9 pr-4 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm appearance-none cursor-pointer min-w-[150px]"
+            >
+              <option value="">All Statuses</option>
+              {LEAD_STATUSES.map((status) => (
+                <option key={status} value={status}>{status}</option>
+              ))}
+            </select>
           </div>
         </div>
       </div>

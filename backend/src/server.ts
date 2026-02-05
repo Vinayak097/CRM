@@ -21,6 +21,7 @@ import developerRoutes from "./routes/developer.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import taskRoutes from "./routes/task.routes.js";
 import communicationRoutes from "./routes/communication.routes.js";
+import noteRoutes from "./routes/note.routes.js";
 import { initializeTaskScheduler } from "./workers/taskScheduler.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -105,6 +106,7 @@ app.use("/api/developers", developerRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/communications", communicationRoutes);
+app.use("/api/notes", noteRoutes);
 app.use("/api/project", projectRoutes);
 // Health check
 app.get("/health", (req: Request, res: Response) => {

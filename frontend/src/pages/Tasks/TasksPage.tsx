@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Plus, Check, Clock, AlertTriangle, ChevronLeft, ChevronRight, Calendar, X } from "lucide-react";
+import { Plus, Check, Clock, AlertTriangle, ChevronLeft, ChevronRight, Calendar, X, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +11,8 @@ import taskService, {
   type TaskPriority,
   type CreateTaskInput,
 } from "@/services/taskService";
+import { leadService } from "@/services/leadService";
+import { type Lead } from "@/types";
 
 const PAGE_SIZE = 10;
 
@@ -25,6 +27,12 @@ const TasksPage: React.FC = () => {
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
+  // Lead search state
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadSearch, setLeadSearch] = useState("");
+  const [loadingLeads, setLoadingLeads] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+
   // Form state
   const [formData, setFormData] = useState<CreateTaskInput>({
     type: "FOLLOW_UP",
@@ -36,6 +44,29 @@ const TasksPage: React.FC = () => {
     description: "",
     priority: "MEDIUM",
   });
+
+  // Fetch leads for selection
+  const searchLeads = async (search: string) => {
+    setLoadingLeads(true);
+    try {
+      const response = await leadService.getLeads(1, 20, search);
+      setLeads(response.leads);
+    } catch (error) {
+      console.error("Failed to search leads:", error);
+    } finally {
+      setLoadingLeads(false);
+    }
+  };
+
+  // Debounced lead search
+  useEffect(() => {
+    if (showCreateModal) {
+      const timer = setTimeout(() => {
+        searchLeads(leadSearch);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [leadSearch, showCreateModal]);
 
   const fetchTasks = useCallback(async () => {
     setLoading(true);
@@ -63,11 +94,20 @@ const TasksPage: React.FC = () => {
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title.trim()) return;
+    if (!formData.title.trim() || !formData.entityId) {
+      alert("Please fill in all required fields including selecting a lead");
+      return;
+    }
 
     setCreating(true);
     try {
-      await taskService.createTask(formData);
+      // Convert datetime-local format to ISO string
+      const dueAtISO = new Date(formData.dueAt).toISOString();
+      
+      await taskService.createTask({
+        ...formData,
+        dueAt: dueAtISO,
+      });
       setShowCreateModal(false);
       setFormData({
         type: "FOLLOW_UP",
@@ -79,6 +119,8 @@ const TasksPage: React.FC = () => {
         description: "",
         priority: "MEDIUM",
       });
+      setSelectedLead(null);
+      setLeadSearch("");
       fetchTasks();
     } catch (error) {
       console.error("Failed to create task:", error);
@@ -138,8 +180,8 @@ const TasksPage: React.FC = () => {
         return "Call";
       case "MEETING":
         return "Meeting";
-      case "SYSTEM_CHECK":
-        return "System Check";
+      default:
+        return type;
     }
   };
 
@@ -323,6 +365,65 @@ const TasksPage: React.FC = () => {
                   />
                 </div>
 
+                {/* Lead Selector */}
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">Select Lead *</label>
+                  {selectedLead ? (
+                    <div className="flex items-center justify-between p-3 bg-gray-800 border border-gray-700 rounded-md">
+                      <div>
+                        <p className="font-medium">{selectedLead.identity?.firstName} {selectedLead.identity?.lastName}</p>
+                        <p className="text-sm text-gray-400">{selectedLead.identity?.email || selectedLead.identity?.phone}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedLead(null);
+                          setFormData((prev) => ({ ...prev, entityId: "" }));
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          value={leadSearch}
+                          onChange={(e) => setLeadSearch(e.target.value)}
+                          placeholder="Search leads by name, email, or phone..."
+                          className="pl-9 bg-gray-800 border-gray-700"
+                        />
+                      </div>
+                      {loadingLeads ? (
+                        <p className="text-sm text-gray-400 p-2">Searching...</p>
+                      ) : leads.length > 0 ? (
+                        <div className="max-h-40 overflow-y-auto border border-gray-700 rounded-md">
+                          {leads.map((lead) => (
+                            <button
+                              key={lead._id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedLead(lead);
+                                setFormData((prev) => ({ ...prev, entityId: lead._id }));
+                                setLeadSearch("");
+                              }}
+                              className="w-full text-left px-3 py-2 hover:bg-gray-700 border-b border-gray-700 last:border-0"
+                            >
+                              <p className="font-medium text-sm">{lead.identity?.firstName} {lead.identity?.lastName}</p>
+                              <p className="text-xs text-gray-400">{lead.identity?.email || lead.identity?.phone}</p>
+                            </button>
+                          ))}
+                        </div>
+                      ) : leadSearch ? (
+                        <p className="text-sm text-gray-400 p-2">No leads found</p>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm text-gray-400 mb-1">Type</label>
@@ -334,7 +435,6 @@ const TasksPage: React.FC = () => {
                       <option value="FOLLOW_UP">Follow Up</option>
                       <option value="CALL">Call</option>
                       <option value="MEETING">Meeting</option>
-                      <option value="SYSTEM_CHECK">System Check</option>
                     </select>
                   </div>
                   <div>

@@ -75,7 +75,7 @@ const AppContent: React.FC = () => {
             <Route
               path="/leads"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin', 'sales_agent', 'sales_manager']}>
                   <LeadsPage />
                 </ProtectedRoute>
               }
@@ -83,7 +83,7 @@ const AppContent: React.FC = () => {
             <Route
               path="/leads/create"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin', 'sales_agent', 'sales_manager']}>
                   <CreateLeadPage />
                 </ProtectedRoute>
               }
@@ -91,7 +91,7 @@ const AppContent: React.FC = () => {
             <Route
               path="/leads/:id/edit"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin', 'sales_agent', 'sales_manager']}>
                   <EditLeadPage />
                 </ProtectedRoute>
               }
@@ -99,7 +99,7 @@ const AppContent: React.FC = () => {
             <Route
               path="/leads/:id"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin', 'sales_agent', 'sales_manager']}>
                   <LeadProfilePage />
                 </ProtectedRoute>
               }
@@ -227,7 +227,7 @@ const AppContent: React.FC = () => {
             <Route
               path="/communication"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRoles={['admin', 'sales_agent', 'sales_manager']}>
                   <CommunicationPage />
                 </ProtectedRoute>
               }

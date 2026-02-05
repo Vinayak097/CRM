@@ -13,26 +13,29 @@ import { Role } from "../models/User.js";
 
 const router = Router();
 
+// Allowed roles for lead operations (excludes onboarding_agent)
+const leadAccessRoles = [Role.Admin, Role.SalesAgent, Role.SalesManager];
+
 // Test route without any middleware
 router.post("/test", (req, res) => {
   console.log("Test route hit with body:", req.body);
   res.json({ message: "Test route works", data: req.body });
 });
 
-// Create a new lead (accessible to all authenticated users)
-router.post("/", createLeadController);
+// Create a new lead (admin, sales_agent, sales_manager only)
+router.post("/", requireRole(leadAccessRoles), createLeadController);
 
 // Get all leads with filters
-router.get("/", getAllLeadsController);
+router.get("/", requireRole(leadAccessRoles), getAllLeadsController);
 
 // Get lead by ID
-router.get("/:id", getLeadByIdController);
+router.get("/:id", requireRole(leadAccessRoles), getLeadByIdController);
 
 // Update lead (partial update)
-router.patch("/:id", updateLeadController);
+router.patch("/:id", requireRole(leadAccessRoles), updateLeadController);
 
 // Update lead status
-router.patch("/:id/status", updateLeadStatusController);
+router.patch("/:id/status", requireRole(leadAccessRoles), updateLeadStatusController);
 
 // Assign agent to lead (admin/sales manager only)
 router.patch(

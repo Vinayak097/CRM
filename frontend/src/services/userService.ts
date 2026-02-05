@@ -1,11 +1,14 @@
 import api from "./api";
+import { Role } from "@/types";
+
+export type UserRole = "admin" | "sales_agent" | "onboarding_agent" | "sales_manager" | "business_head" | "developer";
 
 export interface User {
   _id: string;
   name: string;
   email: string;
   phone?: string;
-  role: "admin" | "sales_agent" | "developer";
+  role: UserRole;
   assignedLeadsCount: number;
   createdAt: string;
   updatedAt: string;
@@ -27,7 +30,7 @@ export interface CreateUserData {
   email: string;
   password: string;
   phone?: string;
-  role: "admin" | "sales_agent" | "developer";
+  role: UserRole;
 }
 
 export const userService = {

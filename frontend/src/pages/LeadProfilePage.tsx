@@ -3,11 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft, Phone, Mail, Calendar, MapPin, UserCheck, UserPlus, Clock,
   Edit2, CheckCircle2, Home, Users, Target, MessageSquare,
-  Building, Trash2, ListTodo, FileText, Send,
+  Building, Trash2, ListTodo, FileText, Send, Activity, Pin, Globe, Lock, UsersIcon,
 } from "lucide-react";
 import { leadService } from "../services/leadService";
 import { userService, type User } from "../services/userService";
 import { taskService, type Task } from "../services/taskService";
+import { communicationService, type Activity as ActivityType } from "../services/communicationService";
+import { noteService, type Note, type NoteVisibility } from "../services/noteService";
 import CreateTaskModal from "../components/tasks/CreateTaskModal";
 import TaskList from "../components/tasks/TaskList";
 import { Button } from "@/components/ui/button";
@@ -36,9 +38,15 @@ const LeadProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
   
   // Notes state
-  const [notes, setNotes] = useState<Array<{ id: string; text: string; createdAt: string; author: string }>>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [newNote, setNewNote] = useState("");
+  const [noteVisibility, setNoteVisibility] = useState<NoteVisibility>("private");
   const [addingNote, setAddingNote] = useState(false);
+  const [notesLoading, setNotesLoading] = useState(false);
+
+  // Activities state
+  const [activities, setActivities] = useState<ActivityType[]>([]);
+  const [activitiesLoading, setActivitiesLoading] = useState(false);
 
   const statuses: LeadStatus[] = ["New", "Contacted", "Qualified", "Shortlisted", "Site Visit", "Negotiation", "Booked", "Lost", "Converted"];
 
@@ -77,7 +85,36 @@ const LeadProfilePage: React.FC = () => {
 
   useEffect(() => {
     fetchTasks();
+    fetchActivities();
+    fetchNotes();
   }, [id]);
+
+  const fetchActivities = async () => {
+    if (!id) return;
+    setActivitiesLoading(true);
+    try {
+      const response = await communicationService.getEntityTimeline("lead", id, 100);
+      const allActivities = response.data?.data || [];
+      setActivities(allActivities);
+    } catch (error) {
+      console.error("Failed to fetch activities:", error);
+    } finally {
+      setActivitiesLoading(false);
+    }
+  };
+
+  const fetchNotes = async () => {
+    if (!id) return;
+    setNotesLoading(true);
+    try {
+      const notesData = await noteService.getEntityNotes("lead", id);
+      setNotes(notesData);
+    } catch (error) {
+      console.error("Failed to fetch notes:", error);
+    } finally {
+      setNotesLoading(false);
+    }
+  };
 
   const fetchAgents = async () => {
     try {
@@ -127,18 +164,53 @@ const LeadProfilePage: React.FC = () => {
     }
   };
 
-  const handleAddNote = () => {
-    if (!newNote.trim()) return;
+  const handleAddNote = async () => {
+    if (!newNote.trim() || !id) return;
     setAddingNote(true);
-    const note = {
-      id: Date.now().toString(),
-      text: newNote,
-      createdAt: new Date().toISOString(),
-      author: user?.name || "Agent",
-    };
-    setNotes([note, ...notes]);
-    setNewNote("");
-    setAddingNote(false);
+    try {
+      await noteService.createNote({
+        content: newNote,
+        entity_type: "lead",
+        entity_id: id,
+        visibility: noteVisibility,
+      });
+      setNewNote("");
+      setNoteVisibility("private");
+      fetchNotes();
+    } catch (error) {
+      console.error("Failed to add note:", error);
+      alert("Failed to add note");
+    } finally {
+      setAddingNote(false);
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string) => {
+    if (!confirm("Delete this note?")) return;
+    try {
+      await noteService.deleteNote(noteId);
+      fetchNotes();
+    } catch (error) {
+      console.error("Failed to delete note:", error);
+      alert("Failed to delete note");
+    }
+  };
+
+  const handleTogglePin = async (noteId: string) => {
+    try {
+      await noteService.togglePin(noteId);
+      fetchNotes();
+    } catch (error) {
+      console.error("Failed to toggle pin:", error);
+    }
+  };
+
+  const getVisibilityIcon = (visibility: NoteVisibility) => {
+    switch (visibility) {
+      case "private": return <Lock className="h-3 w-3" />;
+      case "team": return <UsersIcon className="h-3 w-3" />;
+      case "public": return <Globe className="h-3 w-3" />;
+    }
   };
 
   const getStatusColor = (status: LeadStatus): string => {
@@ -256,6 +328,9 @@ const LeadProfilePage: React.FC = () => {
             <TabsTrigger value="tasks" className="data-[state=active]:bg-gray-700">
               <ListTodo className="h-4 w-4 mr-2" />Tasks ({tasks.length})
             </TabsTrigger>
+            <TabsTrigger value="activities" className="data-[state=active]:bg-gray-700">
+              <Activity className="h-4 w-4 mr-2" />Activities
+            </TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -372,13 +447,26 @@ const LeadProfilePage: React.FC = () => {
                     rows={3}
                     className="bg-gray-800 border-gray-700 mb-2"
                   />
-                  <Button onClick={handleAddNote} disabled={addingNote || !newNote.trim()}>
-                    <Send className="h-4 w-4 mr-2" />Add Note
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button onClick={handleAddNote} disabled={addingNote || !newNote.trim()}>
+                      <Send className="h-4 w-4 mr-2" />{addingNote ? "Adding..." : "Add Note"}
+                    </Button>
+                    <select
+                      value={noteVisibility}
+                      onChange={(e) => setNoteVisibility(e.target.value as NoteVisibility)}
+                      className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-sm text-white"
+                    >
+                      <option value="private">🔒 Private (Only me)</option>
+                      <option value="team">👥 Team (My team)</option>
+                      <option value="public">🌐 Public (Everyone)</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Notes List */}
-                {notes.length === 0 ? (
+                {notesLoading ? (
+                  <div className="text-center py-8 text-gray-400">Loading notes...</div>
+                ) : notes.length === 0 ? (
                   <div className="text-center py-8 text-gray-400">
                     <FileText className="h-10 w-10 mx-auto mb-3 opacity-50" />
                     <p>No notes yet</p>
@@ -386,14 +474,46 @@ const LeadProfilePage: React.FC = () => {
                 ) : (
                   <div className="space-y-4">
                     {notes.map((note) => (
-                      <div key={note.id} className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+                      <div 
+                        key={note._id} 
+                        className={`bg-gray-800/50 rounded-lg p-4 border ${note.is_pinned ? "border-yellow-500/50" : "border-gray-700"}`}
+                      >
                         <div className="flex justify-between items-start mb-2">
-                          <span className="text-sm font-medium text-blue-400">{note.author}</span>
-                          <span className="text-xs text-gray-500">
-                            {new Date(note.createdAt).toLocaleDateString()} {new Date(note.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            {note.is_pinned && <Pin className="h-3 w-3 text-yellow-500" />}
+                            <span className="text-sm font-medium text-blue-400">
+                              {note.created_by?.name || note.created_by?.email || "Agent"}
+                            </span>
+                            <span className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs ${
+                              note.visibility === "private" ? "bg-gray-700 text-gray-400" :
+                              note.visibility === "team" ? "bg-blue-500/20 text-blue-400" :
+                              "bg-green-500/20 text-green-400"
+                            }`}>
+                              {getVisibilityIcon(note.visibility)}
+                              {note.visibility}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">
+                              {new Date(note.created_at).toLocaleDateString()} {new Date(note.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <button
+                              onClick={() => handleTogglePin(note._id)}
+                              className={`p-1 rounded hover:bg-gray-700 ${note.is_pinned ? "text-yellow-500" : "text-gray-500"}`}
+                              title={note.is_pinned ? "Unpin" : "Pin"}
+                            >
+                              <Pin className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteNote(note._id)}
+                              className="p-1 rounded hover:bg-gray-700 text-red-400"
+                              title="Delete"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          </div>
                         </div>
-                        <p className="text-sm text-gray-300">{note.text}</p>
+                        <p className="text-sm text-gray-300">{note.content}</p>
                       </div>
                     ))}
                   </div>
@@ -422,6 +542,63 @@ const LeadProfilePage: React.FC = () => {
                   </div>
                 ) : (
                   <TaskList tasks={tasks} entityType="LEAD" entityId={id!} onTasksChange={fetchTasks} />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Activities Tab */}
+          <TabsContent value="activities" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Activity className="h-5 w-5" />Recent Activities
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {activitiesLoading ? (
+                  <div className="text-center py-8 text-gray-400">Loading activities...</div>
+                ) : activities.length === 0 ? (
+                  <div className="text-center py-8 text-gray-400">
+                    <Activity className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p>No activities yet</p>
+                    <p className="text-sm mt-2">Activities will appear here as you interact with this lead</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {activities.map((activity) => (
+                      <div key={activity._id} className="flex gap-4 border-l-2 border-gray-700 pl-4 py-2">
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium text-sm">
+                                {activity.title || activity.activity_type.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}
+                              </p>
+                              {activity.description && (
+                                <p className="text-sm text-gray-400 mt-1">{activity.description}</p>
+                              )}
+                            </div>
+                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                              {new Date(activity.created_at).toLocaleDateString()} {new Date(activity.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          {activity.performed_by && (
+                            <p className="text-xs text-gray-500 mt-1">
+                              By {activity.performed_by.name || activity.performed_by.email}
+                            </p>
+                          )}
+                          <span className={`inline-block mt-2 px-2 py-0.5 text-xs rounded ${
+                            activity.channel === "email" ? "bg-blue-500/20 text-blue-400" :
+                            activity.channel === "whatsapp" ? "bg-green-500/20 text-green-400" :
+                            activity.channel === "call" ? "bg-purple-500/20 text-purple-400" :
+                            "bg-gray-500/20 text-gray-400"
+                          }`}>
+                            {activity.channel}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>

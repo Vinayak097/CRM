@@ -1,8 +1,17 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Search, Plus, Trash2, ChevronLeft, ChevronRight, Edit2 } from "lucide-react";
+import { Search, Plus, Trash2, ChevronLeft, ChevronRight, Edit2, Eye, EyeOff } from "lucide-react";
 import { userService, type User } from "../services/userService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
+// Role options for dropdowns
+const ROLE_OPTIONS = [
+  { value: "admin", label: "Admin" },
+  { value: "sales_agent", label: "Sales Agent" },
+  { value: "onboarding_agent", label: "Onboarding Agent" },
+  { value: "sales_manager", label: "Sales Manager" },
+  { value: "business_head", label: "Business Head" },
+];
 
 const PAGE_SIZE = 10;
 
@@ -15,6 +24,8 @@ const UsersPage: React.FC = () => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({
@@ -364,8 +375,11 @@ const UsersPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Password *</label>
+                <div className="relative">
+                  
+                
                 <Input
-                  type="password"
+                  type={showPassword ? "text":"password"}
                   required
                   minLength={6}
                   value={createForm.password}
@@ -374,6 +388,10 @@ const UsersPage: React.FC = () => {
                   }
                   className="bg-gray-800 border-gray-700"
                 />
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
+                  {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                </div>
+                </div>
               </div>
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Phone</label>
@@ -398,9 +416,11 @@ const UsersPage: React.FC = () => {
                   }
                   className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
                 >
-                  <option value="sales_agent">Sales Agent</option>
-                  <option value="admin">Admin</option>
-                  <option value="developer">Developer</option>
+                  {ROLE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
@@ -473,9 +493,11 @@ const UsersPage: React.FC = () => {
                   }
                   className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
                 >
-                  <option value="sales_agent">Sales Agent</option>
-                  <option value="admin">Admin</option>
-                  <option value="developer">Developer</option>
+                  {ROLE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">

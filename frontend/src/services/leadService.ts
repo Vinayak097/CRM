@@ -78,13 +78,15 @@ export const leadService = {
   getLeads: async (
     page = 1,
     limit = 10,
-    search = ""
+    search = "",
+    status = ""
   ): Promise<PaginatedResponse<Lead>> => {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
     });
     if (search) params.append("search", search);
+    if (status) params.append("status", status);
     const response = await api.get(`/leads?${params}`);
     return response.data.data;
   },

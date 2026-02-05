@@ -64,6 +64,58 @@ export interface CommunicationQueryParams {
   limit?: number;
 }
 
+export type ActivityType =
+  | "email_sent"
+  | "email_received"
+  | "whatsapp_sent"
+  | "whatsapp_received"
+  | "call_logged"
+  | "call_received"
+  | "site_visit"
+  | "note_added"
+  | "task_created"
+  | "status_changed"
+  | "meeting_scheduled";
+
+export type ActivityChannel = "email" | "whatsapp" | "call" | "sms" | "system";
+
+export interface Activity {
+  _id: string;
+  activity_type: ActivityType;
+  title: string;
+  description?: string;
+  channel: ActivityChannel;
+  related_to: {
+    type: string;
+    id: string;
+  };
+  communication_id?: string;
+  performed_by?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  assigned_to?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  meta?: Record<string, any>;
+  created_at: string;
+}
+
+export interface CreateActivityInput {
+  activity_type: ActivityType;
+  title: string;
+  description?: string;
+  channel: ActivityChannel;
+  related_to: {
+    type: "lead" | "customer" | "deal" | "property";
+    id: string;
+  };
+  meta?: Record<string, any>;
+}
+
 export const communicationService = {
   getCommunications: async (params?: CommunicationQueryParams) => {
     const response = await api.get<{
@@ -99,6 +151,31 @@ export const communicationService = {
       `/communications/entity/${entityType}/${entityId}`
     );
     return response.data.data;
+  },
+
+  // Activity methods
+  getEntityTimeline: async (entityType: string, entityId: string, limit = 50) => {
+    const response = await api.get<{ success: boolean; data: Activity[] }>(
+      `/communications/activities/entity/${entityType}/${entityId}`,
+      { params: { limit } }
+    );
+    return response;
+  },
+
+  createActivity: async (data: CreateActivityInput) => {
+    const response = await api.post<{ success: boolean; data: Activity }>(
+      "/communications/activities",
+      data
+    );
+    return response.data.data;
+  },
+
+  getActivities: async (params?: { entityType?: string; entityId?: string; limit?: number }) => {
+    const response = await api.get<{
+      success: boolean;
+      data: { activities: Activity[]; total: number };
+    }>("/communications/activities", { params });
+    return response.data;
   },
 };
 

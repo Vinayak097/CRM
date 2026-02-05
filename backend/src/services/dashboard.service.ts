@@ -194,7 +194,7 @@ export async function getAdminStats() {
       .select("name email assignedLeadsCount")
       .lean(),
     User.find({
-      role: { $in: ["developer", "onboarding_agent", Role.OnboardingAgent, Role.Developer] },
+      role: { $in: ["developer", "onboarding_agent", Role.OnboardingAgent] },
     })
       .select("name email")
       .lean(),
@@ -295,7 +295,7 @@ export async function getBusinessHeadStats() {
       { $group: { _id: "$project_status", count: { $sum: 1 } } },
     ]),
     User.find({
-      role: { $in: ["developer", "onboarding_agent", Role.OnboardingAgent, Role.Developer] },
+      role: { $in: ["developer", "onboarding_agent", Role.OnboardingAgent] },
     })
       .select("name email")
       .lean(),

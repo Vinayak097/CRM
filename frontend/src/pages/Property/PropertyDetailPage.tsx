@@ -10,7 +10,7 @@ const PropertyDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useUser();
-  const canEdit = user?.role === "Admin";
+  const canEdit = user?.role === "admin" || user?.role === "onboarding_agent";
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     basic: true,
     location: false,
