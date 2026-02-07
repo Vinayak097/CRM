@@ -4,7 +4,8 @@ import bcrypt from "bcryptjs";
 import type { AuthRequest } from "../middlewares/auth.js";
 
 export const createUser = async (req: AuthRequest, res: Response) => {
-  const { password, name, role, email, phone } = req.body;
+  const { password, name, role, email, phone, managedBy } = req.body;
+  const currentUser = req.user!;
 
   if (!password || !name || !email || !role) {
     res.status(400).json({ message: "Missing required fields" });
@@ -26,12 +27,51 @@ export const createUser = async (req: AuthRequest, res: Response) => {
       }
     }
 
+    // Determine managedBy based on role and current user
+    let finalManagedBy = managedBy || undefined;
+
+    // If current user is Sales Manager creating a Sales Agent, auto-assign
+    if (role === Role.SalesAgent && currentUser.role === Role.SalesManager) {
+      finalManagedBy = currentUser.id;
+    }
+
+    // If current user is Business Head creating an Onboarding Agent, auto-assign
+    if (role === Role.OnboardingAgent && currentUser.role === Role.BusinessHead) {
+      finalManagedBy = currentUser.id;
+    }
+
+    // Validate managedBy for agents
+    if (role === Role.SalesAgent) {
+      if (!finalManagedBy) {
+        res.status(400).json({ message: "Sales Agent must be assigned to a Sales Manager" });
+        return;
+      }
+      const manager = await User.findById(finalManagedBy);
+      if (!manager || manager.role !== Role.SalesManager) {
+        res.status(400).json({ message: "Invalid Sales Manager" });
+        return;
+      }
+    }
+
+    if (role === Role.OnboardingAgent) {
+      if (!finalManagedBy) {
+        res.status(400).json({ message: "Onboarding Agent must be assigned to a Business Head" });
+        return;
+      }
+      const manager = await User.findById(finalManagedBy);
+      if (!manager || manager.role !== Role.BusinessHead) {
+        res.status(400).json({ message: "Invalid Business Head" });
+        return;
+      }
+    }
+
     const user = await User.create({
       name,
       role,
       email,
       phone,
       password,
+      managedBy: finalManagedBy,
     });
 
     res.status(201).json({
@@ -42,6 +82,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
         email: user.email,
         role: user.role,
         phone: user.phone,
+        managedBy: user.managedBy,
       },
     });
   } catch (e) {
@@ -166,6 +207,7 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
     const limit = Number(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const search = (req.query.search as string) || "";
+    const currentUser = req.user!;
 
     const filter: Record<string, unknown> = {};
     if (search) {
@@ -176,8 +218,21 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
       ];
     }
 
+    // Filter based on user role
+    if (currentUser.role === Role.SalesManager) {
+      // Sales Managers only see Sales Agents they manage
+      filter.managedBy = currentUser.id;
+      filter.role = Role.SalesAgent;
+    } else if (currentUser.role === Role.BusinessHead) {
+      // Business Heads only see Onboarding Agents they manage
+      filter.managedBy = currentUser.id;
+      filter.role = Role.OnboardingAgent;
+    }
+    // Admins can see all users (no additional filter)
+
     const users = await User.find(filter)
       .select("-password")
+      .populate("managedBy", "name email")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);

@@ -13,6 +13,7 @@ const PropertySchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    assignedAgent: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     listing_id: { type: String, index: true },
     title: { type: String },
     subtitle: { type: String },

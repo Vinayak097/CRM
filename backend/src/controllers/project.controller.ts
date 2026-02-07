@@ -6,6 +6,7 @@ import {
 } from "../schemas/project.shema.js";
 import PropertyProject from "../models/project.model.js";
 import { AppError } from "../utils/errorHandler.js";
+import mongoose from "mongoose";
 
 export class PropertyProjectController {
 
@@ -33,8 +34,12 @@ export class PropertyProjectController {
             // query parameters already validated by middleware
             const queryParams = req.query as any;
 
-            const page = parseInt(queryParams.page || '1');
-            const limit = parseInt(queryParams.limit || '10');
+            let page = parseInt(queryParams.page || '1');
+            let limit = parseInt(queryParams.limit || '10');
+
+            if (isNaN(page) || page < 1) page = 1;
+            if (isNaN(limit) || limit < 1) limit = 10;
+
             const skip = (page - 1) * limit;
 
             // Build filter object
@@ -97,14 +102,33 @@ export class PropertyProjectController {
         }
     }
 
-    // READ - Get single project by ID
+    // READ - Get single project by ID (supports both _id and custom id)
     getProjectById = async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
+            console.log(`[PropertyProjectController] Fetching project with ID: ${id}`);
 
-            const project = await PropertyProject.findById(id);
+            let project = null;
+
+            // 1. Try finding by MongoDB _id if it's a valid ObjectId
+            if (mongoose.isValidObjectId(id)) {
+                project = await PropertyProject.findById(id);
+            }
+
+            // 2. If not found by _id, try finding by custom string id
+            if (!project) {
+                console.log(`[PropertyProjectController] Project not found by _id (ObjectId), trying custom id: ${id}`);
+                project = await PropertyProject.findOne({ id: id });
+            }
+
+            // 3. Fallback: Try native collection query for _id as string (bypassing Mongoose casting)
+            if (!project) {
+                console.log(`[PropertyProjectController] Project not found by Mongoose, trying native collection _id: ${id}`);
+                project = await mongoose.connection.db?.collection('property_projects').findOne({ _id: id });
+            }
 
             if (!project) {
+                console.warn(`[PropertyProjectController] Project not found for ID: ${id}`);
                 throw new AppError('Property project not found', 404);
             }
 
@@ -113,6 +137,7 @@ export class PropertyProjectController {
                 data: project
             });
         } catch (error: any) {
+            console.error(`[PropertyProjectController] Error fetching project: ${error.message}`, error);
             throw new AppError('Error fetching property project', 500, error);
         }
     }
@@ -121,6 +146,10 @@ export class PropertyProjectController {
     updateProject = async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
+
+            if (!mongoose.isValidObjectId(id)) {
+                throw new AppError('Invalid property project ID', 400);
+            }
 
             // Data already validated by middleware
             const project = await PropertyProject.findByIdAndUpdate(
@@ -148,6 +177,10 @@ export class PropertyProjectController {
         try {
             const { id } = req.params;
             const { permanent } = req.query;
+
+            if (!mongoose.isValidObjectId(id)) {
+                throw new AppError('Invalid property project ID', 400);
+            }
 
             if (permanent === 'true') {
                 // Hard delete

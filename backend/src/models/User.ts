@@ -16,6 +16,7 @@ export interface IUser extends Document {
   phone?: string;
   role: Role;
   assignedLeadsCount: number;
+  managedBy?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
   lastLogin: Date | null;
@@ -56,6 +57,14 @@ const userSchema = new Schema<IUser>(
     assignedLeadsCount: {
       type: Number,
       default: 0,
+    },
+    managedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: function (this: IUser) {
+        // Only required for agents (optional for backward compatibility)
+        return false;
+      },
     },
   },
   {

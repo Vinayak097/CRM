@@ -141,10 +141,10 @@ const PoliciesSchema = new mongoose.Schema({
 
 // Main Schema
 const PropertyProjectSchema = new mongoose.Schema({
-    _id: { type: String, default: () => new mongoose.Types.ObjectId().toString() },
     id: String,
     name: { type: String, required: true, trim: true },
     subtitle: String,
+    assignedAgent: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     project_type: { type: String, required: true },
     project_status: {
         type: String,

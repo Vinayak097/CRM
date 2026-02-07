@@ -86,6 +86,12 @@ const leadSchema = new Schema(
 
       priorityScore: { type: Number, default: 0 },
       investmentScore: { type: Number, default: 0 },
+
+      dealValue: {
+        amount: { type: Number, default: 0 },
+        currency: { type: String, default: "INR" },
+        expectedCloseDate: { type: Date },
+      },
     },
   },
   { timestamps: true }
