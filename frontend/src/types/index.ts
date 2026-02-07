@@ -91,6 +91,11 @@ export interface LeadSystem {
   };
   priorityScore?: number;
   investmentScore?: number;
+  dealValue?: {
+    amount: number;
+    currency: string;
+    expectedCloseDate?: string;
+  };
 }
 
 export interface Lead {

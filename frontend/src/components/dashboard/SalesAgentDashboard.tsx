@@ -49,7 +49,7 @@ export const SalesAgentDashboard: React.FC<Props> = ({ stats }) => {
           subtitle="Needs attention"
         />
         <KpiCard
-          title="Assigned Leads"
+          title="My Pipeline Leads"
           value={stats.assignedLeadsCount}
           icon="📋"
           subtitle="Total in pipeline"

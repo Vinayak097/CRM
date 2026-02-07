@@ -28,6 +28,8 @@ import EditProjectPage from './pages/Project/EditProjectPage';
 import DashboardPage from './pages/Dashboard/DashboardPage';
 import CommunicationPage from './pages/Communication/CommunicationPage';
 import TasksPage from './pages/Tasks/TasksPage';
+import SalesFunnelPage from './pages/SalesFunnel/SalesFunnelPage';
+
 
 
 const AppContent: React.FC = () => {
@@ -237,6 +239,14 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <TasksPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/sales-funnel"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'sales_manager']}>
+                  <SalesFunnelPage />
                 </ProtectedRoute>
               }
             />

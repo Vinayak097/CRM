@@ -33,9 +33,11 @@ const UsersPage: React.FC = () => {
     email: "",
     password: "",
     phone: "",
-    role: "sales_agent" as "admin" | "sales_agent" | "developer",
+    role: "sales_agent" as "admin" | "sales_agent" | "onboarding_agent" | "sales_manager" | "business_head" | "developer",
+    managedBy: "",
   });
   const [createLoading, setCreateLoading] = useState(false);
+  const [managers, setManagers] = useState<User[]>([]);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
@@ -43,7 +45,7 @@ const UsersPage: React.FC = () => {
     name: "",
     email: "",
     phone: "",
-    role: "sales_agent" as "admin" | "sales_agent" | "developer",
+    role: "sales_agent" as "admin" | "sales_agent" | "onboarding_agent" | "sales_manager" | "business_head" | "developer",
   });
   const [editLoading, setEditLoading] = useState(false);
 
@@ -77,6 +79,30 @@ const UsersPage: React.FC = () => {
     }
   };
 
+  // Fetch managers based on role
+  const fetchManagers = async (role: string) => {
+    try {
+      let managerRole = "";
+      if (role === "sales_agent") {
+        managerRole = "sales_manager";
+      } else if (role === "onboarding_agent") {
+        managerRole = "business_head";
+      }
+
+      if (managerRole) {
+        // Fetch all users and filter by role on client side
+        const response = await userService.getUsers(1, 100, "");
+        const filteredManagers = response.data.filter(u => u.role === managerRole);
+        setManagers(filteredManagers);
+      } else {
+        setManagers([]);
+      }
+    } catch (err) {
+      console.error("Failed to fetch managers", err);
+      setManagers([]);
+    }
+  };
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateLoading(true);
@@ -90,6 +116,7 @@ const UsersPage: React.FC = () => {
         password: "",
         phone: "",
         role: "sales_agent",
+        managedBy: "",
       });
       fetchUsers();
     } catch (err: any) {
@@ -218,7 +245,9 @@ const UsersPage: React.FC = () => {
               <div className="flex justify-between items-center">
                 <div className="text-sm">
                   <span className="text-gray-500">Assigned leads:</span>
-                  <span className="text-gray-300 ml-1 font-medium">{user.assignedLeadsCount || 0}</span>
+                  <span className="text-gray-300 ml-1 font-medium">
+                    {user.role === "sales_agent" ? user.assignedLeadsCount || 0 : "-"}
+                  </span>
                 </div>
                 <div className="flex gap-2">
                   <Button
@@ -286,7 +315,9 @@ const UsersPage: React.FC = () => {
                       {user.role.replace("_", " ")}
                     </span>
                   </td>
-                  <td className="p-3">{user.assignedLeadsCount}</td>
+                  <td className="p-3">
+                    {user.role === "sales_agent" ? user.assignedLeadsCount : "-"}
+                  </td>
                   <td className="p-3">
                     <div className="flex gap-2">
                       <Button
@@ -376,21 +407,21 @@ const UsersPage: React.FC = () => {
               <div>
                 <label className="block text-sm text-gray-400 mb-1">Password *</label>
                 <div className="relative">
-                  
-                
-                <Input
-                  type={showPassword ? "text":"password"}
-                  required
-                  minLength={6}
-                  value={createForm.password}
-                  onChange={(e) =>
-                    setCreateForm({ ...createForm, password: e.target.value })
-                  }
-                  className="bg-gray-800 border-gray-700"
-                />
-                <div className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
-                  {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
-                </div>
+
+
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    minLength={6}
+                    value={createForm.password}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, password: e.target.value })
+                    }
+                    className="bg-gray-800 border-gray-700"
+                  />
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
+                    {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                  </div>
                 </div>
               </div>
               <div>

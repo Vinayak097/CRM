@@ -1,8 +1,12 @@
+
+prompt :
+make sure you are not duplicating anything 
 # Avacasa Real Estate CRM
 
 A comprehensive Real Estate CRM system with frontend and backend authentication.
 
 ## Project Structure
+
 
 ```
 crm/

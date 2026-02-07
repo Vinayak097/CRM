@@ -10,6 +10,11 @@ export interface User {
   phone?: string;
   role: UserRole;
   assignedLeadsCount: number;
+  managedBy?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
   createdAt: string;
   updatedAt: string;
   lastLogin: string | null;
@@ -31,6 +36,7 @@ export interface CreateUserData {
   password: string;
   phone?: string;
   role: UserRole;
+  managedBy?: string;
 }
 
 export const userService = {
