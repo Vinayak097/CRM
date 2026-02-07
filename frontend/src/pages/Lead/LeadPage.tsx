@@ -8,7 +8,7 @@ import { Role, type Lead, type LeadStatus } from "@/types";
 import { useUser } from "@/hooks/useAuth";
 
 const LEAD_STATUSES: LeadStatus[] = [
-  "New", "Contacted", "Qualified", "Shortlisted", "Site Visit", 
+  "New", "Contacted", "Qualified", "Shortlisted", "Site Visit",
   "Negotiation", "Booked", "Lost", "Converted"
 ];
 
@@ -115,7 +115,7 @@ const LeadsPage: React.FC = () => {
               <Search className="h-4 w-4" />
             </Button>
           </div>
-          
+
           {/* Status Filter */}
           <div className="relative">
             <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
@@ -163,7 +163,7 @@ const LeadsPage: React.FC = () => {
               <div className="flex justify-between items-center text-sm mb-3">
                 <div>
                   <span className="text-gray-500">Budget:</span>
-                  <p className="text-gray-300 font-medium">{lead.totalBudgetBandInr || "-"}</p>
+                  <p className="text-gray-300 font-medium">{lead.identity?.householdIncomeBandInr || "-"}</p>
                 </div>
                 <div>
                   <span className="text-gray-500">Agent:</span>
@@ -178,10 +178,10 @@ const LeadsPage: React.FC = () => {
                   <Trash2 className="h-4 w-4 mr-1" />Delete
                 </Button>
               </div>
-              {lead.buyingJourneyStage && (
+              {lead.identity?.buyingJourneyStage && (
                 <div className="mt-3 pt-3 border-t border-gray-700">
                   <span className="text-gray-500 text-sm">Stage:</span>
-                  <p className="text-gray-300 font-medium">{lead.buyingJourneyStage}</p>
+                  <p className="text-gray-300 font-medium">{lead.identity.buyingJourneyStage}</p>
                 </div>
               )}
             </div>
@@ -201,14 +201,17 @@ const LeadsPage: React.FC = () => {
               <th className="p-3">Budget</th>
               <th className="p-3">Journey Stage</th>
               {!isSalesAgent && <th className="p-3">Assigned Agent</th>}
+              {(user?.role as any === Role.Admin || user?.role as any === Role.BusinessHead) && (
+                <th className="p-3">Sales Manager</th>
+              )}
               <th className="p-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={isSalesAgent ? 7 : 8} className="p-6 text-center text-gray-400">Loading...</td></tr>
+              <tr><td colSpan={isSalesAgent ? 7 : 9} className="p-6 text-center text-gray-400">Loading...</td></tr>
             ) : leads.length === 0 ? (
-              <tr><td colSpan={isSalesAgent ? 7 : 8} className="p-6 text-center text-gray-400">No leads found</td></tr>
+              <tr><td colSpan={isSalesAgent ? 7 : 9} className="p-6 text-center text-gray-400">No leads found</td></tr>
             ) : (
               leads.map((lead) => (
                 <tr key={lead._id} className="border-t border-gray-700 hover:bg-gray-800 cursor-pointer" onClick={() => navigate(`/leads/${lead._id}`)}>
@@ -218,9 +221,13 @@ const LeadsPage: React.FC = () => {
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded text-xs ${getStatusColor(lead.system?.leadStatus)}`}>{lead.system?.leadStatus || "New"}</span>
                   </td>
-                  <td className="p-3">{lead.totalBudgetBandInr || "-"}</td>
-                  <td className="p-3">{lead.buyingJourneyStage || "-"}</td>
+                  {/* Assuming totalBudgetBandInr maps to householdIncomeBandInr based on schema context */}
+                  <td className="p-3">{lead.identity?.householdIncomeBandInr || "-"}</td>
+                  <td className="p-3">{lead.identity?.buyingJourneyStage || "-"}</td>
                   {!isSalesAgent && <td className="p-3">{lead.system?.assignedAgent?.name || "-"}</td>}
+                  {(user?.role as any === Role.Admin || user?.role as any === Role.BusinessHead) && (
+                    <td className="p-3">{lead.system?.managerId?.name || "-"}</td>
+                  )}
                   <td className="p-3">
                     <div className="flex gap-2">
                       <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300" onClick={(e) => { e.stopPropagation(); navigate(`/leads/${lead._id}/edit`); }}>

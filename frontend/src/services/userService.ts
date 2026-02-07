@@ -37,6 +37,7 @@ export interface CreateUserData {
   phone?: string;
   role: UserRole;
   managedBy?: string;
+  autoAssign?: boolean;
 }
 
 export const userService = {

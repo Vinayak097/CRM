@@ -83,7 +83,11 @@ const leadSchema = new Schema(
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
-
+      managerId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+      },
       priorityScore: { type: Number, default: 0 },
       investmentScore: { type: Number, default: 0 },
 

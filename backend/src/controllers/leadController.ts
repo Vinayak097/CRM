@@ -20,10 +20,46 @@ const getAgentIdForLead = (user?: AuthUser | null): string | null => {
   return null;
 };
 
+// Helper to find Sales Manager with fewest leads
+async function findManagerWithFewestLeads(): Promise<string | null> {
+  try {
+    // Pipeline to find manager with fewest leads
+    const managers = await User.aggregate([
+      { $match: { role: Role.SalesManager } },
+      {
+        $lookup: {
+          from: "leads",
+          let: { managerId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$system.managerId", "$$managerId"] } } }
+          ],
+          as: "leads"
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          leadCount: { $size: "$leads" }
+        }
+      },
+      { $sort: { leadCount: 1 } },
+      { $limit: 1 }
+    ]);
+
+    if (managers.length > 0) {
+      return managers[0]._id.toString();
+    }
+    return null;
+  } catch (error) {
+    console.error("Error finding manager with fewest leads:", error);
+    return null;
+  }
+}
+
 export async function createLeadController(req: AuthRequest, res: Response) {
   try {
     const validationResult = leadZodSchema.safeParse(req.body);
-
+    console.log("validationResult", validationResult)
     if (!validationResult.success) {
       return res.status(400).json({
         success: false,
@@ -35,13 +71,39 @@ export async function createLeadController(req: AuthRequest, res: Response) {
     const leadData: LeadInput = validationResult.data;
 
     // Create lead with system defaults
+    // Auto-assign manager if not provided (though practically it should be auto-assigned)
+    let managerId = leadData.system?.managerId;
+
+    if (!managerId) {
+      managerId = await findManagerWithFewestLeads() as any;
+    }
+
+    if (!managerId) {
+      // Fallback: If no manager found, this might be a critical issue or first run
+      // For now, if Admin is creating, maybe assign to Admin or leave logic? 
+      // Requirement says "ManagerId must always exist". 
+      // If no managers exist in DB, we can't create a lead properly under this rule.
+      // We will throw error if no manager found.
+      const anyManager = await User.findOne({ role: Role.SalesManager });
+      if (anyManager) {
+        managerId = anyManager.id;
+      } else {
+        return res.status(400).json({
+          success: false,
+          message: "No Sales Manager found to assign lead to.",
+        });
+      }
+    }
+
+    // Create lead with system defaults
     const lead = new Lead({
       ...leadData,
       system: {
         leadStatus: leadData.system?.leadStatus || LeadStatus.New,
         priorityScore: leadData.system?.priorityScore || 0,
         investmentScore: leadData.system?.investmentScore || 0,
-        assignedAgent: leadData.system?.assignedAgent || getAgentIdForLead(req.user),
+        managerId: managerId,
+        assignedAgent: null, // Always null on creation as per requirement
       },
     });
 
@@ -102,6 +164,17 @@ export const updateLeadController = async (req: AuthRequest, res: Response) => {
       }
     }
 
+    // Check sales manager access
+    if (req.user?.role === Role.SalesManager) {
+      const isManaged = lead.system?.managerId?.toString() === req.user.id;
+      if (!isManaged) {
+        return res.status(403).json({
+          success: false,
+          message: "You can only update leads managed by you",
+        });
+      }
+    }
+
     // Validate update data
     const validationResult = leadZodSchema.partial().safeParse(req.body);
     if (!validationResult.success) {
@@ -112,12 +185,29 @@ export const updateLeadController = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // Logic for Admin changing manager
+    if (req.body.system?.managerId && req.user?.role === Role.Admin) {
+      const newManagerId = req.body.system.managerId;
+      const oldManagerId = lead.system?.managerId?.toString();
+
+      if (newManagerId !== oldManagerId) {
+        // Reset assigned agent if manager changes
+        req.body.system.assignedAgent = null;
+      }
+    }
+
+    // Prevent non-admins from changing managerId
+    if (req.body.system?.managerId && req.user?.role !== Role.Admin) {
+      delete req.body.system.managerId;
+    }
+
     // Update lead with nested object support
     const updatedLead = await Lead.findByIdAndUpdate(
       id,
       { $set: req.body },
       { new: true, runValidators: true }
-    ).populate("system.assignedAgent", "name email phone");
+    ).populate("system.assignedAgent", "name email phone")
+      .populate("system.managerId", "name email");
 
     return res.status(200).json({
       success: true,
@@ -188,17 +278,24 @@ export const getAllLeadsController = async (req: AuthRequest, res: Response) => 
 
     const filter: any = {};
 
-    // Role-based access control: agents can only see their assigned leads
+    // Role-based access control
+
+    // Sales Agent: Can only see leads assigned to them
     if (req.user?.role === Role.SalesAgent) {
       filter["system.assignedAgent"] = new mongoose.Types.ObjectId(req.user.id);
-    } 
-    // Admin can filter by assignedAgent if provided
-    else if (assignedAgent) {
-      if (mongoose.Types.ObjectId.isValid(assignedAgent as string)) {
-        filter["system.assignedAgent"] = new mongoose.Types.ObjectId(
-          assignedAgent as string
-        );
+    }
+    // Sales Manager: Can only see leads managed by them
+    else if (req.user?.role === Role.SalesManager) {
+      filter["system.managerId"] = new mongoose.Types.ObjectId(req.user.id);
+    }
+    // Admin: Can (optionally) filter by manager or agent for viewing specific users' leads
+    else if (req.user?.role === Role.Admin || req.user?.role === Role.BusinessHead) {
+      if (assignedAgent && mongoose.Types.ObjectId.isValid(assignedAgent as string)) {
+        filter["system.assignedAgent"] = new mongoose.Types.ObjectId(assignedAgent as string);
       }
+      // Can add manager filter if passed in query
+      // const { managerId } = req.query;
+      // if (managerId) filter["system.managerId"] = ...
     }
     // Status filter
     if (status) {
@@ -226,7 +323,9 @@ export const getAllLeadsController = async (req: AuthRequest, res: Response) => 
       .sort(sort)
       .skip(skip)
       .limit(limitNum)
+      .limit(limitNum)
       .populate("system.assignedAgent", "name email")
+      .populate("system.managerId", "name email")
       .lean();
 
     const total = await Lead.countDocuments(filter);
@@ -237,7 +336,7 @@ export const getAllLeadsController = async (req: AuthRequest, res: Response) => 
       data: {
         leads,
         pagination: {
-        page: pageNum,
+          page: pageNum,
           limit: limitNum,
           total,
           pages: Math.ceil(total / limitNum),
@@ -266,10 +365,9 @@ export const getLeadByIdController = async (
     });
   }
   try {
-    const lead = await Lead.findById(id).populate(
-      "system.assignedAgent",
-      "name email"
-    );
+    const lead = await Lead.findById(id)
+      .populate("system.assignedAgent", "name email")
+      .populate("system.managerId", "name email");
 
     if (!lead) {
       res.status(404).json({ message: "Lead not found" });
@@ -282,7 +380,7 @@ export const getLeadByIdController = async (
       const assignedAgentId = typeof assignedAgent === 'object' && assignedAgent !== null
         ? assignedAgent._id?.toString()
         : assignedAgent?.toString();
-      
+
       if (assignedAgentId !== req.user.id) {
         res.status(403).json({ message: "Access denied" });
         return;
@@ -312,7 +410,7 @@ export const deleteLeadController = async (req: AuthRequest, res: Response) => {
       const assignedAgentId = typeof assignedAgent === 'object' && assignedAgent !== null
         ? assignedAgent._id?.toString()
         : assignedAgent?.toString();
-      
+
       if (assignedAgentId !== req.user.id) {
         res.status(403).json({ message: "Access denied" });
         return;
@@ -380,6 +478,7 @@ export const updateLeadStatusController = async (
     // Ensure system object exists
     if (!lead.system) {
       lead.system = {
+        managerId: new mongoose.Types.ObjectId() as any, // This is a rare fallback, but required by type
         leadStatus: LeadStatus.New,
         priorityScore: 0,
         investmentScore: 0,
@@ -466,13 +565,41 @@ export const assignAgentToLeadController = async (
 
     const oldAgent = lead.system?.assignedAgent?.toString();
 
+    // VALIDATION: Check if agent exists and has role sales_agent
+    const agent = await User.findById(agentId);
+    if (!agent || agent.role !== Role.SalesAgent) {
+      return res.status(400).json({ message: "Invalid agent or agent role is not Sales Agent" });
+    }
+
+    // VALIDATION: Check if Agent's manager matches Lead's manager
+    // Note: User model needs reference to manager. Assuming 'managedBy' field on User based on context or similar.
+    // The requirements say "Agent.managerId === lead.managerId". 
+    // In User model, we verify if there is `managedBy` or similar. 
+    // Checking User.ts... it has `managedBy?: mongoose.Types.ObjectId;`
+
+    const leadManagerId = lead.system?.managerId?.toString();
+    const agentManagerId = agent.managedBy?.toString();
+
+    if (!leadManagerId) {
+      // This should technically not happen if schema requires it, but for safety
+      return res.status(400).json({ message: "Lead does not have a manager assigned. Cannot assign agent." });
+    }
+
+    if (agentManagerId !== leadManagerId) {
+      return res.status(400).json({
+        message: "Agent does not report to the Lead's Manager. Hierarchy violation.",
+        details: `Agent Manager: ${agentManagerId}, Lead Manager: ${leadManagerId}`
+      });
+    }
+
     // METHOD 1: Direct assignment with type assertion (Your current approach)
     if (!lead.system) {
       // Create minimal system object
       lead.system = {
         assignedAgent: agentId,
         leadStatus: LeadStatus.New,
-      } as any; // This is fine for runtime
+        managerId: leadManagerId // Maintain manager
+      } as any;
     } else {
       // Just update the assignedAgent
       lead.system.assignedAgent = agentId;

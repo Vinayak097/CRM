@@ -89,6 +89,11 @@ export interface LeadSystem {
     name: string;
     email: string;
   };
+  managerId?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
   priorityScore?: number;
   investmentScore?: number;
   dealValue?: {

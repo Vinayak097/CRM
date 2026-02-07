@@ -35,6 +35,7 @@ const UsersPage: React.FC = () => {
     phone: "",
     role: "sales_agent" as "admin" | "sales_agent" | "onboarding_agent" | "sales_manager" | "business_head" | "developer",
     managedBy: "",
+    autoAssign: false,
   });
   const [createLoading, setCreateLoading] = useState(false);
   const [managers, setManagers] = useState<User[]>([]);
@@ -46,6 +47,7 @@ const UsersPage: React.FC = () => {
     email: "",
     phone: "",
     role: "sales_agent" as "admin" | "sales_agent" | "onboarding_agent" | "sales_manager" | "business_head" | "developer",
+    managedBy: "",
   });
   const [editLoading, setEditLoading] = useState(false);
 
@@ -117,6 +119,7 @@ const UsersPage: React.FC = () => {
         phone: "",
         role: "sales_agent",
         managedBy: "",
+        autoAssign: false,
       });
       fetchUsers();
     } catch (err: any) {
@@ -143,7 +146,12 @@ const UsersPage: React.FC = () => {
       email: user.email,
       phone: user.phone || "",
       role: user.role,
+      managedBy: user.managedBy?._id || "",
     });
+    // Fetch managers if needed for the current user's role
+    if (user.role === "sales_agent" || user.role === "onboarding_agent") {
+      fetchManagers(user.role);
+    }
     setShowEditModal(true);
   };
 
@@ -439,12 +447,16 @@ const UsersPage: React.FC = () => {
                 <label className="block text-sm text-gray-400 mb-1">Role *</label>
                 <select
                   value={createForm.role}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const newRole = e.target.value as typeof createForm.role;
                     setCreateForm({
                       ...createForm,
-                      role: e.target.value as typeof createForm.role,
-                    })
-                  }
+                      role: newRole,
+                      managedBy: "",
+                      autoAssign: false, // Reset auto-assign on role change
+                    });
+                    fetchManagers(newRole);
+                  }}
                   className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
                 >
                   {ROLE_OPTIONS.map((option) => (
@@ -454,6 +466,56 @@ const UsersPage: React.FC = () => {
                   ))}
                 </select>
               </div>
+
+              {(createForm.role === "sales_agent" || createForm.role === "onboarding_agent") && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-gray-400">
+                      {createForm.role === "sales_agent"
+                        ? "Sales Manager"
+                        : "Business Head"}
+                    </label>
+                    <Button
+                      type="button"
+                      variant={createForm.autoAssign ? "default" : "secondary"}
+                      size="sm"
+                      onClick={() =>
+                        setCreateForm({
+                          ...createForm,
+                          autoAssign: !createForm.autoAssign,
+                          managedBy: "",
+                        })
+                      }
+                      className="h-7 text-xs"
+                    >
+                      {createForm.autoAssign ? "Auto-Assign On" : "Auto-Assign Off"}
+                    </Button>
+                  </div>
+
+                  {!createForm.autoAssign && (
+                    <select
+                      required
+                      value={createForm.managedBy}
+                      onChange={(e) =>
+                        setCreateForm({ ...createForm, managedBy: e.target.value })
+                      }
+                      className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
+                    >
+                      <option value="">Select Manager</option>
+                      {managers.map((manager) => (
+                        <option key={manager._id} value={manager._id}>
+                          {manager.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {createForm.autoAssign && (
+                    <div className="p-2 bg-blue-500/10 border border-blue-500/20 rounded text-xs text-blue-400 italic">
+                      System will automatically assign the manager with the lowest workload.
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
                 <Button
                   type="button"
@@ -516,12 +578,15 @@ const UsersPage: React.FC = () => {
                 <label className="block text-sm text-gray-400 mb-1">Role *</label>
                 <select
                   value={editForm.role}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const newRole = e.target.value as typeof editForm.role;
                     setEditForm({
                       ...editForm,
-                      role: e.target.value as typeof editForm.role,
-                    })
-                  }
+                      role: newRole,
+                      managedBy: "", // Reset manager when role changes
+                    });
+                    fetchManagers(newRole);
+                  }}
                   className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
                 >
                   {ROLE_OPTIONS.map((option) => (
@@ -531,6 +596,30 @@ const UsersPage: React.FC = () => {
                   ))}
                 </select>
               </div>
+
+              {(editForm.role === "sales_agent" || editForm.role === "onboarding_agent") && (
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1">
+                    {editForm.role === "sales_agent"
+                      ? "Assign Sales Manager *"
+                      : "Assign Business Head *"}
+                  </label>
+                  <select
+                    value={editForm.managedBy || ""}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, managedBy: e.target.value })
+                    }
+                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
+                  >
+                    <option value="">Select Manager</option>
+                    {managers.map((manager) => (
+                      <option key={manager._id} value={manager._id}>
+                        {manager.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
                 <Button
                   type="button"

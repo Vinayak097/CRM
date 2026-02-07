@@ -53,11 +53,11 @@ import {
 const CreateLeadPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-const [household, setHousehold] = useState({
-  hasSeniorCitizen: "",
-  hasChildren: "",
-  hasPets: "",
-});
+  const [household, setHousehold] = useState({
+    hasSeniorCitizen: "",
+    hasChildren: "",
+    hasPets: "",
+  });
 
   // Form data
   const [identity, setIdentity] = useState<LeadIdentity>({
@@ -66,11 +66,11 @@ const [household, setHousehold] = useState({
   });
   const [location, setLocation] = useState<LeadLocation>({
     targetStatesRegions: [],
-    
+
     targetLocations: [],
-    
+
     locationPriorities: [],
-    
+
     sorroundings: [],
   });
   const [property, setProperty] = useState<LeadProperty>({
@@ -91,14 +91,14 @@ const [household, setHousehold] = useState({
     e.preventDefault();
 
     setLoading(true);
-    const ident=identity
-    ident.household=household
+    const identityData = { ...identity, household };
+
     try {
       const leadData = {
-        ident,
+        identity: identityData,
         location,
         property,
-        
+
       };
 
       await leadService.createLead(leadData);
@@ -211,10 +211,10 @@ const [household, setHousehold] = useState({
                     onChange={(e) => setIdentity({ ...identity, homeCountry: e.target.value })}
                     className="bg-gray-800 border-gray-700"
                   >
-                  <option value="" > select country</option>
-                  {HomecountryOptions.map(option=>(
-                    <option key={option} value={option}>{option}</option>
-                  ))}
+                    <option value="" > select country</option>
+                    {HomecountryOptions.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
                   </Select>
                 </div>
 
@@ -272,7 +272,7 @@ const [household, setHousehold] = useState({
                     onChange={(e) => setIdentity({ ...identity, ageYears: parseInt(e.target.value) || undefined })}
                     className="bg-gray-800 border-gray-700"
                   >
-                    
+
                   </Input>
                 </div>
                 <div>
@@ -291,7 +291,7 @@ const [household, setHousehold] = useState({
                     ))}
                   </Select>
                 </div>
-                
+
 
 
 
@@ -473,7 +473,7 @@ const [household, setHousehold] = useState({
             <CardContent className="space-y-6">
               <div>
                 <Label htmlFor="buyingCountryFocus">Country Focus</Label>
-                <Select 
+                <Select
                   id="buyingCountryFocus"
                   value={location.buyingCountryFocus || ""}
                   onChange={(e) => setLocation({ ...location, buyingCountryFocus: e.target.value })}
@@ -488,9 +488,9 @@ const [household, setHousehold] = useState({
                 </Select>
               </div>
 
-             
 
-              
+
+
 
               <div>
                 <Label className="text-base font-medium mb-3 block">Location Priorities</Label>
@@ -512,8 +512,8 @@ const [household, setHousehold] = useState({
                 </div>
               </div>
 
-             
-             
+
+
 
               <div>
                 <Label className="text-base font-medium mb-3 block">sorroundings</Label>

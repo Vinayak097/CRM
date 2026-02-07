@@ -3,8 +3,60 @@ import User, { Role } from "../models/User.js";
 import bcrypt from "bcryptjs";
 import type { AuthRequest } from "../middlewares/auth.js";
 
+// Helper to find Sales Manager with fewest agents
+const findManagerWithFewestAgents = async () => {
+  const managers = await User.find({ role: Role.SalesManager });
+  if (managers.length === 0) return null;
+
+  const counts = await User.aggregate([
+    { $match: { role: Role.SalesAgent, managedBy: { $exists: true } } },
+    { $group: { _id: "$managedBy", count: { $sum: 1 } } },
+  ]);
+
+  const countMap = new Map(counts.map((c) => [c._id.toString(), c.count]));
+
+  let bestManager = managers[0];
+  let minCount = countMap.get(bestManager._id.toString()) || 0;
+
+  for (const manager of managers) {
+    const count = countMap.get(manager._id.toString()) || 0;
+    if (count < minCount) {
+      minCount = count;
+      bestManager = manager;
+    }
+  }
+
+  return bestManager._id;
+};
+
+// Helper to find Business Head with fewest onboarding agents
+const findBusinessHeadWithFewestAgents = async () => {
+  const heads = await User.find({ role: Role.BusinessHead });
+  if (heads.length === 0) return null;
+
+  const counts = await User.aggregate([
+    { $match: { role: Role.OnboardingAgent, managedBy: { $exists: true } } },
+    { $group: { _id: "$managedBy", count: { $sum: 1 } } },
+  ]);
+
+  const countMap = new Map(counts.map((c) => [c._id.toString(), c.count]));
+
+  let bestHead = heads[0];
+  let minCount = countMap.get(bestHead._id.toString()) || 0;
+
+  for (const head of heads) {
+    const count = countMap.get(head._id.toString()) || 0;
+    if (count < minCount) {
+      minCount = count;
+      bestHead = head;
+    }
+  }
+
+  return bestHead._id;
+};
+
 export const createUser = async (req: AuthRequest, res: Response) => {
-  const { password, name, role, email, phone, managedBy } = req.body;
+  const { password, name, role, email, phone, managedBy, autoAssign } = req.body;
   const currentUser = req.user!;
 
   if (!password || !name || !email || !role) {
@@ -30,6 +82,15 @@ export const createUser = async (req: AuthRequest, res: Response) => {
     // Determine managedBy based on role and current user
     let finalManagedBy = managedBy || undefined;
 
+    // Handle Auto-Assignment
+    if (autoAssign) {
+      if (role === Role.SalesAgent) {
+        finalManagedBy = await findManagerWithFewestAgents();
+      } else if (role === Role.OnboardingAgent) {
+        finalManagedBy = await findBusinessHeadWithFewestAgents();
+      }
+    }
+
     // If current user is Sales Manager creating a Sales Agent, auto-assign
     if (role === Role.SalesAgent && currentUser.role === Role.SalesManager) {
       finalManagedBy = currentUser.id;
@@ -43,7 +104,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
     // Validate managedBy for agents
     if (role === Role.SalesAgent) {
       if (!finalManagedBy) {
-        res.status(400).json({ message: "Sales Agent must be assigned to a Sales Manager" });
+        res.status(400).json({ message: "Sales Agent must be assigned to a Sales Manager. No managers found for auto-assign." });
         return;
       }
       const manager = await User.findById(finalManagedBy);
@@ -55,7 +116,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
 
     if (role === Role.OnboardingAgent) {
       if (!finalManagedBy) {
-        res.status(400).json({ message: "Onboarding Agent must be assigned to a Business Head" });
+        res.status(400).json({ message: "Onboarding Agent must be assigned to a Business Head. No business heads found for auto-assign." });
         return;
       }
       const manager = await User.findById(finalManagedBy);
@@ -120,7 +181,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
 
     const user = await User.findByIdAndUpdate(
       userId,
-      { name, role, phone, email },
+      { name, role, phone, email, managedBy: req.body.managedBy },
       { new: true }
     ).select("-password");
 

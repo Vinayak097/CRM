@@ -27,16 +27,19 @@ const LeadProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showAssignManagerModal, setShowAssignManagerModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [agents, setAgents] = useState<User[]>([]);
+  const [managers, setManagers] = useState<User[]>([]);
   const [selectedAgent, setSelectedAgent] = useState("");
+  const [selectedManager, setSelectedManager] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<LeadStatus>("New");
   const [deleting, setDeleting] = useState(false);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [tasksLoading, setTasksLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  
+
   // Notes state
   const [notes, setNotes] = useState<Note[]>([]);
   const [newNote, setNewNote] = useState("");
@@ -123,6 +126,13 @@ const LeadProfilePage: React.FC = () => {
     } catch { console.error("Failed to fetch agents"); }
   };
 
+  const fetchManagers = async () => {
+    try {
+      const response = await userService.getUsers(1, 100);
+      setManagers(response.data.filter((u) => u.role === "sales_manager"));
+    } catch { console.error("Failed to fetch managers"); }
+  };
+
   const handleDelete = async () => {
     if (!id || !confirm("Are you sure you want to delete this lead?")) return;
     setDeleting(true);
@@ -145,6 +155,25 @@ const LeadProfilePage: React.FC = () => {
       setShowAssignModal(false);
     } catch {
       alert("Failed to assign agent");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleAssignManager = async () => {
+    if (!id || !selectedManager) return;
+    setUpdating(true);
+    try {
+      // Use general updateLead for manager assignment
+      const response = await leadService.updateLead(id, {
+        system: {
+          managerId: selectedManager
+        }
+      });
+      setLead(response.data);
+      setShowAssignManagerModal(false);
+    } catch {
+      alert("Failed to assign manager");
     } finally {
       setUpdating(false);
     }
@@ -300,9 +329,14 @@ const LeadProfilePage: React.FC = () => {
                 <Target className="h-4 w-4 mr-1" />Status
               </Button>
               {user?.role === "admin" && (
-                <Button variant="outline" size="sm" onClick={() => { fetchAgents(); setShowAssignModal(true); }}>
-                  <UserPlus className="h-4 w-4 mr-1" />Assign
-                </Button>
+                <>
+                  <Button variant="outline" size="sm" onClick={() => { fetchManagers(); setShowAssignManagerModal(true); }}>
+                    <UsersIcon className="h-4 w-4 mr-1" />Assign Manager
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => { fetchAgents(); setShowAssignModal(true); }}>
+                    <UserPlus className="h-4 w-4 mr-1" />Assign Agent
+                  </Button>
+                </>
               )}
               <Button variant="outline" size="sm" onClick={handleDelete} disabled={deleting} className="text-red-400 hover:text-red-300">
                 <Trash2 className="h-4 w-4 mr-1" />{deleting ? "..." : "Delete"}
@@ -352,6 +386,26 @@ const LeadProfilePage: React.FC = () => {
                   <InfoRow label="Profession" value={lead.identity?.profession} />
                   <InfoRow label="Age" value={lead.identity?.ageYears} />
                   <InfoRow label="Lead Source" value={lead.identity?.leadSource} />
+                </CardContent>
+              </Card>
+
+              {/* Assignment Info */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <UserCheck className="h-5 w-5" />Assignment Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <InfoRow
+                    label="Sales Manager"
+                    value={typeof lead.system?.managerId === 'object' ? (lead.system.managerId as any)?.name : lead.system?.managerId}
+                  />
+                  <InfoRow
+                    label="Assigned Agent"
+                    value={typeof lead.system?.assignedAgent === 'object' ? (lead.system.assignedAgent as any)?.name : lead.system?.assignedAgent || "Unassigned"}
+                  />
+                  <InfoRow label="Priority" value={lead.system?.priorityScore?.toString()} />
                 </CardContent>
               </Card>
 
@@ -474,8 +528,8 @@ const LeadProfilePage: React.FC = () => {
                 ) : (
                   <div className="space-y-4">
                     {notes.map((note) => (
-                      <div 
-                        key={note._id} 
+                      <div
+                        key={note._id}
                         className={`bg-gray-800/50 rounded-lg p-4 border ${note.is_pinned ? "border-yellow-500/50" : "border-gray-700"}`}
                       >
                         <div className="flex justify-between items-start mb-2">
@@ -484,11 +538,10 @@ const LeadProfilePage: React.FC = () => {
                             <span className="text-sm font-medium text-blue-400">
                               {note.created_by?.name || note.created_by?.email || "Agent"}
                             </span>
-                            <span className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs ${
-                              note.visibility === "private" ? "bg-gray-700 text-gray-400" :
+                            <span className={`flex items-center gap-1 px-2 py-0.5 rounded text-xs ${note.visibility === "private" ? "bg-gray-700 text-gray-400" :
                               note.visibility === "team" ? "bg-blue-500/20 text-blue-400" :
-                              "bg-green-500/20 text-green-400"
-                            }`}>
+                                "bg-green-500/20 text-green-400"
+                              }`}>
                               {getVisibilityIcon(note.visibility)}
                               {note.visibility}
                             </span>
@@ -587,12 +640,11 @@ const LeadProfilePage: React.FC = () => {
                               By {activity.performed_by.name || activity.performed_by.email}
                             </p>
                           )}
-                          <span className={`inline-block mt-2 px-2 py-0.5 text-xs rounded ${
-                            activity.channel === "email" ? "bg-blue-500/20 text-blue-400" :
+                          <span className={`inline-block mt-2 px-2 py-0.5 text-xs rounded ${activity.channel === "email" ? "bg-blue-500/20 text-blue-400" :
                             activity.channel === "whatsapp" ? "bg-green-500/20 text-green-400" :
-                            activity.channel === "call" ? "bg-purple-500/20 text-purple-400" :
-                            "bg-gray-500/20 text-gray-400"
-                          }`}>
+                              activity.channel === "call" ? "bg-purple-500/20 text-purple-400" :
+                                "bg-gray-500/20 text-gray-400"
+                            }`}>
                             {activity.channel}
                           </span>
                         </div>
@@ -606,7 +658,39 @@ const LeadProfilePage: React.FC = () => {
         </Tabs>
       </div>
 
-      {/* Assign Modal */}
+      {/* Assign Manager Modal */}
+      {showAssignManagerModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Assign Sales Manager</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <select
+                value={selectedManager}
+                onChange={(e) => setSelectedManager(e.target.value)}
+                className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white mb-4"
+              >
+                <option value="">Select Manager</option>
+                {managers.map((manager) => (
+                  <option key={manager._id} value={manager._id}>{manager.name}</option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mb-4 italic">
+                Note: Changing the manager will automatically clear the currently assigned agent.
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" onClick={() => setShowAssignManagerModal(false)}>Cancel</Button>
+                <Button onClick={handleAssignManager} disabled={updating || !selectedManager}>
+                  {updating ? "Assigning..." : "Assign Manager"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Assign Modal (Agent) */}
       {showAssignModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md">
@@ -621,7 +705,7 @@ const LeadProfilePage: React.FC = () => {
               >
                 <option value="">Select Agent</option>
                 {agents.map((agent) => (
-                  <option key={agent.id} value={agent.id}>{agent.name}</option>
+                  <option key={agent._id} value={agent._id}>{agent.name}</option>
                 ))}
               </select>
               <div className="flex justify-end gap-2">
