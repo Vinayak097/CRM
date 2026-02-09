@@ -16,30 +16,11 @@ import {
   Tooltip,
   Legend
 } from "recharts";
-
-interface AdminStats {
-  // Leads & Sales
-  totalLeads: number;
-  activeDeals: number;
-  monthlyConversions: number;
-  conversionRate: number;
-  pipeline: Record<string, number>;
-  // Projects & Properties
-  totalProjects: number;
-  activeProjects: number;
-  totalProperties: number;
-  projectsByStatus: Record<string, number>;
-  propertiesByStatus: Record<string, number>;
-  // Users & Teams
-  totalUsers: number;
-  salesAgents: Array<{ id: string; name: string; email: string; assignedLeads: number }>;
-  onboardingAgents: Array<{ id: string; name: string; email: string }>;
-  // Growth
-  growthTrend: Array<{ month: string; projects: number; leads?: number }>;
-}
+import LeadAnalyticsCharts from "./LeadAnalyticsCharts";
+import type { AdminStats as AdminStatsType } from "@/types";
 
 interface Props {
-  stats: AdminStats;
+  stats: AdminStatsType;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -95,6 +76,9 @@ export const AdminDashboard: React.FC<Props> = ({ stats }) => {
           <p className="text-gray-400">Complete system overview and management.</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate("/operational-analytics")}>
+            📊 Analytics
+          </Button>
           <Button variant="outline" onClick={() => navigate("/users")}>
             👥 Users
           </Button>
@@ -111,6 +95,11 @@ export const AdminDashboard: React.FC<Props> = ({ stats }) => {
         <KpiCard title="Properties" value={stats.totalProperties} icon="🏠" />
         <KpiCard title="Total Users" value={stats.totalUsers} icon="👥" />
       </div>
+
+      {/* Lead Analytics Charts */}
+      {stats.leadAnalytics && (
+        <LeadAnalyticsCharts data={stats.leadAnalytics} title="Lead Analytics Overview" />
+      )}
 
       {/* Sales & Lead Pipeline */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

@@ -142,6 +142,21 @@ export interface OnboardingAgentStats {
   projectsByStatus: Record<string, number>;
 }
 
+export interface LeadAnalytics {
+  trends: {
+    daily: Array<{ _id: string; count: number }>;
+    weekly: Array<{ _id: { week: number; year: number }; count: number }>;
+    monthly: Array<{ _id: string; count: number }>;
+  };
+  sources: Array<{ source: string; count: number }>;
+  statusBreakdown: Array<{ status: string; count: number }>;
+  metrics: {
+    totalLeads: number;
+    closedWon: number;
+    conversionRate: number;
+  };
+}
+
 export interface SalesManagerStats {
   totalLeads: number;
   activeDeals: number;
@@ -155,6 +170,7 @@ export interface SalesManagerStats {
     email: string;
     assignedLeads: number;
   }>;
+  leadAnalytics?: LeadAnalytics;
 }
 
 export interface BusinessHeadStats {
@@ -184,6 +200,7 @@ export interface AdminStats {
   activeProjects: number;
   totalProperties: number;
   projectsByStatus: Record<string, number>;
+  propertiesByStatus: Record<string, number>;
   totalUsers: number;
   salesAgents: Array<{
     id: string;
@@ -200,6 +217,7 @@ export interface AdminStats {
     month: string;
     projects: number;
   }>;
+  leadAnalytics?: LeadAnalytics;
 }
 
 export type DashboardResponse =

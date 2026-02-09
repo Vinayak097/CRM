@@ -151,7 +151,7 @@ export async function getSalesManagerStats(userId: string) {
       "system.assignedAgent": { $in: managedAgentIds },
     }),
     Lead.aggregate([
-      { $match: { "system.assignedAgent": { $in: managedAgentIds.map(id => new mongoose.Types.ObjectId(id)) } } },
+      { $match: { "system.assignedAgent": { $in: managedAgentIds.map((id: any) => new mongoose.Types.ObjectId(id as string)) } } },
       { $group: { _id: "$system.leadStatus", count: { $sum: 1 } } },
     ]),
   ]);
@@ -180,6 +180,9 @@ export async function getSalesManagerStats(userId: string) {
 
   const conversionRate =
     totalLeads > 0 ? Math.round((convertedThisMonth / totalLeads) * 100) : 0;
+
+  // 3. Lead Analytics
+  const leadAnalytics = await fetchLeadAnalyticsData({ "system.assignedAgent": { $in: managedAgentIds.map(id => new mongoose.Types.ObjectId(id as string)) } });
 
   // Calculate revenue pipeline from active deals (filtered by managed agents)
   const activeLeadsWithValue = await Lead.find({
@@ -210,6 +213,7 @@ export async function getSalesManagerStats(userId: string) {
         email: agent.email,
         assignedLeads: agent.assignedLeadsCount,
       })),
+      leadAnalytics,
     },
   };
 }
@@ -314,6 +318,9 @@ export async function getAdminStats() {
 
   const conversionRate = totalLeads > 0 ? Math.round((convertedThisMonth / totalLeads) * 100) : 0;
 
+  // Lead Analytics
+  const leadAnalytics = await fetchLeadAnalyticsData({});
+
   const projectStatusMap: Record<string, number> = {
     "Planning": 0,
     "Under Construction": 0,
@@ -343,6 +350,7 @@ export async function getAdminStats() {
       monthlyConversions: convertedThisMonth,
       conversionRate,
       pipeline,
+      leadAnalytics,
       // Projects & Properties
       totalProjects,
       activeProjects,
@@ -397,7 +405,8 @@ export async function getBusinessHeadStats(userId: string) {
     .lean();
 
   // 2. Fetch stats filtered by managed agents
-  const managedAgentObjectIds = managedAgentIds.map(id => new mongoose.Types.ObjectId(id));
+  const managedAgentIds = onboardingAgents.map((agent: any) => agent._id);
+  const managedAgentObjectIds = managedAgentIds.map((id: any) => new mongoose.Types.ObjectId(id as string));
 
   const [
     activeProjects,
@@ -474,6 +483,180 @@ export async function getBusinessHeadStats(userId: string) {
     },
   };
 }
+
+// Operational Analytics
+const DISCOVERY_SOURCES = [
+  "I've used Avacasa before",
+  "Friend / family / referral",
+  "Instagram / Facebook",
+  "Google search",
+  "LinkedIn",
+  "Email / newsletter",
+  "WhatsApp / Telegram community",
+  "Website / blog / online article",
+  "Event / webinar / workshop",
+  "Broker / agent / developer partner",
+  "Other",
+];
+
+// Helper for Lead Analytics Data
+async function fetchLeadAnalyticsData(matchQuery: any) {
+  const now = new Date();
+
+  const [dailyLeads, weeklyLeads, monthlyLeads, leadsBySource, leadsByStatus] = await Promise.all([
+    // Daily Trend (Last 7 days)
+    Lead.aggregate([
+      {
+        $match: {
+          ...matchQuery,
+          createdAt: { $gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]),
+    // Weekly Trend (Last 4 weeks)
+    Lead.aggregate([
+      {
+        $match: {
+          ...matchQuery,
+          createdAt: { $gte: new Date(now.getTime() - 28 * 24 * 60 * 60 * 1000) },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            week: { $isoWeek: "$createdAt" },
+            year: { $isoWeekYear: "$createdAt" },
+          },
+          count: { $sum: 1 },
+        } as any,
+      },
+      { $sort: { "_id.year": 1, "_id.week": 1 } },
+    ]),
+    // Monthly Trend (Last 6 months)
+    Lead.aggregate([
+      {
+        $match: {
+          ...matchQuery,
+          createdAt: { $gte: new Date(now.getFullYear(), now.getMonth() - 5, 1) },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m", date: "$createdAt" } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]),
+    // Leads by Source
+    Lead.aggregate([
+      { $match: matchQuery },
+      { $group: { _id: "$identity.leadSource", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]),
+    // Leads by Status (Raw for mapping)
+    Lead.aggregate([
+      { $match: matchQuery },
+      { $group: { _id: "$system.leadStatus", count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const statusMap: Record<string, number> = {
+    New: 0,
+    Contacted: 0,
+    "Follow-up": 0,
+    "Site Visit": 0,
+    "Closed Won": 0,
+    "Closed Lost": 0,
+  };
+
+  leadsByStatus.forEach((item: any) => {
+    const status = item._id;
+    const count = item.count;
+
+    if (status === "New") statusMap["New"] += count;
+    else if (status === "Contacted") statusMap["Contacted"] += count;
+    else if (status === "Site Visit") statusMap["Site Visit"] += count;
+    else if (["Qualified", "Shortlisted", "Negotiation"].includes(status))
+      statusMap["Follow-up"] += count;
+    else if (["Booked", "Converted"].includes(status)) statusMap["Closed Won"] += count;
+    else if (status === "Lost") statusMap["Closed Lost"] += count;
+  });
+
+  const totalLeads = leadsByStatus.reduce((sum: number, item: any) => sum + item.count, 0);
+  const closedWon = statusMap["Closed Won"];
+  const conversionRate = totalLeads > 0 ? Math.round((closedWon / totalLeads) * 100) : 0;
+
+  return {
+    trends: {
+      daily: dailyLeads,
+      weekly: weeklyLeads,
+      monthly: monthlyLeads,
+    },
+    sources: [
+      ...DISCOVERY_SOURCES.map((source) => ({
+        source,
+        count: leadsBySource.find((s: any) => s._id === source)?.count || 0,
+      })),
+      // Add any additional sources not in the predefined list as "Unknown" or just include them
+      ...leadsBySource
+        .filter((s: any) => s._id && !DISCOVERY_SOURCES.includes(s._id))
+        .map((s: any) => ({ source: s._id, count: s.count })),
+      {
+        source: "Unknown",
+        count: leadsBySource.find((s: any) => !s._id)?.count || 0,
+      }
+    ].filter(s => s.count > 0 || DISCOVERY_SOURCES.includes(s.source)),
+    statusBreakdown: Object.entries(statusMap).map(([status, count]) => ({
+      status,
+      count,
+    })),
+    metrics: {
+      totalLeads,
+      closedWon,
+      conversionRate,
+    },
+  };
+}
+
+// Operational Analytics
+export async function getOperationalAnalytics(userId: string, role: string) {
+  const normalizedRole = normalizeRole(role);
+  let managedAgentIds: mongoose.Types.ObjectId[] = [];
+
+  if (normalizedRole === "sales_manager") {
+    const salesAgents = await User.find({
+      role: { $in: ["sales_agent", Role.SalesAgent] },
+      managedBy: new mongoose.Types.ObjectId(userId),
+    }).select("_id");
+    managedAgentIds = salesAgents.map((agent) => agent._id as mongoose.Types.ObjectId);
+  }
+
+  const matchQuery: any = {};
+  if (normalizedRole === "sales_manager") {
+    matchQuery["system.assignedAgent"] = { $in: managedAgentIds };
+  }
+
+  return fetchLeadAnalyticsData(matchQuery);
+}
+
+const stages = [
+  "New",
+  "Contacted",
+  "Qualified",
+  "Shortlisted",
+  "Site Visit",
+  "Negotiation",
+  "Booked",
+  "Converted",
+];
 
 // Sales Funnel Analytics
 export async function getSalesFunnelData(

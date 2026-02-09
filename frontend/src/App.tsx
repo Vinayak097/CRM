@@ -29,8 +29,7 @@ import DashboardPage from './pages/Dashboard/DashboardPage';
 import CommunicationPage from './pages/Communication/CommunicationPage';
 import TasksPage from './pages/Tasks/TasksPage';
 import SalesFunnelPage from './pages/SalesFunnel/SalesFunnelPage';
-
-
+import OperationalAnalyticsPage from './pages/Dashboard/OperationalAnalyticsPage';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -247,6 +246,14 @@ const AppContent: React.FC = () => {
               element={
                 <ProtectedRoute allowedRoles={['admin', 'sales_manager']}>
                   <SalesFunnelPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/operational-analytics"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'sales_manager']}>
+                  <OperationalAnalyticsPage />
                 </ProtectedRoute>
               }
             />

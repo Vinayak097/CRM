@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import KpiCard from "./KpiCard";
+import LeadAnalyticsCharts from "./LeadAnalyticsCharts";
 import type { SalesManagerStats } from "@/types";
 
 interface Props {
@@ -45,6 +46,11 @@ export const SalesManagerDashboard: React.FC<Props> = ({ stats }) => {
         />
       </div>
 
+      {/* Lead Analytics Charts */}
+      {stats.leadAnalytics && (
+        <LeadAnalyticsCharts data={stats.leadAnalytics} title="Team Analytics Overview" />
+      )}
+
       {/* Main Screens */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Lead Management */}
@@ -76,6 +82,21 @@ export const SalesManagerDashboard: React.FC<Props> = ({ stats }) => {
             </p>
             <Button onClick={() => navigate("/sales-funnel")}>
               View Funnel
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Operational Analytics */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Operational Analytics</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-gray-400">
+              Monitor team-level lead trends, sources, and status breakdown.
+            </p>
+            <Button onClick={() => navigate("/operational-analytics")}>
+              View Analytics
             </Button>
           </CardContent>
         </Card>

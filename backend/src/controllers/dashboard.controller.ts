@@ -38,3 +38,21 @@ export const getSalesFunnel = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: error.message || "Failed to fetch sales funnel data" });
   }
 };
+export const getOperationalAnalyticsController = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const { id, role } = req.user;
+    if (role !== "admin" && role !== "sales_manager") {
+      return res.status(403).json({ error: "Not authorized" });
+    }
+
+    const analyticsData = await getOperationalAnalytics(id, role);
+    res.json(analyticsData);
+  } catch (error: any) {
+    console.error("Operational analytics error:", error);
+    res.status(500).json({ error: error.message || "Failed to fetch operational analytics data" });
+  }
+};
