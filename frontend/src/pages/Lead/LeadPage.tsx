@@ -26,7 +26,7 @@ const LeadsPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const user = useUser().user;
-  const isSalesAgent = user?.role === Role.SalesAgent;
+  const isSalesAgent = user?.role as string === Role.SalesAgent;
 
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -160,15 +160,21 @@ const LeadsPage: React.FC = () => {
                   {lead.system?.leadStatus || "New"}
                 </span>
               </div>
-              <div className="flex justify-between items-center text-sm mb-3">
+              <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                 <div>
-                  <span className="text-gray-500">Budget:</span>
-                  <p className="text-gray-300 font-medium">{lead.identity?.householdIncomeBandInr || "-"}</p>
+                  <span className="text-gray-500 block">Budget:</span>
+                  <p className="text-gray-300 font-medium truncate">{lead.identity?.householdIncomeBandInr || "-"}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Agent:</span>
+                  <span className="text-gray-500 block">Agent:</span>
                   <p className="text-gray-300 font-medium truncate">{lead.system?.assignedAgent?.name || "Unassigned"}</p>
                 </div>
+                {(user?.role === Role.Admin || user?.role === Role.BusinessHead) && (
+                  <div className="col-span-2 mt-1">
+                    <span className="text-gray-500 block">Sales Manager:</span>
+                    <p className="text-gray-300 font-medium truncate">{lead.system?.managerId?.name || "-"}</p>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2 pt-3 border-t border-gray-700">
                 <Button variant="ghost" size="sm" className="flex-1 text-blue-400 hover:text-blue-300" onClick={(e) => { e.stopPropagation(); navigate(`/leads/${lead._id}/edit`); }}>

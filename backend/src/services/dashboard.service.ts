@@ -3,6 +3,7 @@ import PropertyProject from "../models/project.model.js";
 import { PropertyModel } from "../models/property.model.js";
 import User from "../models/User.js";
 import { Role } from "../models/User.js";
+import mongoose from "mongoose";
 
 // Helper to normalize legacy roles
 function normalizeRole(role: string): string {
@@ -20,21 +21,23 @@ export async function getSalesAgentStats(userId: string) {
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
   const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
 
-  const [assignedLeads, convertedThisMonth, allLeads] = await Promise.all([
+  const [assignedLeads, convertedThisMonth, statusCountsAggregation] = await Promise.all([
     Lead.countDocuments({ "system.assignedAgent": userId }),
     Lead.countDocuments({
       "system.assignedAgent": userId,
       "system.leadStatus": "Converted",
       updatedAt: { $gte: startOfMonth, $lte: endOfMonth },
     }),
-    Lead.find({ "system.assignedAgent": userId }).select("system.leadStatus").lean(),
+    Lead.aggregate([
+      { $match: { "system.assignedAgent": new mongoose.Types.ObjectId(userId) } },
+      { $group: { _id: "$system.leadStatus", count: { $sum: 1 } } },
+    ]),
   ]);
 
-  // Count leads by status for pipeline
-  const statusCounts = allLeads.reduce(
-    (acc: Record<string, number>, lead: any) => {
-      const status = lead.system?.leadStatus || "New";
-      acc[status] = (acc[status] || 0) + 1;
+  // Transform aggregation result to Record<string, number>
+  const statusCounts = statusCountsAggregation.reduce(
+    (acc: Record<string, number>, item: any) => {
+      acc[item._id || "New"] = item.count;
       return acc;
     },
     {}
@@ -108,34 +111,55 @@ export async function getSalesManagerStats(userId: string) {
   startOfMonth.setDate(1);
   startOfMonth.setHours(0, 0, 0, 0);
 
-  // 1. Fetch managed agents first
-  const salesAgents = await User.find({
-    role: { $in: ["sales_agent", Role.SalesAgent] },
-    managedBy: userId,
-  })
-    .select("name email assignedLeadsCount")
-    .lean();
+  // 1. Fetch managed agents with lead counts using aggregation
+  const salesAgents = await User.aggregate([
+    {
+      $match: {
+        role: { $in: ["sales_agent", Role.SalesAgent] },
+        managedBy: new mongoose.Types.ObjectId(userId),
+      }
+    },
+    {
+      $lookup: {
+        from: "leads",
+        let: { agentId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$system.assignedAgent", "$$agentId"] } } },
+          { $count: "count" }
+        ],
+        as: "leadCount"
+      }
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        email: 1,
+        assignedLeadsCount: { $ifNull: [{ $arrayElemAt: ["$leadCount.count", 0] }, 0] }
+      }
+    }
+  ]);
 
   const managedAgentIds = salesAgents.map((agent) => agent._id);
 
   // 2. Fetch stats filtered by managed agents
-  const [totalLeads, convertedThisMonth, allLeads] = await Promise.all([
+  const [totalLeads, convertedThisMonth, statusCountsAggregation] = await Promise.all([
     Lead.countDocuments({ "system.assignedAgent": { $in: managedAgentIds } }),
     Lead.countDocuments({
       "system.leadStatus": "Converted",
       updatedAt: { $gte: startOfMonth },
       "system.assignedAgent": { $in: managedAgentIds },
     }),
-    Lead.find({ "system.assignedAgent": { $in: managedAgentIds } })
-      .select("system.leadStatus")
-      .lean(),
+    Lead.aggregate([
+      { $match: { "system.assignedAgent": { $in: managedAgentIds.map(id => new mongoose.Types.ObjectId(id)) } } },
+      { $group: { _id: "$system.leadStatus", count: { $sum: 1 } } },
+    ]),
   ]);
 
-  // Count leads by status
-  const statusCounts = allLeads.reduce(
-    (acc: Record<string, number>, lead: any) => {
-      const status = lead.system?.leadStatus || "New";
-      acc[status] = (acc[status] || 0) + 1;
+  // Transform aggregation result
+  const statusCounts = statusCountsAggregation.reduce(
+    (acc: Record<string, number>, item: any) => {
+      acc[item._id || "New"] = item.count;
       return acc;
     },
     {}
@@ -184,7 +208,7 @@ export async function getSalesManagerStats(userId: string) {
         id: agent._id,
         name: agent.name,
         email: agent.email,
-        assignedLeads: agent.assignedLeadsCount || 0,
+        assignedLeads: agent.assignedLeadsCount,
       })),
     },
   };
@@ -207,6 +231,7 @@ export async function getAdminStats() {
     activeProjects,
     totalProperties,
     projectsByStatus,
+    propertiesByStatusAggregation,
     totalUsers,
     salesAgents,
     onboardingAgents,
@@ -217,7 +242,9 @@ export async function getAdminStats() {
       "system.leadStatus": "Converted",
       updatedAt: { $gte: startOfMonth },
     }),
-    Lead.find({}).select("system.leadStatus").lean(),
+    Lead.aggregate([
+      { $group: { _id: "$system.leadStatus", count: { $sum: 1 } } },
+    ]),
     PropertyProject.countDocuments({}),
     PropertyProject.countDocuments({
       project_status: { $in: ["Under Construction", "Ready to Move", "Planning"] },
@@ -226,10 +253,36 @@ export async function getAdminStats() {
     PropertyProject.aggregate([
       { $group: { _id: "$project_status", count: { $sum: 1 } } },
     ]),
+    PropertyModel.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]),
     User.countDocuments({}),
-    User.find({ role: { $in: ["sales_agent", Role.SalesAgent] } })
-      .select("name email assignedLeadsCount")
-      .lean(),
+    User.aggregate([
+      {
+        $match: {
+          role: { $in: ["sales_agent", Role.SalesAgent] },
+        }
+      },
+      {
+        $lookup: {
+          from: "leads",
+          let: { agentId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$system.assignedAgent", "$$agentId"] } } },
+            { $count: "count" }
+          ],
+          as: "leadCount"
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          email: 1,
+          assignedLeadsCount: { $ifNull: [{ $arrayElemAt: ["$leadCount.count", 0] }, 0] }
+        }
+      }
+    ]),
     User.find({
       role: { $in: ["developer", "onboarding_agent", Role.OnboardingAgent] },
     })
@@ -247,11 +300,10 @@ export async function getAdminStats() {
     ]),
   ]);
 
-  // Count leads by status
-  const pipeline = allLeads.reduce(
-    (acc: Record<string, number>, lead: any) => {
-      const status = lead.system?.leadStatus || "New";
-      acc[status] = (acc[status] || 0) + 1;
+  // Transform aggregation results
+  const pipeline = (allLeads as any[]).reduce(
+    (acc: Record<string, number>, item: any) => {
+      acc[item._id || "New"] = item.count;
       return acc;
     },
     {}
@@ -262,13 +314,25 @@ export async function getAdminStats() {
 
   const conversionRate = totalLeads > 0 ? Math.round((convertedThisMonth / totalLeads) * 100) : 0;
 
-  const projectStatusMap = projectsByStatus.reduce(
-    (acc: Record<string, number>, item: any) => {
-      acc[item._id || "Unknown"] = item.count;
-      return acc;
-    },
-    {}
-  );
+  const projectStatusMap: Record<string, number> = {
+    "Planning": 0,
+    "Under Construction": 0,
+    "Completed": 0,
+    "Ready to Move": 0
+  };
+  projectsByStatus.forEach((item: any) => {
+    projectStatusMap[item._id || "Unknown"] = item.count;
+  });
+
+  const propertyStatusMap: Record<string, number> = {
+    "AVAILABLE": 0,
+    "SOLD": 0,
+    "RESERVED": 0,
+    "UNDER_CONTRACT": 0
+  };
+  (propertiesByStatusAggregation as any[]).forEach((item: any) => {
+    propertyStatusMap[item._id || "Unknown"] = item.count;
+  });
 
   return {
     role: "admin",
@@ -284,13 +348,14 @@ export async function getAdminStats() {
       activeProjects,
       totalProperties,
       projectsByStatus: projectStatusMap,
+      propertiesByStatus: propertyStatusMap,
       // Users & Teams
       totalUsers,
       salesAgents: salesAgents.map((agent: any) => ({
         id: agent._id,
         name: agent.name,
         email: agent.email,
-        assignedLeads: agent.assignedLeadsCount || 0,
+        assignedLeads: agent.assignedLeadsCount,
       })),
       onboardingAgents: onboardingAgents.map((agent: any) => ({
         id: agent._id,
@@ -304,6 +369,18 @@ export async function getAdminStats() {
       })),
     },
   };
+}
+export async function getSalesAgentLeadCount(userId: string) {
+  try {
+    const leadCount = await Lead.countDocuments({
+      "system.assignedAgent": userId,
+    })
+    return leadCount;
+  } catch (e) {
+    console.log("e getsales agent lead count ", e)
+    return 0;
+  }
+
 }
 
 // Business Head Dashboard Stats
@@ -319,9 +396,9 @@ export async function getBusinessHeadStats(userId: string) {
     .select("name email")
     .lean();
 
-  const managedAgentIds = onboardingAgents.map((agent) => agent._id);
-
   // 2. Fetch stats filtered by managed agents
+  const managedAgentObjectIds = managedAgentIds.map(id => new mongoose.Types.ObjectId(id));
+
   const [
     activeProjects,
     totalProjects,
@@ -333,23 +410,23 @@ export async function getBusinessHeadStats(userId: string) {
       project_status: {
         $in: ["Under Construction", "Ready to Move", "Planning"],
       },
-      assignedAgent: { $in: managedAgentIds },
-    }),
+      assignedAgent: { $in: managedAgentObjectIds },
+    } as any),
     PropertyProject.countDocuments({
-      assignedAgent: { $in: managedAgentIds },
-    }),
+      assignedAgent: { $in: managedAgentObjectIds },
+    } as any),
     PropertyModel.countDocuments({
-      assignedAgent: { $in: managedAgentIds },
-    }),
+      assignedAgent: { $in: managedAgentObjectIds },
+    } as any),
     PropertyProject.aggregate([
-      { $match: { assignedAgent: { $in: managedAgentIds } } },
+      { $match: { assignedAgent: { $in: managedAgentObjectIds } } },
       { $group: { _id: "$project_status", count: { $sum: 1 } } },
     ]),
     PropertyProject.aggregate([
       {
         $match: {
           created_at: { $gte: sixMonthsAgo },
-          assignedAgent: { $in: managedAgentIds },
+          assignedAgent: { $in: managedAgentObjectIds },
         },
       },
       {
@@ -413,20 +490,23 @@ export async function getSalesFunnelData(
   }
 
   if (agentId) {
-    query["system.assignedAgent"] = agentId;
+    query["system.assignedAgent"] = new mongoose.Types.ObjectId(agentId);
   }
 
-  const leads = await Lead.find(query).select("system.leadStatus createdAt updatedAt").lean();
+  const stageCountsAggregation = await Lead.aggregate([
+    { $match: query },
+    { $group: { _id: "$system.leadStatus", count: { $sum: 1 } } },
+  ]);
 
-  const stages = ["New", "Contacted", "Qualified", "Shortlisted", "Site Visit", "Negotiation", "Booked", "Converted"];
+  const stageCounts: Record<string, number> = stageCountsAggregation.reduce(
+    (acc: any, item: any) => {
+      acc[item._id || "New"] = item.count;
+      return acc;
+    },
+    {}
+  );
 
-  // Count leads at each stage
-  const stageCounts: Record<string, number> = {};
-  stages.forEach(stage => {
-    stageCounts[stage] = leads.filter((lead: any) => lead.system?.leadStatus === stage).length;
-  });
-
-  const totalLeads = leads.length;
+  const totalLeads = stageCountsAggregation.reduce((sum, item) => sum + item.count, 0);
   const convertedLeads = stageCounts["Converted"] || 0;
   const overallConversionRate = totalLeads > 0 ? Math.round((convertedLeads / totalLeads) * 100) : 0;
 

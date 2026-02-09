@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Phone, Mail, Calendar, MapPin, UserCheck, UserPlus, Clock,
-  Edit2, CheckCircle2, Home, Users, Target, MessageSquare,
-  Building, Trash2, ListTodo, FileText, Send, Activity, Pin, Globe, Lock, UsersIcon,
+  ArrowLeft, Phone, Mail, MapPin, UserCheck, UserPlus,
+  Edit2, Home, Users, Target, MessageSquare,
+  Trash2, ListTodo, FileText, Send, Activity, Pin, Globe, Lock, UsersIcon,
 } from "lucide-react";
 import { leadService } from "../services/leadService";
 import { userService, type User } from "../services/userService";
@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type Lead, type LeadStatus } from "@/types";
+import { type Lead, type LeadStatus, Role } from "@/types";
 import { useUser } from "../hooks/useAuth";
 
 const LeadProfilePage: React.FC = () => {
@@ -328,9 +328,9 @@ const LeadProfilePage: React.FC = () => {
               <Button variant="outline" size="sm" onClick={() => { setSelectedStatus(lead.system?.leadStatus || "New"); setShowStatusModal(true); }}>
                 <Target className="h-4 w-4 mr-1" />Status
               </Button>
-              {(user?.role === "admin" || user?.role === "sales_manager") && (
+              {(user?.role as string === Role.Admin || user?.role as string === Role.BusinessHead) && (
                 <>
-                  {user?.role === "admin" && (
+                  {user?.role as string === Role.Admin && (
                     <Button variant="outline" size="sm" onClick={() => { fetchManagers(); setShowAssignManagerModal(true); }}>
                       <UsersIcon className="h-4 w-4 mr-1" />Assign Manager
                     </Button>

@@ -10,7 +10,7 @@ export interface RegisterRequest {
   email: string;
   phone: string;
   password: string;
-  role?: "Admin" | "Developer" | "Sales Agent";
+  role?: "admin" | "developer" | "sales_agent" | "sales_manager" | "onboarding_agent" | "business_head";
 }
 
 export interface User {
@@ -18,7 +18,7 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
-  role: "Admin" | "Developer" | "Sales Agent";
+  role: "admin" | "developer" | "sales_agent" | "sales_manager" | "onboarding_agent" | "business_head";
   isActive?: boolean;
   lastLogin?: string | null;
   createdAt?: string;
