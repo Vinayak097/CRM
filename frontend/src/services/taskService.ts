@@ -108,9 +108,12 @@ export const taskService = {
     return response.data.data;
   },
 
-  getOverdueTasks: async () => {
-    const response = await api.get<{ success: boolean; data: Task[] }>("/tasks/overdue");
-    return response.data.data;
+  getTaskStats: async (agentId?: string) => {
+    const response = await api.get<{
+      success: boolean;
+      data: { total: number; pending: number; overdue: number; completed: number };
+    }>("/tasks/stats", { params: { agentId } });
+    return response.data;
   },
 };
 

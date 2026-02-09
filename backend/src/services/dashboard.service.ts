@@ -125,9 +125,17 @@ export async function getSalesManagerStats(userId: string) {
         let: { agentId: "$_id" },
         pipeline: [
           { $match: { $expr: { $eq: ["$system.assignedAgent", "$$agentId"] } } },
-          { $count: "count" }
+          {
+            $facet: {
+              total: [{ $count: "count" }],
+              converted: [
+                { $match: { "system.leadStatus": "Converted" } },
+                { $count: "count" }
+              ]
+            }
+          }
         ],
-        as: "leadCount"
+        as: "leadStats"
       }
     },
     {
@@ -135,7 +143,8 @@ export async function getSalesManagerStats(userId: string) {
         _id: 1,
         name: 1,
         email: 1,
-        assignedLeadsCount: { $ifNull: [{ $arrayElemAt: ["$leadCount.count", 0] }, 0] }
+        assignedLeadsCount: { $ifNull: [{ $arrayElemAt: ["$leadStats.total.count", 0] }, 0] },
+        convertedLeadsCount: { $ifNull: [{ $arrayElemAt: ["$leadStats.converted.count", 0] }, 0] }
       }
     }
   ]);
@@ -212,6 +221,7 @@ export async function getSalesManagerStats(userId: string) {
         name: agent.name,
         email: agent.email,
         assignedLeads: agent.assignedLeadsCount,
+        convertedLeads: agent.convertedLeadsCount,
       })),
       leadAnalytics,
     },
@@ -273,9 +283,17 @@ export async function getAdminStats() {
           let: { agentId: "$_id" },
           pipeline: [
             { $match: { $expr: { $eq: ["$system.assignedAgent", "$$agentId"] } } },
-            { $count: "count" }
+            {
+              $facet: {
+                total: [{ $count: "count" }],
+                converted: [
+                  { $match: { "system.leadStatus": "Converted" } },
+                  { $count: "count" }
+                ]
+              }
+            }
           ],
-          as: "leadCount"
+          as: "leadStats"
         }
       },
       {
@@ -283,7 +301,8 @@ export async function getAdminStats() {
           _id: 1,
           name: 1,
           email: 1,
-          assignedLeadsCount: { $ifNull: [{ $arrayElemAt: ["$leadCount.count", 0] }, 0] }
+          assignedLeadsCount: { $ifNull: [{ $arrayElemAt: ["$leadStats.total.count", 0] }, 0] },
+          convertedLeadsCount: { $ifNull: [{ $arrayElemAt: ["$leadStats.converted.count", 0] }, 0] }
         }
       }
     ]),
@@ -364,6 +383,7 @@ export async function getAdminStats() {
         name: agent.name,
         email: agent.email,
         assignedLeads: agent.assignedLeadsCount,
+        convertedLeads: agent.convertedLeadsCount,
       })),
       onboardingAgents: onboardingAgents.map((agent: any) => ({
         id: agent._id,

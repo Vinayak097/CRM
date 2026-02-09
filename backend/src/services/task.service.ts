@@ -1,9 +1,9 @@
 import Task, { TaskStatus, TaskType, EntityType, type ITask } from "../models/Task.js";
 import Activity, { ActivityType, ActivityChannel, ActivityEntityType } from "../models/Activity.js";
-import type { 
-  CreateTaskInput, 
-  UpdateTaskInput, 
-  TaskQueryParams 
+import type {
+  CreateTaskInput,
+  UpdateTaskInput,
+  TaskQueryParams
 } from "../schemas/task.schema.js";
 import { v4 as uuidv4 } from "uuid";
 import mongoose from "mongoose";
@@ -57,7 +57,7 @@ export class TaskService {
     } catch (err) {
       console.error("Failed to create activity for task:", err);
     }
-    
+
     return task.toObject();
   }
 
@@ -130,7 +130,7 @@ export class TaskService {
     const [tasks, total] = await Promise.all([
       Task.find(query)
         .populate("assignedAgentId", "name email role")
-        .sort({ dueAt: 1, createdAt: -1 })
+        .sort({ createdAt: -1, dueAt: 1 })
         .skip(skip)
         .limit(limit)
         .lean(),
@@ -300,7 +300,7 @@ export class TaskService {
     status: TaskStatus
   ): Promise<number> {
     const validIds = taskIds.filter((id) => mongoose.Types.ObjectId.isValid(id));
-    
+
     if (validIds.length === 0) {
       return 0;
     }
@@ -325,15 +325,19 @@ export class TaskService {
    * @param agentId Optional: filter by agent
    * @returns Task statistics
    */
-  static async getTaskStats(agentId?: string): Promise<{
+  static async getTaskStats(agentId?: string | string[]): Promise<{
     total: number;
     pending: number;
     overdue: number;
     completed: number;
   }> {
-    const query = agentId && mongoose.Types.ObjectId.isValid(agentId)
-      ? { assignedAgentId: new mongoose.Types.ObjectId(agentId) }
-      : {};
+    let query = {};
+
+    if (Array.isArray(agentId)) {
+      query = { assignedAgentId: { $in: agentId.map(id => new mongoose.Types.ObjectId(id)) } };
+    } else if (agentId && mongoose.Types.ObjectId.isValid(agentId)) {
+      query = { assignedAgentId: new mongoose.Types.ObjectId(agentId) };
+    }
 
     const stats = await Task.aggregate([
       { $match: query },

@@ -169,6 +169,7 @@ export interface SalesManagerStats {
     name: string;
     email: string;
     assignedLeads: number;
+    convertedLeads: number;
   }>;
   leadAnalytics?: LeadAnalytics;
 }

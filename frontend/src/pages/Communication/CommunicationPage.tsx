@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Send, MessageSquare, Mail, FileText, Phone, ChevronLeft, ChevronRight } from "lucide-react";
+import { Send, MessageSquare, Mail, FileText, Phone, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,8 @@ import communicationService, {
   type CommunicationChannel,
   type CreateCommunicationInput,
 } from "@/services/communicationService";
+import { leadService } from "@/services/leadService";
+import { type Lead } from "@/types";
 
 const PAGE_SIZE = 10;
 
@@ -20,6 +22,12 @@ const CommunicationPage: React.FC = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [sending, setSending] = useState(false);
+
+  // Lead search state
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leadSearch, setLeadSearch] = useState("");
+  const [loadingLeads, setLoadingLeads] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -32,6 +40,43 @@ const CommunicationPage: React.FC = () => {
   });
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+  // Fetch leads for selection
+  const searchLeads = useCallback(async (search: string) => {
+    if (!search.trim()) {
+      setLeads([]);
+      return;
+    }
+    setLoadingLeads(true);
+    try {
+      const response = await leadService.getLeads(1, 20, search);
+      setLeads(response.leads);
+    } catch (error) {
+      console.error("Failed to search leads:", error);
+    } finally {
+      setLoadingLeads(false);
+    }
+  }, []);
+
+  // Debounced lead search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchLeads(leadSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [leadSearch, searchLeads]);
+
+  const handleSelectLead = (lead: Lead) => {
+    setSelectedLead(lead);
+    setFormData((prev) => ({
+      ...prev,
+      toName: `${lead.identity?.firstName || ""} ${lead.identity?.lastName || ""}`.trim() || "Recipient",
+      toEmail: lead.identity?.email || "",
+      toPhone: lead.identity?.phone || "",
+    }));
+    setLeadSearch("");
+    setLeads([]);
+  };
 
   const fetchCommunications = useCallback(async () => {
     setLoading(true);
@@ -88,9 +133,12 @@ const CommunicationPage: React.FC = () => {
             phone: formData.toPhone || undefined,
           },
         ],
-        related_to: {
+        related_to: selectedLead ? {
           type: "lead",
-          id: "000000000000000000000000", // Placeholder - in real app would link to specific lead
+          id: selectedLead._id,
+        } : {
+          type: "lead",
+          id: "000000000000000000000000",
         },
       };
 
@@ -103,6 +151,7 @@ const CommunicationPage: React.FC = () => {
         toEmail: "",
         toPhone: "",
       });
+      setSelectedLead(null);
       fetchCommunications();
     } catch (error) {
       console.error("Failed to send:", error);
@@ -183,7 +232,69 @@ const CommunicationPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSend} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="block text-sm text-gray-400 mb-1">Select Lead *</label>
+                  {selectedLead ? (
+                    <div className="flex items-center justify-between p-3 bg-gray-800 border border-gray-700 rounded-md">
+                      <div>
+                        <p className="font-medium text-white">{selectedLead.identity?.firstName} {selectedLead.identity?.lastName}</p>
+                        <p className="text-sm text-gray-400">{selectedLead.identity?.email || selectedLead.identity?.phone}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedLead(null);
+                          setFormData((prev) => ({
+                            ...prev,
+                            toName: "",
+                            toEmail: "",
+                            toPhone: "",
+                          }));
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          value={leadSearch}
+                          onChange={(e) => setLeadSearch(e.target.value)}
+                          placeholder="Search leads by name, email, or phone..."
+                          className="pl-9 bg-gray-800 border-gray-700"
+                        />
+                      </div>
+                      {loadingLeads ? (
+                        <p className="text-sm text-gray-400 p-2">Searching...</p>
+                      ) : leads.length > 0 ? (
+                        <div className="max-h-40 overflow-y-auto border border-gray-700 rounded-md bg-gray-800">
+                          {leads.map((lead) => (
+                            <button
+                              key={lead._id}
+                              type="button"
+                              onClick={() => handleSelectLead(lead)}
+                              className="w-full text-left px-3 py-2 hover:bg-gray-700 border-b border-gray-700 last:border-0"
+                            >
+                              <p className="font-medium text-sm text-white">
+                                {lead.identity?.firstName} {lead.identity?.lastName}
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                {lead.identity?.email || lead.identity?.phone}
+                              </p>
+                            </button>
+                          ))}
+                        </div>
+                      ) : leadSearch ? (
+                        <p className="text-sm text-gray-400 p-2">No leads found</p>
+                      ) : null}
+                    </div>
+                  )}
+                </div>
                 <div>
                   <label className="block text-sm text-gray-400 mb-1">Channel</label>
                   <select
@@ -191,7 +302,7 @@ const CommunicationPage: React.FC = () => {
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, channel: e.target.value as CommunicationChannel }))
                     }
-                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white"
+                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 text-white h-[40px]"
                   >
                     <option value="email">Email</option>
                     <option value="whatsapp">WhatsApp</option>
@@ -199,35 +310,36 @@ const CommunicationPage: React.FC = () => {
                     <option value="call">Call Log</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">To (Name)</label>
+                  <label className="block text-sm text-gray-400 mb-1">Recipient Name</label>
                   <Input
                     value={formData.toName}
                     onChange={(e) => setFormData((prev) => ({ ...prev, toName: e.target.value }))}
-                    placeholder="Recipient name"
+                    placeholder="Auto-populated from lead"
                     className="bg-gray-800 border-gray-700"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">
-                    {formData.channel === "email" ? "Email" : "Phone"}
-                  </label>
-                  {formData.channel === "email" ? (
-                    <Input
-                      type="email"
-                      value={formData.toEmail}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, toEmail: e.target.value }))}
-                      placeholder="recipient@example.com"
-                      className="bg-gray-800 border-gray-700"
-                    />
-                  ) : (
-                    <Input
-                      value={formData.toPhone}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, toPhone: e.target.value }))}
-                      placeholder="+91 98765 43210"
-                      className="bg-gray-800 border-gray-700"
-                    />
-                  )}
+                  <label className="block text-sm text-gray-400 mb-1 text-blue-400">Email (Required for Email)</label>
+                  <Input
+                    type="email"
+                    value={formData.toEmail}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, toEmail: e.target.value }))}
+                    placeholder="recipient@example.com"
+                    className="bg-gray-800 border-gray-700"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-gray-400 mb-1 text-green-400">Phone (Required for WhatsApp)</label>
+                  <Input
+                    value={formData.toPhone}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, toPhone: e.target.value }))}
+                    placeholder="+91 98765 43210"
+                    className="bg-gray-800 border-gray-700"
+                  />
                 </div>
               </div>
 
@@ -299,9 +411,8 @@ const CommunicationPage: React.FC = () => {
                         <p className="text-sm text-gray-400 mt-1 line-clamp-2">{comm.message}</p>
                       </div>
                       <div
-                        className={`px-2 py-1 rounded text-xs ${
-                          comm.direction === "outbound" ? "bg-blue-500/20 text-blue-400" : "bg-green-500/20 text-green-400"
-                        }`}
+                        className={`px-2 py-1 rounded text-xs ${comm.direction === "outbound" ? "bg-blue-500/20 text-blue-400" : "bg-green-500/20 text-green-400"
+                          }`}
                       >
                         {comm.direction}
                       </div>

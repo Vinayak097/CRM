@@ -153,9 +153,15 @@ export const SalesManagerDashboard: React.FC<Props> = ({ stats }) => {
                       <p className="text-xs text-gray-400">{agent.email}</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold text-white">{agent.assignedLeads}</p>
-                    <p className="text-xs text-gray-400">leads</p>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-white">{agent.assignedLeads}</p>
+                      <p className="text-xs text-gray-400">leads</p>
+                    </div>
+                    <div className="text-right min-w-[80px]">
+                      <p className="text-lg font-bold text-green-500">{agent.convertedLeads}</p>
+                      <p className="text-xs text-gray-400">converted</p>
+                    </div>
                   </div>
                 </div>
               ))

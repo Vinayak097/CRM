@@ -1,7 +1,8 @@
 import express, { Router, Request, Response, NextFunction } from "express";
-import { authenticateToken } from "../middlewares/auth.js";
+import { authenticateToken, AuthRequest } from "../middlewares/auth.js";
 import TaskService from "../services/task.service.js";
 import GoogleCalendarService from "../services/googleCalendar.service.js";
+import User, { Role } from "../models/User.js";
 import {
   createTaskSchema,
   updateTaskSchema,
@@ -111,8 +112,27 @@ router.get(
         });
       }
 
-      // Get tasks
-      const result = await TaskService.getTasks(validationResult.data);
+      // Get tasks with role-based filtering
+      const user = (req as AuthRequest).user;
+      if (!user) {
+        return res.status(401).json({ success: false, message: "Unauthorized" });
+      }
+
+      const queryParams: any = { ...validationResult.data };
+
+      if (user.role === Role.SalesAgent) {
+        queryParams.assignedAgentId = user.id;
+      } else if (user.role === Role.SalesManager) {
+        // managers can only see their own tasks and their team's tasks
+        const managedAgents = await User.find({ managedBy: user.id }).select("_id");
+        const agentIds = managedAgents.map(a => (a as any)._id.toString());
+        agentIds.push(user.id);
+        queryParams.assignedAgentIds = agentIds;
+      }
+
+      const result = await TaskService.getTasks(queryParams);
+
+      console.log(`[TASKS] Get tasks for user ${user.id} (${user.role}), found ${result.tasks.length} tasks`);
 
       res.status(200).json({
         success: true,
@@ -142,6 +162,21 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { agentId } = req.params;
+      const user = (req as AuthRequest).user;
+      if (!user) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+      // Security check: Only Admins can see any agent's tasks. 
+      // Managers can see their own or their team's. 
+      // Agents can only see their own.
+      if (user.role === Role.SalesAgent && user.id !== agentId) {
+        return res.status(403).json({ success: false, message: "Access denied" });
+      }
+      if (user.role === Role.SalesManager && user.id !== agentId) {
+        const agent = await User.findById(agentId);
+        if (!agent || agent.managedBy?.toString() !== user.id) {
+          return res.status(403).json({ success: false, message: "Access denied" });
+        }
+      }
 
       const tasks = await TaskService.getAgentTasks(agentId, 20);
 
@@ -170,10 +205,39 @@ router.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { agentId } = req.query;
+      const user = (req as AuthRequest).user;
+      if (!user) return res.status(401).json({ success: false, message: "Unauthorized" });
 
-      const stats = await TaskService.getTaskStats(
-        typeof agentId === "string" ? agentId : undefined
-      );
+      let filterAgentId: string | string[] | undefined = typeof agentId === "string" ? agentId : undefined;
+
+      // Enforce access control if no specific agentId is requested or if user is limited
+      if (!filterAgentId) {
+        if (user.role === Role.SalesAgent) {
+          filterAgentId = user.id;
+        } else if (user.role === Role.SalesManager) {
+          const managedAgents = await User.find({ managedBy: user.id }).select("_id");
+          const agentIds = managedAgents.map(a => (a as any)._id.toString());
+          agentIds.push(user.id);
+          filterAgentId = agentIds;
+        }
+      } else {
+        // If agentId is provided, verify permission
+        if (user.role === Role.SalesAgent && filterAgentId !== user.id) {
+          return res.status(403).json({ success: false, message: "Access denied" });
+        }
+        if (user.role === Role.SalesManager && filterAgentId !== user.id) {
+          const targetIds = Array.isArray(filterAgentId) ? filterAgentId : [filterAgentId];
+          for (const id of targetIds) {
+            if (id === user.id) continue;
+            const agent = await User.findById(id);
+            if (!agent || agent.managedBy?.toString() !== user.id) {
+              return res.status(403).json({ success: false, message: "Access denied" });
+            }
+          }
+        }
+      }
+
+      const stats = await TaskService.getTaskStats(filterAgentId);
 
       res.status(200).json({
         success: true,

@@ -68,6 +68,21 @@ const TasksPage: React.FC = () => {
     }
   }, [leadSearch, showCreateModal]);
 
+  const [stats, setStats] = useState({ pending: 0, overdue: 0, completed: 0, total: 0 });
+  const [loadingStats, setLoadingStats] = useState(false);
+
+  const fetchStats = useCallback(async () => {
+    setLoadingStats(true);
+    try {
+      const response = await taskService.getTaskStats();
+      setStats(response.data);
+    } catch (error) {
+      console.error("Failed to fetch task stats:", error);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, []);
+
   const fetchTasks = useCallback(async () => {
     setLoading(true);
     try {
@@ -90,7 +105,8 @@ const TasksPage: React.FC = () => {
 
   useEffect(() => {
     fetchTasks();
-  }, [fetchTasks]);
+    fetchStats();
+  }, [fetchTasks, fetchStats]);
 
   const handleCreateTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +119,7 @@ const TasksPage: React.FC = () => {
     try {
       // Convert datetime-local format to ISO string
       const dueAtISO = new Date(formData.dueAt).toISOString();
-      
+
       await taskService.createTask({
         ...formData,
         dueAt: dueAtISO,
@@ -224,40 +240,49 @@ const TasksPage: React.FC = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card>
+        <Card
+          className={`cursor-pointer transition-all hover:ring-2 hover:ring-yellow-500/50 ${filter === 'PENDING' ? 'ring-2 ring-yellow-500' : ''}`}
+          onClick={() => setFilter(filter === 'PENDING' ? '' : 'PENDING')}
+        >
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-full bg-yellow-500/20">
               <Clock className="h-6 w-6 text-yellow-500" />
             </div>
             <div>
               <p className="text-2xl font-bold text-white">
-                {tasks.filter((t) => t.status === "PENDING").length}
+                {stats.pending || 0}
               </p>
               <p className="text-sm text-gray-400">Pending</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={`cursor-pointer transition-all hover:ring-2 hover:ring-red-500/50 ${filter === 'OVERDUE' ? 'ring-2 ring-red-500' : ''}`}
+          onClick={() => setFilter(filter === 'OVERDUE' ? '' : 'OVERDUE')}
+        >
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-full bg-red-500/20">
               <AlertTriangle className="h-6 w-6 text-red-500" />
             </div>
             <div>
               <p className="text-2xl font-bold text-white">
-                {tasks.filter((t) => t.status === "OVERDUE" || isOverdue(t.dueAt, t.status)).length}
+                {stats.overdue || 0}
               </p>
               <p className="text-sm text-gray-400">Overdue</p>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card
+          className={`cursor-pointer transition-all hover:ring-2 hover:ring-green-500/50 ${filter === 'COMPLETED' ? 'ring-2 ring-green-500' : ''}`}
+          onClick={() => setFilter(filter === 'COMPLETED' ? '' : 'COMPLETED')}
+        >
           <CardContent className="p-4 flex items-center gap-4">
             <div className="p-3 rounded-full bg-green-500/20">
               <Check className="h-6 w-6 text-green-500" />
             </div>
             <div>
               <p className="text-2xl font-bold text-white">
-                {tasks.filter((t) => t.status === "COMPLETED").length}
+                {stats.completed || 0}
               </p>
               <p className="text-sm text-gray-400">Completed</p>
             </div>
