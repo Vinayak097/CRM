@@ -244,11 +244,12 @@ const AppContent: React.FC = () => {
             <Route
               path="/sales-funnel"
               element={
-                <ProtectedRoute allowedRoles={['admin', 'sales_manager']}>
+                <ProtectedRoute allowedRoles={['admin', 'sales_agent', 'sales_manager']}>
                   <SalesFunnelPage />
                 </ProtectedRoute>
               }
             />
+            <Route path="/leads-funnel" element={<Navigate to="/sales-funnel" replace />} />
             <Route
               path="/operational-analytics"
               element={

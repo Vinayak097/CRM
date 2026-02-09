@@ -361,6 +361,10 @@ export const AdminDashboard: React.FC<Props> = ({ stats }) => {
               <span className="text-2xl mb-1">🏗️</span>
               <span className="text-xs">Developers</span>
             </Button>
+            <Button variant="outline" className="flex-col h-20" onClick={() => navigate("/sales-funnel")}>
+              <span className="text-2xl mb-1">🌪️</span>
+              <span className="text-xs">Funnel</span>
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -80,9 +80,11 @@ export const SalesManagerDashboard: React.FC<Props> = ({ stats }) => {
             <p className="text-sm text-gray-400">
               Visualize lead progression and conversion rates across stages.
             </p>
-            <Button onClick={() => navigate("/sales-funnel")}>
-              View Funnel
-            </Button>
+            {false && (
+              <Button onClick={() => navigate("/sales-funnel")}>
+                View Funnel
+              </Button>
+            )}
           </CardContent>
         </Card>
 
@@ -95,9 +97,11 @@ export const SalesManagerDashboard: React.FC<Props> = ({ stats }) => {
             <p className="text-sm text-gray-400">
               Monitor team-level lead trends, sources, and status breakdown.
             </p>
-            <Button onClick={() => navigate("/operational-analytics")}>
-              View Analytics
-            </Button>
+            {false && (
+              <Button onClick={() => navigate("/operational-analytics")}>
+                View Analytics
+              </Button>
+            )}
           </CardContent>
         </Card>
 

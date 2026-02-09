@@ -126,6 +126,13 @@ export const SalesAgentDashboard: React.FC<Props> = ({ stats }) => {
             >
               🏠 Browse Properties
             </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => navigate("/sales-funnel")}
+            >
+              🌪️ View Sales Funnel
+            </Button>
           </CardContent>
         </Card>
       </div>

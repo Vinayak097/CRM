@@ -1,6 +1,6 @@
 import type { Response } from "express";
 import type { AuthRequest } from "../middlewares/auth.js";
-import { getDashboardStats, getSalesFunnelData } from "../services/dashboard.service.js";
+import { getDashboardStats, getSalesFunnelData, getOperationalAnalytics } from "../services/dashboard.service.js";
 
 export const getDashboard = async (req: AuthRequest, res: Response) => {
   try {
@@ -28,7 +28,12 @@ export const getSalesFunnel = async (req: AuthRequest, res: Response) => {
 
     const start = startDate ? new Date(startDate as string) : undefined;
     const end = endDate ? new Date(endDate as string) : undefined;
-    const agent = agentId as string | undefined;
+    let agent = agentId as string | undefined;
+
+    // Auto-filter for sales agents
+    if (req.user.role === "sales_agent") {
+      agent = req.user.id;
+    }
 
     const funnelData = await getSalesFunnelData(start, end, agent);
 

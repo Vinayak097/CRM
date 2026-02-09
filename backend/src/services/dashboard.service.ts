@@ -714,10 +714,10 @@ export async function getSalesFunnelData(
   });
 
   return {
-    stages: funnelData,
-    totalLeads,
-    overallConversionRate,
-    convertedLeads,
+    stages: funnelData || [],
+    totalLeads: totalLeads || 0,
+    overallConversionRate: overallConversionRate || 0,
+    convertedLeads: convertedLeads || 0,
   };
 }
 

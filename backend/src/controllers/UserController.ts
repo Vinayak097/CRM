@@ -2,6 +2,7 @@ import type { Response } from "express";
 import User, { Role } from "../models/User.js";
 import bcrypt from "bcryptjs";
 import type { AuthRequest } from "../middlewares/auth.js";
+import { getSalesAgentLeadCount } from "@/services/dashboard.service.js";
 
 // Helper to find Sales Manager with fewest agents
 const findManagerWithFewestAgents = async () => {
@@ -297,7 +298,11 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
-
+    if (currentUser.role === Role.SalesManager) {
+      users.forEach(async (user) => {
+        user.assignedLeadsCount = await getSalesAgentLeadCount(user._id);
+      });
+    }
     const totalUsers = await User.countDocuments(filter);
 
     res.status(200).json({

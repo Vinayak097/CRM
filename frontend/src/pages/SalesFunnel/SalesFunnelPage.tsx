@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Filter, TrendingDown } from "lucide-react";
+import { ArrowLeft, TrendingDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import axios from "axios";
@@ -184,8 +184,8 @@ const SalesFunnelPage: React.FC = () => {
                             />
                             <Legend />
                             <Bar dataKey="count" name="Lead Count" radius={[8, 8, 0, 0]}>
-                                {funnelData.stages.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={STAGE_COLORS[index]} />
+                                {funnelData.stages?.map((_, index) => (
+                                    <Cell key={`cell-${index}`} fill={STAGE_COLORS[index % STAGE_COLORS.length]} />
                                 ))}
                             </Bar>
                         </BarChart>
@@ -211,7 +211,7 @@ const SalesFunnelPage: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {funnelData.stages.map((stage, index) => {
+                                {funnelData.stages?.map((stage, index) => {
                                     const dropOff = 100 - stage.conversionRate;
                                     return (
                                         <tr
@@ -222,7 +222,7 @@ const SalesFunnelPage: React.FC = () => {
                                                 <div className="flex items-center gap-2">
                                                     <div
                                                         className="w-3 h-3 rounded-full"
-                                                        style={{ backgroundColor: STAGE_COLORS[index] }}
+                                                        style={{ backgroundColor: STAGE_COLORS[index % STAGE_COLORS.length] }}
                                                     />
                                                     <span className="font-medium">{stage.stage}</span>
                                                 </div>
@@ -236,10 +236,10 @@ const SalesFunnelPage: React.FC = () => {
                                             <td className="p-3 text-right">
                                                 <span
                                                     className={`px-2 py-1 rounded text-sm ${stage.conversionRate >= 50
-                                                            ? "bg-green-500/20 text-green-400"
-                                                            : stage.conversionRate >= 25
-                                                                ? "bg-yellow-500/20 text-yellow-400"
-                                                                : "bg-red-500/20 text-red-400"
+                                                        ? "bg-green-500/20 text-green-400"
+                                                        : stage.conversionRate >= 25
+                                                            ? "bg-yellow-500/20 text-yellow-400"
+                                                            : "bg-red-500/20 text-red-400"
                                                         }`}
                                                 >
                                                     {stage.conversionRate}%
