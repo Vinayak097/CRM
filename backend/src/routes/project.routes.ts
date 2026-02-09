@@ -49,6 +49,13 @@ router.patch(
     propertyProjectController.updateProject
 );
 
+router.patch(
+    '/:id/verify',
+    authenticateToken,
+    requireRole([Role.Admin, Role.BusinessHead]),
+    propertyProjectController.verifyProject
+);
+
 // DELETE - only admin and onboarding agents
 router.delete(
     '/:id',

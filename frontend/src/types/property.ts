@@ -12,6 +12,7 @@ export interface Property {
   property_type?: string;
   propertyType?: string; // Legacy
   status?: string;
+  isVerified?: boolean;
 
   // Location
   location_id?: string;

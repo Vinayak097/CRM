@@ -77,6 +77,17 @@ export class PropertyProjectController {
                 filter.$text = { $search: queryParams.search };
             }
 
+            // Role-based visibility
+            const user = (req as any).user;
+            if (user?.role === 'sales_agent') {
+                filter.isVerified = true;
+            } else if (queryParams.isVerified) {
+                filter.isVerified = queryParams.isVerified === 'true';
+            }
+
+            // Soft-delete filter
+            filter.is_deleted = queryParams.is_deleted ? parseInt(queryParams.is_deleted) : 0;
+
             // Execute query
             const projects = await PropertyProject
                 .find(filter)
@@ -195,10 +206,10 @@ export class PropertyProjectController {
                     message: 'Property project permanently deleted'
                 });
             } else {
-                // Soft delete - update status to 'Deleted' or similar
+                // Soft delete - update is_deleted to 1
                 const project = await PropertyProject.findByIdAndUpdate(
                     id,
-                    { $set: { availabilityStatus: 'Deleted' } },
+                    { $set: { is_deleted: 1, availabilityStatus: 'Deleted' } },
                     { new: true }
                 );
 
@@ -273,6 +284,35 @@ export class PropertyProjectController {
             });
         } catch (error: any) {
             throw new AppError('Error bulk creating projects', 500, error);
+        }
+    }
+
+    // VERIFY - Verify project by ID
+    verifyProject = async (req: Request, res: Response) => {
+        try {
+            const { id } = req.params;
+
+            if (!mongoose.isValidObjectId(id)) {
+                throw new AppError('Invalid property project ID', 400);
+            }
+
+            const project = await PropertyProject.findByIdAndUpdate(
+                id,
+                { $set: { isVerified: true } },
+                { new: true }
+            );
+
+            if (!project) {
+                throw new AppError('Property project not found', 404);
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: 'Property project verified successfully',
+                data: project
+            });
+        } catch (error: any) {
+            throw new AppError('Error verifying property project', 500, error);
         }
     }
 }

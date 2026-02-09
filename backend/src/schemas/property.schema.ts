@@ -321,11 +321,15 @@ export const propertySchema = z
 
     // Remaining Original Fields (Overwritten or Merged)
     views: z.number().int().min(0).default(0),
+    is_deleted: z.number().default(0),
+    isVerified: z.boolean().default(false),
   });
 
 // Schema for creating new property
 export const createPropertySchema = propertySchema.omit({
   views: true,
+  is_deleted: true,
+  isVerified: true,
 });
 
 // Schema for updating property
@@ -335,6 +339,8 @@ export const updatePropertySchema = createPropertySchema
     created_at: z.any().optional(),
     updated_at: z.any().optional(),
     views: z.any().optional(),
+    is_deleted: z.number().optional(),
+    isVerified: z.boolean().optional(),
   })
   .partial();
 
@@ -363,6 +369,11 @@ export const queryPropertySchema = z.object({
     .transform((val) => val === "true")
     .optional(),
   active: z
+    .string()
+    .transform((val) => val === "true")
+    .optional(),
+  is_deleted: z.string().transform(Number).optional(),
+  isVerified: z
     .string()
     .transform((val) => val === "true")
     .optional(),

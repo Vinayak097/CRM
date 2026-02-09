@@ -17,6 +17,7 @@ export interface QueryPropertyParams {
   featured?: boolean;
   active?: boolean;
   tags?: string;
+  isVerified?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -56,6 +57,8 @@ export const propertyService = {
       queryParams.append("featured", params.featured.toString());
     if (params.active !== undefined)
       queryParams.append("active", params.active.toString());
+    if (params.isVerified !== undefined)
+      queryParams.append("isVerified", params.isVerified.toString());
     if (params.tags) queryParams.append("tags", params.tags);
 
     const response = await api.get(`/properties?${queryParams}`);
@@ -130,5 +133,10 @@ export const propertyService = {
       `/properties/location/${locationId}?limit=${limit}`,
     );
     return response.data.data;
+  },
+
+  verifyProperty: async (id: string): Promise<{ data: Property; message: string }> => {
+    const response = await api.patch(`/properties/${id}/verify`);
+    return response.data;
   },
 };

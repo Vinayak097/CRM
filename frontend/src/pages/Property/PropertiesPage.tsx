@@ -14,6 +14,7 @@ const PropertiesPage: React.FC = () => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const canWrite = WRITE_ROLES.includes(user?.role);
+  const canApprove = ['admin', 'business_head'].includes(user?.role);
   const [properties, setProperties] = useState<Property[]>([]);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -28,6 +29,7 @@ const PropertiesPage: React.FC = () => {
     status: "",
     featured: "",
     active: "",
+    verificationStatus: "",
   });
 
   const fetchProperties = useCallback(async () => {
@@ -43,6 +45,7 @@ const PropertiesPage: React.FC = () => {
       if (filters.status) params.status = filters.status;
       if (filters.featured !== "") params.featured = filters.featured === "true";
       if (filters.active !== "") params.active = filters.active === "true";
+      if (filters.verificationStatus !== "") params.isVerified = filters.verificationStatus === "true";
 
       const response = await propertyService.getProperties(params);
       setProperties(response.data);
@@ -89,8 +92,18 @@ const PropertiesPage: React.FC = () => {
       status: "",
       featured: "",
       active: "",
+      verificationStatus: "",
     });
     setPage(1);
+  };
+
+  const handleVerify = async (id: string) => {
+    try {
+      await propertyService.verifyProperty(id);
+      fetchProperties();
+    } catch {
+      alert("Failed to verify property");
+    }
   };
 
   const getStatusColor = (status?: string) => {
@@ -236,6 +249,18 @@ const PropertiesPage: React.FC = () => {
                   <option value="false">Inactive</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-sm text-gray-400 mb-1">Verification Status</label>
+                <select
+                  value={filters.verificationStatus}
+                  onChange={(e) => handleFilterChange("verificationStatus", e.target.value)}
+                  className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
+                >
+                  <option value="">All</option>
+                  <option value="false">Pending Verification</option>
+                  <option value="true">Verified</option>
+                </select>
+              </div>
             </div>
           </div>
         )}
@@ -279,6 +304,11 @@ const PropertiesPage: React.FC = () => {
                   >
                     {property.property_type || property.propertyType || "Type"}
                   </span>
+                  {!property.isVerified && (
+                    <span className="px-2 py-1 rounded-full text-xs font-medium shrink-0 bg-yellow-500/20 text-yellow-400">
+                      Pending Verification
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="flex justify-between items-center text-sm mb-3">
@@ -313,6 +343,16 @@ const PropertiesPage: React.FC = () => {
                     <Trash2 className="h-4 w-4 mr-1" />
                     Delete
                   </Button>
+                  {canApprove && !property.isVerified && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="flex-1 bg-green-600 hover:bg-green-500 text-white"
+                      onClick={(e) => { e.stopPropagation(); handleVerify(property._id); }}
+                    >
+                      Verify
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -330,6 +370,7 @@ const PropertiesPage: React.FC = () => {
               <th className="p-3">Price</th>
               <th className="p-3">Area</th>
               <th className="p-3">Status</th>
+              <th className="p-3">Approval</th>
               <th className="p-3">Featured</th>
               <th className="p-3">Views</th>
               {canWrite && <th className="p-3">Actions</th>}
@@ -372,6 +413,17 @@ const PropertiesPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="p-3">
+                    {!property.isVerified ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-yellow-500/20 text-yellow-400">
+                        Pending
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-green-500/20 text-green-400">
+                        Verified
+                      </span>
+                    )}
+                  </td>
+                  <td className="p-3">
                     {property.badges?.is_featured ? (
                       <span className="text-yellow-400">★</span>
                     ) : (
@@ -398,6 +450,16 @@ const PropertiesPage: React.FC = () => {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                        {canApprove && !property.isVerified && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-500 text-white"
+                            onClick={(e) => { e.stopPropagation(); handleVerify(property._id); }}
+                          >
+                            Verify
+                          </Button>
+                        )}
                       </div>
                     </td>
                   )}

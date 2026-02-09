@@ -183,7 +183,9 @@ const PropertyProjectSchema = new mongoose.Schema({
     availabilityStatus: String,
     unitName: String,
     unitNumber: String,
-    projectName: String
+    projectName: String,
+    isVerified: { type: Boolean, default: false, index: true },
+    is_deleted: { type: Number, default: 0, index: true }
 }, {
     timestamps: {
         createdAt: 'created_at',

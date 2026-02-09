@@ -16,6 +16,7 @@ const propertyController = new PropertyController();
 // Read routes - accessible to authenticated users
 router.get(
   "/",
+  authenticateToken,
   validateRequest(queryPropertySchema, "query"),
   propertyController.getProperties
 );
@@ -23,6 +24,7 @@ router.get("/featured", propertyController.getFeaturedProperties);
 router.get("/search", propertyController.searchProperties);
 router.get(
   "/type/:type",
+  authenticateToken,
   validateRequest(queryPropertySchema, "query"),
   propertyController.getPropertiesByType
 );
@@ -37,6 +39,14 @@ router.post(
   validateRequest(createPropertySchema),
   propertyController.createProperty
 );
+
+router.patch(
+  "/:id/verify",
+  authenticateToken,
+  requireRole([Role.Admin, Role.BusinessHead]),
+  propertyController.verifyProperty
+);
+
 router.put(
   "/:id",
   authenticateToken,

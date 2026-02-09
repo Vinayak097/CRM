@@ -15,6 +15,7 @@ const ProjectsPage: React.FC = () => {
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     const canWrite = WRITE_ROLES.includes(user?.role);
+    const canApprove = ['admin', 'business_head'].includes(user?.role);
     const [projects, setProjects] = useState<PropertyProject[]>([]);
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
@@ -27,6 +28,7 @@ const ProjectsPage: React.FC = () => {
     const [filters, setFilters] = useState({
         project_status: "" as ProjectStatus | "",
         project_type: "",
+        verificationStatus: "",
     });
 
     const fetchProjects = useCallback(async () => {
@@ -40,6 +42,7 @@ const ProjectsPage: React.FC = () => {
             if (search) params.search = search;
             if (filters.project_status) params.project_status = filters.project_status as ProjectStatus;
             if (filters.project_type) params.project_type = filters.project_type;
+            if (filters.verificationStatus !== "") params.isVerified = filters.verificationStatus === "true";
 
             const response = await projectService.getProjects(params);
             setProjects(response.data);
@@ -84,8 +87,18 @@ const ProjectsPage: React.FC = () => {
         setFilters({
             project_status: "",
             project_type: "",
+            verificationStatus: "",
         });
         setPage(1);
+    };
+
+    const handleVerify = async (id: string, name: string) => {
+        try {
+            await projectService.verifyProject(id);
+            fetchProjects();
+        } catch {
+            alert("Failed to verify project");
+        }
     };
 
     const getStatusColor = (status?: string) => {
@@ -194,6 +207,18 @@ const ProjectsPage: React.FC = () => {
                                     <option value="Mixed Use">Mixed Use</option>
                                 </select>
                             </div>
+                            <div>
+                                <label className="block text-sm text-gray-400 mb-1">Verification Status</label>
+                                <select
+                                    value={filters.verificationStatus}
+                                    onChange={(e) => handleFilterChange("verificationStatus", e.target.value)}
+                                    className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
+                                >
+                                    <option value="">All</option>
+                                    <option value="false">Pending Verification</option>
+                                    <option value="true">Verified</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -228,6 +253,11 @@ const ProjectsPage: React.FC = () => {
                                 >
                                     {project.project_status}
                                 </span>
+                                {!project.isVerified && (
+                                    <span className="px-2 py-1 rounded-full text-[10px] font-medium shrink-0 bg-yellow-500/20 text-yellow-400 ml-2">
+                                        Pending
+                                    </span>
+                                )}
                             </div>
                             <div className="flex justify-between items-center text-sm mb-3">
                                 <div className="text-gray-400">
@@ -259,6 +289,16 @@ const ProjectsPage: React.FC = () => {
                                         <Trash2 className="h-4 w-4 mr-1" />
                                         Delete
                                     </Button>
+                                    {canApprove && !project.isVerified && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            className="flex-1 bg-green-600 hover:bg-green-500 text-white"
+                                            onClick={(e) => { e.stopPropagation(); handleVerify(project._id, project.name); }}
+                                        >
+                                            Verify
+                                        </Button>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -276,6 +316,7 @@ const ProjectsPage: React.FC = () => {
                             <th className="p-3">Status</th>
                             <th className="p-3">Price Range</th>
                             <th className="p-3">Avg Price</th>
+                            <th className="p-3">Verification</th>
                             <th className="p-3">Developer</th>
                             {canWrite && <th className="p-3">Actions</th>}
                         </tr>
@@ -318,6 +359,17 @@ const ProjectsPage: React.FC = () => {
                                     <td className="p-3">
                                         {project.project_pricing?.average_price ? `₹${project.project_pricing.average_price}` : "-"}
                                     </td>
+                                    <td className="p-3 text-xs uppercase font-medium">
+                                        {!project.isVerified ? (
+                                            <span className="bg-yellow-500/10 text-yellow-400 px-2 py-0.5 rounded border border-yellow-500/20">
+                                                Pending
+                                            </span>
+                                        ) : (
+                                            <span className="bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/20">
+                                                Verified
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="p-3 text-sm text-gray-400">
                                         {project.project_details?.developer_name || project.developer?.developer_id || "-"}
                                     </td>
@@ -340,6 +392,16 @@ const ProjectsPage: React.FC = () => {
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
+                                                {canApprove && !project.isVerified && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-green-400 hover:text-green-300"
+                                                        onClick={(e) => { e.stopPropagation(); handleVerify(project._id, project.name); }}
+                                                    >
+                                                        Verify
+                                                    </Button>
+                                                )}
                                             </div>
                                         </td>
                                     )}

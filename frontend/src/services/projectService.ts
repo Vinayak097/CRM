@@ -11,6 +11,8 @@ export interface QueryProjectParams {
     min_price?: string;
     max_price?: string;
     search?: string;
+    isVerified?: boolean;
+    is_deleted?: number;
     sort?: string;
 }
 
@@ -39,6 +41,8 @@ export const projectService = {
         if (params.min_price) queryParams.append("min_price", params.min_price);
         if (params.max_price) queryParams.append("max_price", params.max_price);
         if (params.search) queryParams.append("search", params.search);
+        if (params.isVerified !== undefined) queryParams.append("isVerified", params.isVerified.toString());
+        if (params.is_deleted !== undefined) queryParams.append("is_deleted", params.is_deleted.toString());
         if (params.sort) queryParams.append("sort", params.sort);
 
         const response = await api.get(`/projects?${queryParams}`);
@@ -86,6 +90,10 @@ export const projectService = {
 
     bulkCreateProjects: async (projects: Partial<PropertyProject>[]): Promise<{ data: PropertyProject[]; message: string }> => {
         const response = await api.post("/projects/bulk", { projects });
+        return response.data;
+    },
+    verifyProject: async (id: string): Promise<{ data: PropertyProject; message: string }> => {
+        const response = await api.patch(`/projects/${id}/verify`);
         return response.data;
     }
 };

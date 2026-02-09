@@ -65,9 +65,17 @@ export class PropertyController {
   // Get all properties with filtering and pagination
   getProperties = async (req: Request, res: Response) => {
     try {
-      // Query was validated by middleware; use query directly
+      const user = (req as any).user;
+      const query = { ...req.query } as any;
+
+      // Role-based visibility: 
+      // Sales Agents should only see verified properties
+      if (user?.role === "sales_agent") {
+        query.isVerified = "true";
+      }
+
       const result = await this.propertyService.getProperties(
-        req.query as unknown as QueryPropertyInput,
+        query as unknown as QueryPropertyInput,
       );
 
       res.status(200).json({
@@ -83,6 +91,30 @@ export class PropertyController {
     } catch (error: any) {
       if (error?.name === "ZodError") throw error;
       throw new AppError("Failed to fetch properties", 400, error);
+    }
+  };
+
+  // Verify a property
+  verifyProperty = async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      if (!id) {
+        throw new AppError("Property ID is required", 400);
+      }
+
+      const approvedProperty = await this.propertyService.approveProperty(id);
+
+      if (!approvedProperty) {
+        throw new AppError("Property not found", 404);
+      }
+
+      res.status(200).json({
+        success: true,
+        data: approvedProperty,
+        message: "Property verified and published successfully",
+      });
+    } catch (error) {
+      throw new AppError("Failed to verify property", 400, error);
     }
   };
 

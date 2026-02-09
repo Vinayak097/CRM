@@ -174,7 +174,9 @@ const PropertyProjectSchema = z.object({
     availabilityStatus: z.string().optional(),
     unitName: z.string().optional().nullable(),
     unitNumber: z.string().optional().nullable(),
-    projectName: z.string().optional()
+    projectName: z.string().optional(),
+    isVerified: z.boolean().default(false),
+    is_deleted: z.number().default(0)
 });
 
 // Update schema (all fields optional)
@@ -191,6 +193,8 @@ const PropertyProjectQuerySchema = z.object({
     min_price: z.string().optional(),
     max_price: z.string().optional(),
     search: z.string().optional(),
+    isVerified: z.string().optional(),
+    is_deleted: z.string().optional(),
     sort: z.string().optional().default('-created_at')
 });
 

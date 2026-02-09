@@ -24,7 +24,17 @@ export class PropertyService {
         throw new Error(`Property with listing ID ${data.listing_id} already exists`);
       }
     }
-    return this.propertyRepository.create(data);
+    return this.propertyRepository.create({
+      ...data,
+      isVerified: false, // Start as pending verification
+    });
+  }
+
+  async approveProperty(id: string): Promise<Property | null> {
+    return this.propertyRepository.update(id, {
+      isVerified: true,
+      published_at: new Date(),
+    });
   }
 
   async getPropertyByListingId(listingId: string): Promise<Property | null> {
@@ -43,6 +53,10 @@ export class PropertyService {
   }> {
     const { page, limit, ...filters } = query;
     const skip = (page - 1) * limit;
+
+    // By default, if no is_deleted filter is specified, we might want to return only published ones (0)
+    // but in CRM, admins might want to see all. Let's let the controller/middleware handle role-based filtering
+    // or just pass through the filter if provided.
 
     const [properties, total] = await Promise.all([
       this.propertyRepository.find(filters, skip, limit),
