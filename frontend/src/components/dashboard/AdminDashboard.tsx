@@ -3,6 +3,19 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import KpiCard from "./KpiCard";
+import {
+  PieChart,
+  Pie,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend
+} from "recharts";
 
 interface AdminStats {
   // Leads & Sales
@@ -16,6 +29,7 @@ interface AdminStats {
   activeProjects: number;
   totalProperties: number;
   projectsByStatus: Record<string, number>;
+  propertiesByStatus: Record<string, number>;
   // Users & Teams
   totalUsers: number;
   salesAgents: Array<{ id: string; name: string; email: string; assignedLeads: number }>;
@@ -42,6 +56,32 @@ const STATUS_COLORS: Record<string, string> = {
   "Under Construction": "bg-yellow-500",
   Completed: "bg-green-500",
   "Ready to Move": "bg-emerald-500",
+  // Property Statuses
+  AVAILABLE: "bg-green-500",
+  SOLD: "bg-red-500",
+  RESERVED: "bg-orange-500",
+  UNDER_CONTRACT: "bg-yellow-500",
+};
+
+const CHART_COLORS: Record<string, string> = {
+  New: "#3b82f6",
+  Contacted: "#06b6d4",
+  Qualified: "#eab308",
+  Shortlisted: "#f97316",
+  "Site Visit": "#a855f7",
+  Negotiation: "#ec4899",
+  Booked: "#22c55e",
+  Converted: "#059669",
+  Lost: "#ef4444",
+  Planning: "#3b82f6",
+  "Under Construction": "#eab308",
+  Completed: "#22c55e",
+  "Ready to Move": "#10b981",
+  AVAILABLE: "#22c55e",
+  SOLD: "#ef4444",
+  RESERVED: "#f97316",
+  UNDER_CONTRACT: "#eab308",
+  Unknown: "#6b7280",
 };
 
 export const AdminDashboard: React.FC<Props> = ({ stats }) => {
@@ -114,34 +154,87 @@ export const AdminDashboard: React.FC<Props> = ({ stats }) => {
           </CardContent>
         </Card>
 
-        {/* Projects by Status */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Projects Overview</CardTitle>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/projects")}>
+        {/* Projects Overview */}
+        <Card className="flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between transition-colors hover:bg-gray-800/50 cursor-pointer" onClick={() => navigate("/projects")}>
+            <CardTitle className="text-lg">Projects Distribution</CardTitle>
+            <Button variant="ghost" size="sm">
               View All →
             </Button>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              {Object.entries(stats.projectsByStatus).map(([status, count]) => (
-                <div
-                  key={status}
-                  className="bg-gray-800 rounded-lg p-4 text-center"
-                >
-                  <div
-                    className={`w-4 h-4 rounded-full mx-auto mb-2 ${STATUS_COLORS[status] || "bg-gray-500"}`}
-                  />
-                  <p className="text-2xl font-bold text-white">{count}</p>
-                  <p className="text-xs text-gray-400 mt-1">{status}</p>
-                </div>
-              ))}
-            </div>
-            <div className="pt-4 border-t border-gray-700">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-400">Active Projects</span>
-                <span className="font-medium text-blue-500">{stats.activeProjects}</span>
+          <CardContent className="flex-1 min-h-[300px]">
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart
+                data={Object.entries(stats.projectsByStatus).map(([name, value]) => ({ name, value }))}
+                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#9ca3af', fontSize: 12 }}
+                />
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fill: '#9ca3af', fontSize: 12 }}
+                />
+                <Tooltip
+                  cursor={{ fill: '#374151', opacity: 0.4 }}
+                  contentStyle={{ backgroundColor: "#1f2937", border: "none", borderRadius: "8px", color: "#fff" }}
+                  itemStyle={{ color: "#fff" }}
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {Object.entries(stats.projectsByStatus).map(([name], index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[name] || CHART_COLORS.Unknown} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="pt-4 border-t border-gray-700 mt-2">
+              <div className="flex justify-between text-sm text-gray-400">
+                <span>Active Projects</span>
+                <span className="font-semibold text-blue-500">{stats.activeProjects}</span>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Properties Overview */}
+        <Card className="flex flex-col">
+          <CardHeader className="flex flex-row items-center justify-between transition-colors hover:bg-gray-800/50 cursor-pointer" onClick={() => navigate("/property")}>
+            <CardTitle className="text-lg">Property Status</CardTitle>
+            <Button variant="ghost" size="sm">
+              View All →
+            </Button>
+          </CardHeader>
+          <CardContent className="flex-1 min-h-[300px]">
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie
+                  data={Object.entries(stats.propertiesByStatus).map(([name, value]) => ({ name, value }))}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {Object.entries(stats.propertiesByStatus).map(([name], index) => (
+                    <Cell key={`cell-${index}`} fill={CHART_COLORS[name] || CHART_COLORS.Unknown} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#1f2937", border: "none", borderRadius: "8px", color: "#fff" }}
+                  itemStyle={{ color: "#fff" }}
+                />
+                <Legend iconType="circle" />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="pt-4 border-t border-gray-700 mt-2 flex justify-between items-center text-sm text-gray-400">
+              <span>Total Listings</span>
+              <span className="font-semibold text-white">{stats.totalProperties}</span>
             </div>
           </CardContent>
         </Card>
