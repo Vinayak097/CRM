@@ -328,11 +328,13 @@ const LeadProfilePage: React.FC = () => {
               <Button variant="outline" size="sm" onClick={() => { setSelectedStatus(lead.system?.leadStatus || "New"); setShowStatusModal(true); }}>
                 <Target className="h-4 w-4 mr-1" />Status
               </Button>
-              {user?.role === "admin" && (
+              {(user?.role === "admin" || user?.role === "sales_manager") && (
                 <>
-                  <Button variant="outline" size="sm" onClick={() => { fetchManagers(); setShowAssignManagerModal(true); }}>
-                    <UsersIcon className="h-4 w-4 mr-1" />Assign Manager
-                  </Button>
+                  {user?.role === "admin" && (
+                    <Button variant="outline" size="sm" onClick={() => { fetchManagers(); setShowAssignManagerModal(true); }}>
+                      <UsersIcon className="h-4 w-4 mr-1" />Assign Manager
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" onClick={() => { fetchAgents(); setShowAssignModal(true); }}>
                     <UserPlus className="h-4 w-4 mr-1" />Assign Agent
                   </Button>
