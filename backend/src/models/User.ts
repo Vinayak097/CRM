@@ -9,6 +9,20 @@ export enum Role {
   // Legacy - kept for backwards compatibility
   Developer = "developer",
 }
+export interface IOnboardingItem {
+  status: 'Draft' | 'Submitted' | 'Approved' | 'Rejected';
+  rejectionReason?: string;
+  updatedAt: Date;
+}
+
+export interface IAssignedProperty extends IOnboardingItem {
+  propertyId: string;
+}
+
+export interface IAssignedProject extends IOnboardingItem {
+  projectId: string;
+}
+
 export interface IUser extends Document {
   name: string;
   email: string;
@@ -17,10 +31,25 @@ export interface IUser extends Document {
   role: Role;
   assignedLeadsCount: number;
   managedBy?: mongoose.Types.ObjectId;
+  assignedProperties: IAssignedProperty[];
+  assignedProjects: IAssignedProject[];
   createdAt: Date;
   updatedAt: Date;
   lastLogin: Date | null;
 }
+
+const OnboardingItemSchema = {
+  status: {
+    type: String,
+    enum: ['Draft', 'Submitted', 'Approved', 'Rejected'],
+    default: 'Draft'
+  },
+  rejectionReason: String,
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+};
 
 const userSchema = new Schema<IUser>(
   {
@@ -66,6 +95,14 @@ const userSchema = new Schema<IUser>(
         return false;
       },
     },
+    assignedProperties: [{
+      propertyId: { type: String, required: true },
+      ...OnboardingItemSchema
+    }],
+    assignedProjects: [{
+      projectId: { type: String, required: true },
+      ...OnboardingItemSchema
+    }],
   },
   {
     timestamps: true,

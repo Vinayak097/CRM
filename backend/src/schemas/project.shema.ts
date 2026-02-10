@@ -176,7 +176,8 @@ const PropertyProjectSchema = z.object({
     unitNumber: z.string().optional().nullable(),
     projectName: z.string().optional(),
     isVerified: z.boolean().default(false),
-    is_deleted: z.number().default(0)
+    is_deleted: z.number().default(0),
+    assignedAgent: z.string().optional()
 });
 
 // Update schema (all fields optional)

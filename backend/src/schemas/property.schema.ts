@@ -84,6 +84,7 @@ export const propertySchema = z
     _id: z.string().optional(),
     id: z.string().optional(),
     listing_id: z.string().optional(),
+    assignedAgent: z.string().optional(),
     listing_type: z.string().optional(),
     title: z.string().optional(),
     subtitle: z.string().optional(),

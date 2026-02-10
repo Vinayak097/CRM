@@ -5,6 +5,8 @@ import { projectService, type QueryProjectParams } from "../../services/projectS
 import type { PropertyProject, ProjectStatus } from "../../types/project";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { onboardingService } from "../../services/onboardingService";
+import { useAuthStore } from "../../store/authStore";
 
 const PAGE_SIZE = 10;
 
@@ -13,9 +15,57 @@ const WRITE_ROLES = ['admin', 'onboarding_agent', 'developer'];
 
 const ProjectsPage: React.FC = () => {
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    const canWrite = WRITE_ROLES.includes(user?.role);
-    const canApprove = ['admin', 'business_head'].includes(user?.role);
+    const { user, checkAuth } = useAuthStore();
+    const canWrite = WRITE_ROLES.includes(user?.role || "");
+    const canApprove = ['admin', 'business_head'].includes(user?.role || "");
+
+    const handleSubmitForApproval = async (id: string) => {
+        try {
+            await onboardingService.submitForApproval(id, 'Project');
+            await checkAuth(); // Refresh user data to get updated status
+            fetchProjects();
+        } catch (err: any) {
+            alert(err.message || "Failed to submit for approval");
+        }
+    };
+
+    const handleApprove = async (project: PropertyProject) => {
+        if (!confirm("Are you sure you want to approve this project?")) return;
+        try {
+            const agentId = (project as any).assignedAgent;
+            if (!agentId) throw new Error("No agent assigned to this project");
+
+            await onboardingService.approveItem(agentId, project._id, 'Project');
+            await checkAuth();
+            fetchProjects();
+        } catch (err: any) {
+            alert(err.message || "Failed to approve project");
+        }
+    };
+
+    const handleReject = async (project: PropertyProject) => {
+        const reason = prompt("Please enter the reason for rejection:");
+        if (reason === null) return;
+        if (!reason.trim()) {
+            alert("Rejection reason is required");
+            return;
+        }
+
+        try {
+            const agentId = (project as any).assignedAgent;
+            if (!agentId) throw new Error("No agent assigned to this project");
+
+            await onboardingService.rejectItem(agentId, project._id, 'Project', reason);
+            await checkAuth();
+            fetchProjects();
+        } catch (err: any) {
+            alert(err.message || "Failed to reject project");
+        }
+    };
+
+    const getOnboardingItem = (projectId: string) => {
+        return user?.assignedProjects?.find(p => p.projectId === projectId);
+    };
     const [projects, setProjects] = useState<PropertyProject[]>([]);
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
@@ -90,15 +140,6 @@ const ProjectsPage: React.FC = () => {
             verificationStatus: "",
         });
         setPage(1);
-    };
-
-    const handleVerify = async (id: string, name: string) => {
-        try {
-            await projectService.verifyProject(id);
-            fetchProjects();
-        } catch {
-            alert("Failed to verify project");
-        }
     };
 
     const getStatusColor = (status?: string) => {
@@ -269,7 +310,7 @@ const ProjectsPage: React.FC = () => {
                                     </div>
                                 )}
                             </div>
-                            {canWrite && (
+                            {(canWrite || canApprove) && (
                                 <div className="flex gap-2 pt-3 border-t border-gray-700">
                                     <Button
                                         variant="ghost"
@@ -289,16 +330,49 @@ const ProjectsPage: React.FC = () => {
                                         <Trash2 className="h-4 w-4 mr-1" />
                                         Delete
                                     </Button>
-                                    {canApprove && !project.isVerified && (
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            className="flex-1 bg-green-600 hover:bg-green-500 text-white"
-                                            onClick={(e) => { e.stopPropagation(); handleVerify(project._id, project.name); }}
-                                        >
-                                            Verify
-                                        </Button>
-                                    )}
+                                    {/* Onboarding Flow Buttons - Mobile */}
+                                    {(() => {
+                                        const ob = getOnboardingItem(project._id);
+                                        const status = project.isVerified ? 'Approved' : (ob?.status || 'Draft');
+
+                                        if (user?.role === 'onboarding_agent' && (status === 'Draft' || status === 'Rejected')) {
+                                            return (
+                                                <Button
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white"
+                                                    onClick={(e) => { e.stopPropagation(); handleSubmitForApproval(project._id); }}
+                                                >
+                                                    Submit
+                                                </Button>
+                                            );
+                                        }
+
+                                        if (canApprove && status === 'Submitted') {
+                                            return (
+                                                <div className="flex flex-1 gap-2">
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        className="flex-1 bg-green-600 hover:bg-green-500 text-white"
+                                                        onClick={(e) => { e.stopPropagation(); handleApprove(project); }}
+                                                    >
+                                                        Approve
+                                                    </Button>
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        className="flex-1 bg-red-600 hover:bg-red-500 text-white"
+                                                        onClick={(e) => { e.stopPropagation(); handleReject(project); }}
+                                                    >
+                                                        Reject
+                                                    </Button>
+                                                </div>
+                                            );
+                                        }
+
+                                        return null;
+                                    })()}
                                 </div>
                             )}
                         </div>
@@ -318,7 +392,7 @@ const ProjectsPage: React.FC = () => {
                             <th className="p-3">Avg Price</th>
                             <th className="p-3">Verification</th>
                             <th className="p-3">Developer</th>
-                            {canWrite && <th className="p-3">Actions</th>}
+                            {(canWrite || canApprove) && <th className="p-3">Actions</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -360,20 +434,35 @@ const ProjectsPage: React.FC = () => {
                                         {project.project_pricing?.average_price ? `₹${project.project_pricing.average_price}` : "-"}
                                     </td>
                                     <td className="p-3 text-xs uppercase font-medium">
-                                        {!project.isVerified ? (
-                                            <span className="bg-yellow-500/10 text-yellow-400 px-2 py-0.5 rounded border border-yellow-500/20">
-                                                Pending
-                                            </span>
-                                        ) : (
-                                            <span className="bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/20">
-                                                Verified
-                                            </span>
-                                        )}
+                                        {(() => {
+                                            const ob = getOnboardingItem(project._id);
+                                            const status = project.isVerified ? 'Approved' : (ob?.status || 'Draft');
+
+                                            const colors: Record<string, string> = {
+                                                Draft: "bg-gray-500/20 text-gray-400 border-gray-500/20",
+                                                Submitted: "bg-yellow-500/20 text-yellow-400 border-yellow-500/20",
+                                                Approved: "bg-green-500/20 text-green-400 border-green-500/20",
+                                                Rejected: "bg-red-500/20 text-red-400 border-red-500/20",
+                                            };
+
+                                            return (
+                                                <div className="flex flex-col gap-1">
+                                                    <span className={`px-2 py-0.5 rounded border ${colors[status]}`}>
+                                                        {status}
+                                                    </span>
+                                                    {status === 'Rejected' && ob?.rejectionReason && (
+                                                        <span className="text-[9px] text-red-300 italic max-w-[120px] truncate normal-case" title={ob.rejectionReason}>
+                                                            {ob.rejectionReason}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()}
                                     </td>
                                     <td className="p-3 text-sm text-gray-400">
                                         {project.project_details?.developer_name || project.developer?.developer_id || "-"}
                                     </td>
-                                    {canWrite && (
+                                    {(canWrite || canApprove) && (
                                         <td className="p-3">
                                             <div className="flex gap-2">
                                                 <Button
@@ -392,16 +481,50 @@ const ProjectsPage: React.FC = () => {
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
-                                                {canApprove && !project.isVerified && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        className="text-green-400 hover:text-green-300"
-                                                        onClick={(e) => { e.stopPropagation(); handleVerify(project._id, project.name); }}
-                                                    >
-                                                        Verify
-                                                    </Button>
-                                                )}
+
+                                                {/* Onboarding Flow Buttons */}
+                                                {(() => {
+                                                    const ob = getOnboardingItem(project._id);
+                                                    const status = project.isVerified ? 'Approved' : (ob?.status || 'Draft');
+
+                                                    if (user?.role === 'onboarding_agent' && (status === 'Draft' || status === 'Rejected')) {
+                                                        return (
+                                                            <Button
+                                                                variant="secondary"
+                                                                size="sm"
+                                                                className="bg-blue-600 hover:bg-blue-500 text-white"
+                                                                onClick={(e) => { e.stopPropagation(); handleSubmitForApproval(project._id); }}
+                                                            >
+                                                                Submit
+                                                            </Button>
+                                                        );
+                                                    }
+
+                                                    if (canApprove && status === 'Submitted') {
+                                                        return (
+                                                            <div className="flex gap-1">
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="text-green-400 hover:text-green-300"
+                                                                    onClick={(e) => { e.stopPropagation(); handleApprove(project); }}
+                                                                >
+                                                                    Approve
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="text-red-400 hover:text-red-300"
+                                                                    onClick={(e) => { e.stopPropagation(); handleReject(project); }}
+                                                                >
+                                                                    Reject
+                                                                </Button>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return null;
+                                                })()}
                                             </div>
                                         </td>
                                     )}

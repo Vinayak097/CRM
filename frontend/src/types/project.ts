@@ -176,6 +176,7 @@ export interface PropertyProject {
     unitNumber?: string | null;
     projectName?: string;
     isVerified?: boolean;
+    is_deleted?: number;
     created_at?: string;
     updated_at?: string;
 }

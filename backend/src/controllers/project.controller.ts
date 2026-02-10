@@ -14,8 +14,27 @@ export class PropertyProjectController {
     createProject = async (req: Request, res: Response) => {
         try {
             // Create new project - data already validated by middleware
-            const project = new PropertyProject(req.body);
+            const projectData = {
+                ...req.body,
+                assignedAgent: (req as any).user?.id
+            };
+            const project = new PropertyProject(projectData);
             await project.save();
+
+            // Onboarding assignment
+            const user = (req as any).user;
+            if (user?.role === 'onboarding_agent') {
+                const User = (await import('../models/User.js')).default;
+                await User.findByIdAndUpdate(user.id, {
+                    $push: {
+                        assignedProjects: {
+                            projectId: project._id,
+                            status: 'Draft',
+                            updatedAt: new Date()
+                        }
+                    }
+                });
+            }
 
             return res.status(201).json({
                 success: true,
@@ -135,7 +154,11 @@ export class PropertyProjectController {
             // 3. Fallback: Try native collection query for _id as string (bypassing Mongoose casting)
             if (!project) {
                 console.log(`[PropertyProjectController] Project not found by Mongoose, trying native collection _id: ${id}`);
-                project = await mongoose.connection.db?.collection('property_projects').findOne({ _id: id });
+                const query: any = { _id: id };
+                if (mongoose.isValidObjectId(id)) {
+                    query._id = new mongoose.Types.ObjectId(id);
+                }
+                project = await mongoose.connection.db?.collection('property_projects').findOne(query);
             }
 
             if (!project) {

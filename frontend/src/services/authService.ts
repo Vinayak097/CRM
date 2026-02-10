@@ -13,6 +13,20 @@ export interface RegisterRequest {
   role?: "admin" | "developer" | "sales_agent" | "sales_manager" | "onboarding_agent" | "business_head";
 }
 
+export interface OnboardingItem {
+  status: 'Draft' | 'Submitted' | 'Approved' | 'Rejected';
+  rejectionReason?: string;
+  updatedAt: string;
+}
+
+export interface AssignedProperty extends OnboardingItem {
+  propertyId: string;
+}
+
+export interface AssignedProject extends OnboardingItem {
+  projectId: string;
+}
+
 export interface User {
   id: string;
   name: string;
@@ -21,6 +35,8 @@ export interface User {
   role: "admin" | "developer" | "sales_agent" | "sales_manager" | "onboarding_agent" | "business_head";
   isActive?: boolean;
   lastLogin?: string | null;
+  assignedProperties?: AssignedProperty[];
+  assignedProjects?: AssignedProject[];
   createdAt?: string;
   updatedAt?: string;
 }

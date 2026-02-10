@@ -23,9 +23,29 @@ export class PropertyController {
   createProperty = async (req: Request, res: Response) => {
     try {
       // Request is validated by `validateRequest` middleware; use body directly
+      const propertyData = {
+        ...req.body,
+        assignedAgent: (req as any).user?.id
+      };
       const property = await this.propertyService.createProperty(
-        req.body as unknown as CreatePropertyInput,
+        propertyData as unknown as CreatePropertyInput,
       );
+
+      // Onboarding assignment
+      const user = (req as any).user;
+      if (user?.role === 'onboarding_agent') {
+        const User = (await import('../models/User.js')).default;
+        await User.findByIdAndUpdate(user.id, {
+          $push: {
+            assignedProperties: {
+              propertyId: property._id,
+              status: 'Draft',
+              updatedAt: new Date()
+            }
+          }
+        });
+      }
+
       res.status(201).json({
         success: true,
         data: property,

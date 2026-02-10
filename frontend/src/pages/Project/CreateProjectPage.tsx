@@ -15,6 +15,11 @@ const CreateProjectPage: React.FC = () => {
 
         try {
             await projectService.createProject(formData);
+
+            // Refresh user data to get updated assignedProjects
+            const { checkAuth } = (await import("../../store/authStore")).useAuthStore.getState();
+            await checkAuth();
+
             navigate("/projects");
         } catch (err: any) {
             setError(err.response?.data?.message || "Failed to create project");
