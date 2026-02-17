@@ -18,27 +18,46 @@ const DevelopersPage: React.FC = () => {
   const [filters, setFilters] = useState({
     active: "",
   });
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    total: 0,
+    limit: 10
+  });
 
-  const fetchDevelopers = useCallback(async () => {
+  const fetchDevelopers = useCallback(async (page = 1) => {
     setLoading(true);
     setError(null);
     try {
-      const params: any = {};
+      const params: any = {
+        page,
+        limit: pagination.limit
+      };
       if (search) params.search = search;
       if (filters.active !== "") params.active = filters.active === "true";
 
       const response = await developerService.getAll(params);
       setDevelopers(response.data);
+      setPagination(prev => ({
+        ...prev,
+        ...response.pagination
+      }));
     } catch {
       setError("Failed to fetch developers");
     } finally {
       setLoading(false);
     }
-  }, [search, filters]);
+  }, [search, filters, pagination.limit]);
 
   useEffect(() => {
-    fetchDevelopers();
-  }, [fetchDevelopers]);
+    fetchDevelopers(1);
+  }, [search, filters]); // Reset to page 1 when search or filters change
+
+  useEffect(() => {
+    if (pagination.currentPage > 1) {
+      // This is for manual page changes if not triggered by the above
+    }
+  }, [pagination.currentPage]);
 
   const handleSearch = () => {
     setSearch(searchInput);
@@ -298,6 +317,56 @@ const DevelopersPage: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <div className="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4 bg-gray-900 border border-gray-700 p-4 rounded-lg">
+          <p className="text-sm text-gray-400">
+            Showing <span className="text-white font-medium">{(pagination.currentPage - 1) * pagination.limit + 1}</span> to{" "}
+            <span className="text-white font-medium">{Math.min(pagination.currentPage * pagination.limit, pagination.total)}</span> of{" "}
+            <span className="text-white font-medium">{pagination.total}</span> developers
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={pagination.currentPage === 1 || loading}
+              onClick={() => fetchDevelopers(pagination.currentPage - 1)}
+            >
+              Previous
+            </Button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                .filter(p => {
+                  // Show current page, first, last, and pages around current
+                  return p === 1 || p === pagination.totalPages || Math.abs(p - pagination.currentPage) <= 1;
+                })
+                .map((p, i, arr) => (
+                  <React.Fragment key={p}>
+                    {i > 0 && arr[i - 1] !== p - 1 && <span className="text-gray-600 px-1">...</span>}
+                    <Button
+                      variant={pagination.currentPage === p ? "default" : "secondary"}
+                      size="sm"
+                      className={`h-8 w-8 p-0 ${pagination.currentPage === p ? "bg-blue-600 hover:bg-blue-700" : ""}`}
+                      onClick={() => fetchDevelopers(p)}
+                      disabled={loading}
+                    >
+                      {p}
+                    </Button>
+                  </React.Fragment>
+                ))}
+            </div>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={pagination.currentPage === pagination.totalPages || loading}
+              onClick={() => fetchDevelopers(pagination.currentPage + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

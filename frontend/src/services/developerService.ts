@@ -2,7 +2,7 @@ import api from "./api";
 import type { Developer, CreateDeveloperInput, UpdateDeveloperInput } from "../types/developer";
 
 export const developerService = {
-  getAll: async (params?: { search?: string; active?: boolean }) => {
+  getAll: async (params?: { search?: string; active?: boolean; page?: number; limit?: number }) => {
     const response = await api.get("/developers", { params });
     return response.data;
   },

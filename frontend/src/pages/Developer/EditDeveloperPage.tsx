@@ -221,10 +221,11 @@ const EditDeveloperPage: React.FC = () => {
               <label className="block text-sm text-gray-400 mb-1">ESG Compliance Score (0-10)</label>
               <Input
                 type="number"
+                step="0.1"
                 min="0"
                 max="10"
                 value={formData.esgComplianceScore}
-                onChange={(e) => setFormData(prev => ({ ...prev, esgComplianceScore: e.target.value }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, esgComplianceScore: parseFloat(e.target.value) || 0 }))}
                 className="bg-gray-800 border-gray-700"
               />
             </div>

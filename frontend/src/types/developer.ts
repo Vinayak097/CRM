@@ -35,3 +35,14 @@ export interface CreateDeveloperInput {
 }
 
 export interface UpdateDeveloperInput extends Partial<CreateDeveloperInput> { }
+
+export interface DeveloperResponse {
+  status: string;
+  data: Developer[];
+  pagination: {
+    total: number;
+    totalPages: number;
+    currentPage: number;
+    limit: number;
+  };
+}
