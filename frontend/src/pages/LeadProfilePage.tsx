@@ -10,6 +10,7 @@ import { userService, type User } from "../services/userService";
 import { taskService, type Task } from "../services/taskService";
 import { communicationService, type Activity as ActivityType } from "../services/communicationService";
 import { noteService, type Note, type NoteVisibility } from "../services/noteService";
+import { whatsAppService } from "../services/whatsAppService";
 import CreateTaskModal from "../components/tasks/CreateTaskModal";
 import TaskList from "../components/tasks/TaskList";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,11 @@ const LeadProfilePage: React.FC = () => {
   // Activities state
   const [activities, setActivities] = useState<ActivityType[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
+
+  // WhatsApp state
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [waMessage, setWaMessage] = useState("");
+  const [sendingWA, setSendingWA] = useState(false);
 
   const statuses: LeadStatus[] = ["New", "Contacted", "Qualified", "Shortlisted", "Site Visit", "Negotiation", "Booked", "Lost", "Converted"];
 
@@ -234,6 +240,30 @@ const LeadProfilePage: React.FC = () => {
     }
   };
 
+  const handleSendWhatsApp = async () => {
+    if (!id || !lead || !waMessage.trim()) return;
+    setSendingWA(true);
+    try {
+      await whatsAppService.sendMessage({
+        destination: lead.identity?.phone || "",
+        message: waMessage,
+        userName: fullName,
+        relatedTo: {
+          type: "lead",
+          id: id
+        }
+      });
+      setWaMessage("");
+      setShowWhatsAppModal(false);
+      fetchActivities(); // Refresh timeline
+    } catch (error) {
+      console.error("Failed to send WhatsApp:", error);
+      alert("Failed to send WhatsApp message");
+    } finally {
+      setSendingWA(false);
+    }
+  };
+
   const getVisibilityIcon = (visibility: NoteVisibility) => {
     switch (visibility) {
       case "private": return <Lock className="h-3 w-3" />;
@@ -340,6 +370,9 @@ const LeadProfilePage: React.FC = () => {
                   </Button>
                 </>
               )}
+              <Button variant="outline" size="sm" onClick={() => setShowWhatsAppModal(true)} className="bg-green-600/20 text-green-400 border-green-500/30 hover:bg-green-600/30">
+                <MessageSquare className="h-4 w-4 mr-1" />WhatsApp
+              </Button>
               <Button variant="outline" size="sm" onClick={handleDelete} disabled={deleting} className="text-red-400 hover:text-red-300">
                 <Trash2 className="h-4 w-4 mr-1" />{deleting ? "..." : "Delete"}
               </Button>
@@ -475,7 +508,7 @@ const LeadProfilePage: React.FC = () => {
                     <Button variant="outline" size="sm">
                       <Mail className="h-4 w-4 mr-2" />Send Email
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => setShowWhatsAppModal(true)}>
                       <MessageSquare className="h-4 w-4 mr-2" />WhatsApp
                     </Button>
                     <Button variant="outline" size="sm">
@@ -742,6 +775,44 @@ const LeadProfilePage: React.FC = () => {
                 <Button variant="secondary" onClick={() => setShowStatusModal(false)}>Cancel</Button>
                 <Button onClick={handleStatusChange} disabled={updating}>
                   {updating ? "Updating..." : "Update"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* WhatsApp Modal */}
+      {showWhatsAppModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md bg-gray-900 border-gray-800">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-white">
+                <MessageSquare className="h-5 w-5 text-green-500" /> Send WhatsApp Message
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-4 text-sm text-gray-400">
+                Sending to: <span className="text-white font-medium">{fullName} ({lead.identity?.phone})</span>
+              </div>
+              <Textarea
+                value={waMessage}
+                onChange={(e) => setWaMessage(e.target.value)}
+                placeholder="Type your WhatsApp message here..."
+                rows={4}
+                className="bg-gray-800 border-gray-700 mb-4 text-white"
+              />
+              <p className="text-xs text-gray-500 mb-4 italic">
+                Note: Ensure the phone number starts with the country code (e.g., +91 for India).
+              </p>
+              <div className="flex justify-end gap-2">
+                <Button variant="secondary" onClick={() => setShowWhatsAppModal(false)}>Cancel</Button>
+                <Button
+                  onClick={handleSendWhatsApp}
+                  disabled={sendingWA || !waMessage.trim()}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {sendingWA ? "Sending..." : "Send Message"}
                 </Button>
               </div>
             </CardContent>

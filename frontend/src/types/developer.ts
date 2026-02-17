@@ -34,4 +34,4 @@ export interface CreateDeveloperInput {
   active?: boolean;
 }
 
-export interface UpdateDeveloperInput extends Partial<CreateDeveloperInput> {}
+export interface UpdateDeveloperInput extends Partial<CreateDeveloperInput> { }

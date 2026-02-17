@@ -197,7 +197,7 @@ const EditDeveloperPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-gray-700 pt-4">
-             <div>
+            <div>
               <label className="block text-sm text-gray-400 mb-1">Email</label>
               <Input
                 type="email"
@@ -224,16 +224,16 @@ const EditDeveloperPage: React.FC = () => {
                 min="0"
                 max="10"
                 value={formData.esgComplianceScore}
-                onChange={(e) => setFormData(prev => ({ ...prev, esgComplianceScore: parseInt(e.target.value) }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, esgComplianceScore: e.target.value }))}
                 className="bg-gray-800 border-gray-700"
               />
             </div>
             <div className="flex items-center pt-6">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  checked={formData.active} 
-                  onChange={e => setFormData(prev => ({ ...prev, active: e.target.checked }))} 
+                <input
+                  type="checkbox"
+                  checked={formData.active}
+                  onChange={e => setFormData(prev => ({ ...prev, active: e.target.checked }))}
                 />
                 <span className="text-sm">Active</span>
               </label>

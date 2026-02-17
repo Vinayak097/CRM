@@ -1,0 +1,80 @@
+{
+  "_id": "65f1c9a2b7e4a91234567890",
+
+  "agent_id": "AGT-2026-0001",
+
+  "status": "approved",
+
+
+  "contacts": {
+    "phone": "+919876543210",
+    "email": "vinay.agent@example.com",
+
+    "phone_verified": true,
+    "email_verified": true
+  },
+
+
+  "profile": {
+    "full_name": "Vinay Injamure",
+
+    "date_of_birth": "1995-08-15T00:00:00.000Z",
+
+    "current_city": "Goa",
+
+    "languages": ["English", "Hindi", "Marathi"],
+
+    "years_of_experience": "3-5",
+
+    "qualifications": ["MBA - Marketing", "Real Estate Certification"],
+
+    "about": "Experienced real estate sales professional specializing in residential and luxury properties across Goa and Alibag markets."
+  },
+
+
+  "markets": {
+    "selected_markets": ["Goa", "Alibag"],
+
+    "primary_market": "Goa"
+  },
+
+
+  "kyc": {
+    "kyc_status": "verified",
+
+    "documents": [
+      {
+        "type": "aadhaar",
+        "document_number": "123412341234",
+        "front_image_url": "https://cdn.yourcrm.com/kyc/agt-2026-0001/aadhaar-front.jpg",
+        "back_image_url": "https://cdn.yourcrm.com/kyc/agt-2026-0001/aadhaar-back.jpg"
+      },
+      {
+        "type": "pan",
+        "document_number": "ABCDE1234F",
+        "front_image_url": "https://cdn.yourcrm.com/kyc/agt-2026-0001/pan-front.jpg",
+        "back_image_url": null
+      }
+    ]
+  },
+
+
+  "agreement": {
+    "agreement_signed": true,
+
+    "agreement_signed_at": "2026-02-10T11:45:00.000Z",
+
+    "agreement_version": "v1.0",
+
+    "agreement_document_url": "https://cdn.yourcrm.com/agreements/agt-2026-0001/agreement-v1.pdf"
+  },
+
+
+  "system": {
+    "created_at": "2026-02-10T10:15:00.000Z",
+
+    "updated_at": "2026-02-10T11:50:00.000Z",
+
+    "last_login_at": "2026-02-11T09:30:00.000Z"
+  }
+}

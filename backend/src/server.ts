@@ -23,6 +23,7 @@ import taskRoutes from "./routes/task.routes.js";
 import communicationRoutes from "./routes/communication.routes.js";
 import noteRoutes from "./routes/note.routes.js";
 import onboardingRoutes from "./routes/onboarding.routes.js";
+import whatsAppRoutes from "./routes/whatsApp.routes.js";
 import { initializeTaskScheduler } from "./workers/taskScheduler.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -109,6 +110,7 @@ app.use("/api/tasks", taskRoutes);
 app.use("/api/communications", communicationRoutes);
 app.use("/api/notes", noteRoutes);
 app.use("/api/onboarding", onboardingRoutes);
+app.use("/api/whatsapp", whatsAppRoutes);
 app.use("/api/project", projectRoutes);
 // Health check
 app.get("/health", (req: Request, res: Response) => {
