@@ -33,7 +33,7 @@ export class PropertyService {
   async approveProperty(id: string): Promise<Property | null> {
     return this.propertyRepository.update(id, {
       isVerified: true,
-      published_at: new Date(),
+      published_at: new Date().toISOString(),
     });
   }
 
@@ -77,7 +77,7 @@ export class PropertyService {
   ): Promise<Property | null> {
     return this.propertyRepository.update(id, {
       ...data,
-      updated_at: new Date(),
+      updated_at: new Date().toISOString(),
     });
   }
 

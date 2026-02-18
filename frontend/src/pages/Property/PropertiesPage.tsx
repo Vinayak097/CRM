@@ -4,8 +4,6 @@ import { Search, Plus, ChevronLeft, ChevronRight, Edit2, Trash2, Filter, X } fro
 import { propertyService, type Property } from "../../services/propertyService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { onboardingService } from "../../services/onboardingService";
-import { useAuthStore } from "../../store/authStore";
 
 const PAGE_SIZE = 10;
 
@@ -14,60 +12,9 @@ const WRITE_ROLES = ['admin', 'onboarding_agent', 'developer'];
 
 const PropertiesPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, checkAuth } = useAuthStore();
-  const canWrite = WRITE_ROLES.includes(user?.role || "");
-  const canApprove = ['admin', 'business_head'].includes(user?.role || "");
+  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const canWrite = WRITE_ROLES.includes(user?.role);
   const [properties, setProperties] = useState<Property[]>([]);
-  // ... (existing state)
-
-  // Add these handlers:
-  const handleSubmitForApproval = async (id: string) => {
-    try {
-      await onboardingService.submitForApproval(id, 'Property');
-      await checkAuth(); // Refresh user data to get updated status
-      fetchProperties();
-    } catch (err: any) {
-      alert(err.message || "Failed to submit for approval");
-    }
-  };
-
-  const handleApprove = async (property: Property) => {
-    if (!confirm("Are you sure you want to approve this property?")) return;
-    try {
-      const agentId = (property as any).assignedAgent;
-      if (!agentId) throw new Error("No agent assigned to this property");
-
-      await onboardingService.approveItem(agentId, property._id, 'Property');
-      await checkAuth();
-      fetchProperties();
-    } catch (err: any) {
-      alert(err.message || "Failed to approve property");
-    }
-  };
-
-  const handleReject = async (property: Property) => {
-    const reason = prompt("Please enter the reason for rejection:");
-    if (reason === null) return;
-    if (!reason.trim()) {
-      alert("Rejection reason is required");
-      return;
-    }
-
-    try {
-      const agentId = (property as any).assignedAgent;
-      if (!agentId) throw new Error("No agent assigned to this property");
-
-      await onboardingService.rejectItem(agentId, property._id, 'Property', reason);
-      await checkAuth();
-      fetchProperties();
-    } catch (err: any) {
-      alert(err.message || "Failed to reject property");
-    }
-  };
-
-  const getOnboardingItem = (propertyId: string) => {
-    return user?.assignedProperties?.find(p => p.propertyId === propertyId);
-  };
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
@@ -81,7 +28,6 @@ const PropertiesPage: React.FC = () => {
     status: "",
     featured: "",
     active: "",
-    verificationStatus: "",
   });
 
   const fetchProperties = useCallback(async () => {
@@ -97,7 +43,6 @@ const PropertiesPage: React.FC = () => {
       if (filters.status) params.status = filters.status;
       if (filters.featured !== "") params.featured = filters.featured === "true";
       if (filters.active !== "") params.active = filters.active === "true";
-      if (filters.verificationStatus !== "") params.isVerified = filters.verificationStatus === "true";
 
       const response = await propertyService.getProperties(params);
       setProperties(response.data);
@@ -144,7 +89,6 @@ const PropertiesPage: React.FC = () => {
       status: "",
       featured: "",
       active: "",
-      verificationStatus: "",
     });
     setPage(1);
   };
@@ -292,18 +236,6 @@ const PropertiesPage: React.FC = () => {
                   <option value="false">Inactive</option>
                 </select>
               </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">Verification Status</label>
-                <select
-                  value={filters.verificationStatus}
-                  onChange={(e) => handleFilterChange("verificationStatus", e.target.value)}
-                  className="w-full px-3 py-2 rounded bg-gray-800 border border-gray-700 focus:outline-none text-white"
-                >
-                  <option value="">All</option>
-                  <option value="false">Pending Verification</option>
-                  <option value="true">Verified</option>
-                </select>
-              </div>
             </div>
           </div>
         )}
@@ -347,11 +279,6 @@ const PropertiesPage: React.FC = () => {
                   >
                     {property.property_type || property.propertyType || "Type"}
                   </span>
-                  {!property.isVerified && (
-                    <span className="px-2 py-1 rounded-full text-xs font-medium shrink-0 bg-yellow-500/20 text-yellow-400">
-                      Pending Verification
-                    </span>
-                  )}
                 </div>
               </div>
               <div className="flex justify-between items-center text-sm mb-3">
@@ -366,7 +293,7 @@ const PropertiesPage: React.FC = () => {
                   </div>
                 )}
               </div>
-              {(canWrite || canApprove) && (
+              {canWrite && (
                 <div className="flex gap-2 pt-3 border-t border-gray-700">
                   <Button
                     variant="ghost"
@@ -386,49 +313,6 @@ const PropertiesPage: React.FC = () => {
                     <Trash2 className="h-4 w-4 mr-1" />
                     Delete
                   </Button>
-                  {/* Onboarding Flow Buttons - Mobile */}
-                  {(() => {
-                    const ob = getOnboardingItem(property._id);
-                    const status = property.isVerified ? 'Approved' : (ob?.status || 'Draft');
-
-                    if (user?.role === 'onboarding_agent' && (status === 'Draft' || status === 'Rejected')) {
-                      return (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="flex-1 bg-blue-600 hover:bg-blue-500 text-white"
-                          onClick={(e) => { e.stopPropagation(); handleSubmitForApproval(property._id); }}
-                        >
-                          Submit
-                        </Button>
-                      );
-                    }
-
-                    if (canApprove && status === 'Submitted') {
-                      return (
-                        <div className="flex flex-1 gap-2">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="flex-1 bg-green-600 hover:bg-green-500 text-white"
-                            onClick={(e) => { e.stopPropagation(); handleApprove(property); }}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="flex-1 bg-red-600 hover:bg-red-500 text-white"
-                            onClick={(e) => { e.stopPropagation(); handleReject(property); }}
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      );
-                    }
-
-                    return null;
-                  })()}
                 </div>
               )}
             </div>
@@ -446,10 +330,9 @@ const PropertiesPage: React.FC = () => {
               <th className="p-3">Price</th>
               <th className="p-3">Area</th>
               <th className="p-3">Status</th>
-              <th className="p-3">Approval</th>
               <th className="p-3">Featured</th>
               <th className="p-3">Views</th>
-              {(canWrite || canApprove) && <th className="p-3">Actions</th>}
+              {canWrite && <th className="p-3">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -489,32 +372,6 @@ const PropertiesPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="p-3">
-                    {(() => {
-                      const ob = getOnboardingItem(property._id);
-                      const status = property.isVerified ? 'Approved' : (ob?.status || 'Draft');
-
-                      const colors: Record<string, string> = {
-                        Draft: "bg-gray-500/20 text-gray-400",
-                        Submitted: "bg-yellow-500/20 text-yellow-400",
-                        Approved: "bg-green-500/20 text-green-400",
-                        Rejected: "bg-red-500/20 text-red-400",
-                      };
-
-                      return (
-                        <div className="flex flex-col gap-1">
-                          <span className={`px-2 py-0.5 rounded text-[10px] w-fit ${colors[status]}`}>
-                            {status}
-                          </span>
-                          {status === 'Rejected' && ob?.rejectionReason && (
-                            <span className="text-[9px] text-red-300 italic max-w-[120px] truncate" title={ob.rejectionReason}>
-                              {ob.rejectionReason}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </td>
-                  <td className="p-3">
                     {property.badges?.is_featured ? (
                       <span className="text-yellow-400">★</span>
                     ) : (
@@ -522,7 +379,7 @@ const PropertiesPage: React.FC = () => {
                     )}
                   </td>
                   <td className="p-3">{property.engagement?.views_count || 0}</td>
-                  {(canWrite || canApprove) && (
+                  {canWrite && (
                     <td className="p-3">
                       <div className="flex gap-2">
                         <Button
@@ -541,50 +398,6 @@ const PropertiesPage: React.FC = () => {
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-
-                        {/* Onboarding Flow Buttons */}
-                        {(() => {
-                          const ob = getOnboardingItem(property._id);
-                          const status = property.isVerified ? 'Approved' : (ob?.status || 'Draft');
-
-                          if (user?.role === 'onboarding_agent' && (status === 'Draft' || status === 'Rejected')) {
-                            return (
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="bg-blue-600 hover:bg-blue-500 text-white"
-                                onClick={(e) => { e.stopPropagation(); handleSubmitForApproval(property._id); }}
-                              >
-                                Submit
-                              </Button>
-                            );
-                          }
-
-                          if (canApprove && status === 'Submitted') {
-                            return (
-                              <div className="flex gap-1">
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  className="bg-green-600 hover:bg-green-500 text-white"
-                                  onClick={(e) => { e.stopPropagation(); handleApprove(property); }}
-                                >
-                                  Approve
-                                </Button>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  className="bg-red-600 hover:bg-red-500 text-white"
-                                  onClick={(e) => { e.stopPropagation(); handleReject(property); }}
-                                >
-                                  Reject
-                                </Button>
-                              </div>
-                            );
-                          }
-
-                          return null;
-                        })()}
                       </div>
                     </td>
                   )}

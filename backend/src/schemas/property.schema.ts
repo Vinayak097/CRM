@@ -142,7 +142,7 @@ export const propertySchema = z
     }).optional().nullable(),
 
     developer: z.object({
-      developer_id: z.string().optional(),
+      developer_id: z.string().optional().nullable(),
       name: z.string().optional(),
       logo: z.string().optional(),
     }).optional().nullable(),
@@ -248,7 +248,7 @@ export const propertySchema = z
       views_this_week: z.number().optional(),
       saved_count: z.number().optional(),
       share_count: z.number().optional(),
-      last_viewed_at: z.string().optional(),
+      last_viewed_at: z.string().optional().nullable(),
     }).optional().nullable(),
 
     property_tags: z.array(z.string()).optional(),

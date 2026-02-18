@@ -26,7 +26,6 @@ const MenuSidebar: React.FC<MenuSidebarProps> = ({ isOpen = false, onClose }) =>
     { name: 'Developers', icon: '🏗️', route: '/developers', allowedRoles: ['admin', 'onboarding_agent', 'developer'] as Role[] },
     { name: 'Users', icon: '👥', route: '/users', allowedRoles: ['admin', 'sales_manager', 'business_head'] as Role[] },
     { name: 'Locations', icon: '📍', route: '/locations', allowedRoles: ['admin'] as Role[] },
-    { name: 'Sales Funnel', icon: '🌪️', route: '/sales-funnel', allowedRoles: ['admin', 'sales_agent', 'sales_manager'] as Role[] },
   ];
 
   const filteredMenuItems = menuItems.filter(item => item.allowedRoles.includes(userRole));

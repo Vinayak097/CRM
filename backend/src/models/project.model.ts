@@ -149,7 +149,7 @@ const PoliciesSchema = new mongoose.Schema({
 
 // Main Schema
 const PropertyProjectSchema = new mongoose.Schema({
-    _id: { type: String, required: true, index: true, unique: true },
+    _id: { type: String, required: true},
     id: { type: String, required: true, index: true, unique: true },
     name: { type: String, required: true, trim: true },
     subtitle: String,

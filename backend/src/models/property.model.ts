@@ -13,6 +13,7 @@ const PropertySchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    _id: { type: String, required: true },
     assignedAgent: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     listing_id: { type: String, index: true },
     title: { type: String },
@@ -81,19 +82,17 @@ const PropertySchema = new mongoose.Schema(
 
     is_deleted: { type: Number, default: 0, index: true },
     
-    created_at: { type: Date, default: Date.now },
-    updated_at: { type: Date, default: Date.now },
-    published_at: { type: Date },
+    created_at: { type: String, default: () => new Date().toISOString() },
+    updated_at: { type: String, default: () => new Date().toISOString() },
+    published_at: { type: String },
 
-    listedDate: { type: Date },
+    listedDate: { type: String },
+
   },
   {
     strict: false, // 👈 REQUIRED for 100% mirroring
     minimize: false, // 👈 REQUIRED to keep empty objects like accessibility: {}
-    timestamps: {
-      createdAt: 'created_at',
-      updatedAt: 'updated_at'
-    },
+    timestamps: false,
     versionKey: false
   }
 );
@@ -118,7 +117,7 @@ export class PropertyRepository {
     return (doc as any).toObject();
   }
 
-  async findById(id: string) {
+  async findById(id: mongoose.Types.ObjectId | string) {
     return PropertyModel.findById(id).lean();
   }
 

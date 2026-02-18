@@ -40,7 +40,7 @@ export class PropertyController {
             assignedProperties: {
               propertyId: property._id,
               status: 'Draft',
-              updatedAt: new Date()
+              
             }
           }
         });
