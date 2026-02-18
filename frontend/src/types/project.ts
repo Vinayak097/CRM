@@ -11,13 +11,21 @@ export interface Developer {
     developer_id: string;
 }
 
+export interface UnitType {
+    type?: string;
+    count?: number | null;
+    min_area_sqft?: number | null;
+    max_area_sqft?: number | null;
+    starting_price?: number | null;
+}
+
 export interface ProjectDetails {
     developer_id?: string;
     developer_name?: string;
     total_units?: number;
     available_units?: number | null;
     sold_units?: number | null;
-    unit_types_available?: string[];
+    unit_types_available?: UnitType[];
     phase_number?: number | null;
 }
 
@@ -175,7 +183,7 @@ export interface PropertyProject {
     unitName?: string | null;
     unitNumber?: string | null;
     projectName?: string;
-    isVerified?: boolean;
+   is_verfied?: boolean;
     is_deleted?: number;
     created_at?: string;
     updated_at?: string;

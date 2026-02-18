@@ -80,7 +80,7 @@ const PropertySchema = new mongoose.Schema(
     lastPriceUpdate: { type: mongoose.Schema.Types.Mixed },
 
     is_deleted: { type: Number, default: 0, index: true },
-    isVerified: { type: Boolean, default: false, index: true },
+    
     created_at: { type: Date, default: Date.now },
     updated_at: { type: Date, default: Date.now },
     published_at: { type: Date },

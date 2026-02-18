@@ -11,13 +11,21 @@ const DeveloperSchema = z.object({
     developer_id: z.string()
 });
 
+const UnitTypeZodSchema = z.object({
+    type: z.string().optional(),
+    count: z.number().optional().nullable(),
+    min_area_sqft: z.number().optional().nullable(),
+    max_area_sqft: z.number().optional().nullable(),
+    starting_price: z.number().optional().nullable()
+});
+
 const ProjectDetailsSchema = z.object({
     developer_id: z.string().optional(),
     developer_name: z.string().optional(),
     total_units: z.number().optional(),
     available_units: z.number().optional().nullable(),
     sold_units: z.number().optional().nullable(),
-    unit_types_available: z.array(z.string()).optional(),
+    unit_types_available: z.array(UnitTypeZodSchema).optional(),
     phase_number: z.number().optional().nullable()
 });
 

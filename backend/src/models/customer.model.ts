@@ -72,7 +72,16 @@ const customerSchema = new Schema<CustomerDocument>(
       },
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: {
+      transform: function(doc, ret) {
+        if (ret.createdAt) ret.createdAt = ret.createdAt?.toISOString?.() || ret.createdAt;
+        if (ret.updatedAt) ret.updatedAt = ret.updatedAt?.toISOString?.() || ret.updatedAt;
+        return ret;
+      }
+    }
+  }
 );
 
 /* INDEXES */

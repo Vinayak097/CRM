@@ -45,6 +45,8 @@ export const projectService = {
         if (params.is_deleted !== undefined) queryParams.append("is_deleted", params.is_deleted.toString());
         if (params.sort) queryParams.append("sort", params.sort);
 
+
+
         const response = await api.get(`/projects?${queryParams}`);
         return {
             data: response.data.data,
@@ -92,6 +94,7 @@ export const projectService = {
         const response = await api.post("/projects/bulk", { projects });
         return response.data;
     },
+
     verifyProject: async (id: string): Promise<{ data: PropertyProject; message: string }> => {
         const response = await api.patch(`/projects/${id}/verify`);
         return response.data;

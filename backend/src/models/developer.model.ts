@@ -22,6 +22,13 @@ const developerSchema = new mongoose.Schema(
     timestamps: {
       createdAt: "created_at",
       updatedAt: "updated_at"
+    },
+    toJSON: {
+      transform: function(doc, ret) {
+        if (ret.created_at) ret.created_at = ret.created_at?.toISOString?.() || ret.created_at;
+        if (ret.updated_at) ret.updated_at = ret.updated_at?.toISOString?.() || ret.updated_at;
+        return ret;
+      }
     }
   }
 );

@@ -11,13 +11,21 @@ const DeveloperSchema = new mongoose.Schema({
     developer_id: { type: String, required: true }
 }, { _id: false });
 
+const UnitTypeSchema = new mongoose.Schema({
+    type: String,
+    count: Number,
+    min_area_sqft: Number,
+    max_area_sqft: Number,
+    starting_price: Number
+}, { _id: false });
+
 const ProjectDetailsSchema = new mongoose.Schema({
     developer_id: String,
     developer_name: String,
     total_units: Number,
     available_units: Number,
     sold_units: Number,
-    unit_types_available: [String],
+    unit_types_available: [UnitTypeSchema],
     phase_number: Number
 }, { _id: false });
 
@@ -141,7 +149,8 @@ const PoliciesSchema = new mongoose.Schema({
 
 // Main Schema
 const PropertyProjectSchema = new mongoose.Schema({
-    id: String,
+    _id: { type: String, required: true, index: true, unique: true },
+    id: { type: String, required: true, index: true, unique: true },
     name: { type: String, required: true, trim: true },
     subtitle: String,
     assignedAgent: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
@@ -184,14 +193,14 @@ const PropertyProjectSchema = new mongoose.Schema({
     unitName: String,
     unitNumber: String,
     projectName: String,
-    isVerified: { type: Boolean, default: false, index: true },
+    
     is_deleted: { type: Number, default: 0 }
 }, {
     timestamps: {
         createdAt: 'created_at',
         updatedAt: 'updated_at'
     },
-    collection: 'property_projects'
+    collection: 'projects'
 });
 
 // Indexes for better query performance
@@ -222,6 +231,6 @@ PropertyProjectSchema.statics.findLuxuryProjects = function (this: any) {
 };
 
 // Export the model
-const PropertyProject = mongoose.model('PropertyProject', PropertyProjectSchema);
+const PropertyProject = mongoose.model('projects', PropertyProjectSchema);
 
 export default PropertyProject;

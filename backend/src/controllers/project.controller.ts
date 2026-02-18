@@ -10,6 +10,35 @@ import mongoose from "mongoose";
 
 export class PropertyProjectController {
 
+    private async findProjectOrThrow(id: string) {
+        let project = null;
+
+        // 1. Try finding by MongoDB _id if it's a valid ObjectId
+        if (mongoose.isValidObjectId(id)) {
+            project = await PropertyProject.findById(id);
+        }
+
+        // 2. If not found by _id, try finding by custom string id
+        if (!project) {
+            project = await PropertyProject.findOne({ id: id });
+        }
+
+        // 3. Fallback: Try native collection query for _id as string
+        if (!project) {
+            const query: any = { _id: id };
+            if (mongoose.isValidObjectId(id)) {
+                query._id = new mongoose.Types.ObjectId(id);
+            }
+            project = await PropertyProject.findOne(query);
+        }
+
+        if (!project) {
+            throw new AppError('Property project not found', 404);
+        }
+
+        return project;
+    }
+
     // CREATE - Create new property project
     createProject = async (req: Request, res: Response) => {
         try {
@@ -98,24 +127,32 @@ export class PropertyProjectController {
 
             // Role-based visibility
             const user = (req as any).user;
+
             if (user?.role === 'sales_agent') {
                 filter.isVerified = true;
             } else if (queryParams.isVerified) {
                 filter.isVerified = queryParams.isVerified === 'true';
             }
 
-            // Soft-delete filter
-            filter.is_deleted = queryParams.is_deleted ? parseInt(queryParams.is_deleted) : 0;
+            // Soft-delete filter: include 0, null, or missing fields. Only exclude explicitly deleted (1)
+            const isDeletedVal = queryParams.is_deleted ? parseInt(queryParams.is_deleted) : 0;
+            if (isDeletedVal === 0) {
+                filter.is_deleted = { $ne: 1 };
+            } else {
+                filter.is_deleted = isDeletedVal;
+            }
 
             // Execute query
+            console.log(`[PropertyProjectController] Fetching projects with filter: ${JSON.stringify(filter)}`);
+
             const projects = await PropertyProject
                 .find(filter)
                 .sort(queryParams.sort as any)
                 .skip(skip)
-                .limit(limit)
-                .lean();
+                .limit(limit);
 
             const total = await PropertyProject.countDocuments(filter);
+            console.log(`[PropertyProjectController] Found ${projects.length} projects out of ${total} total matching filter`);
 
             return res.status(200).json({
                 success: true,
@@ -136,59 +173,37 @@ export class PropertyProjectController {
     getProjectById = async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
-            console.log(`[PropertyProjectController] Fetching project with ID: ${id}`);
-
-            let project = null;
-
-            // 1. Try finding by MongoDB _id if it's a valid ObjectId
-            if (mongoose.isValidObjectId(id)) {
-                project = await PropertyProject.findById(id);
-            }
-
-            // 2. If not found by _id, try finding by custom string id
-            if (!project) {
-                console.log(`[PropertyProjectController] Project not found by _id (ObjectId), trying custom id: ${id}`);
-                project = await PropertyProject.findOne({ id: id });
-            }
-
-            // 3. Fallback: Try native collection query for _id as string (bypassing Mongoose casting)
-            if (!project) {
-                console.log(`[PropertyProjectController] Project not found by Mongoose, trying native collection _id: ${id}`);
-                const query: any = { _id: id };
-                if (mongoose.isValidObjectId(id)) {
-                    query._id = new mongoose.Types.ObjectId(id);
-                }
-                project = await mongoose.connection.db?.collection('property_projects').findOne(query);
-            }
-
-            if (!project) {
-                console.warn(`[PropertyProjectController] Project not found for ID: ${id}`);
-                throw new AppError('Property project not found', 404);
-            }
+            const project = await this.findProjectOrThrow(id);
 
             return res.status(200).json({
                 success: true,
                 data: project
             });
         } catch (error: any) {
+            if (error instanceof AppError) throw error;
             console.error(`[PropertyProjectController] Error fetching project: ${error.message}`, error);
             throw new AppError('Error fetching property project', 500, error);
         }
     }
 
-    // UPDATE - Update project by ID
     updateProject = async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
 
-            if (!mongoose.isValidObjectId(id)) {
-                throw new AppError('Invalid property project ID', 400);
-            }
-
             // Data already validated by middleware
-            const project = await PropertyProject.findByIdAndUpdate(
-                id,
-                { $set: req.body },
+            const updateData = { ...req.body };
+            // Strip immutable or redundant ID/timestamp fields
+            delete updateData._id;
+            delete updateData.id;
+            delete updateData.created_at;
+            delete updateData.updated_at;
+            
+            // Set updated_at manually with ISO format
+            updateData.updated_at = new Date().toISOString();
+
+            const project = await PropertyProject.findOneAndUpdate(
+                { id: id },
+                { $set: updateData },
                 { new: true, runValidators: true }
             );
 
@@ -202,51 +217,42 @@ export class PropertyProjectController {
                 data: project
             });
         } catch (error: any) {
+            console.error(`[PropertyProjectController] Error updating project:`, error);
+            if (error instanceof AppError) throw error;
             throw new AppError('Error updating property project', 500, error);
         }
     }
 
-    // DELETE - Delete project by ID (soft delete by updating status)
     deleteProject = async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
             const { permanent } = req.query;
 
-            if (!mongoose.isValidObjectId(id)) {
-                throw new AppError('Invalid property project ID', 400);
-            }
-
             if (permanent === 'true') {
-                // Hard delete
-                const project = await PropertyProject.findByIdAndDelete(id);
-
-                if (!project) {
-                    throw new AppError('Property project not found', 404);
-                }
+                const project = await PropertyProject.findOneAndDelete({ id: id });
+                if (!project) throw new AppError('Property project not found', 404);
 
                 return res.status(200).json({
                     success: true,
                     message: 'Property project permanently deleted'
                 });
             } else {
-                // Soft delete - update is_deleted to 1
-                const project = await PropertyProject.findByIdAndUpdate(
-                    id,
+                const project = await PropertyProject.findOneAndUpdate(
+                    { id: id },
                     { $set: { is_deleted: 1, availabilityStatus: 'Deleted' } },
                     { new: true }
                 );
 
-                if (!project) {
-                    throw new AppError('Property project not found', 404);
-                }
+                if (!project) throw new AppError('Property project not found', 404);
 
                 return res.status(200).json({
                     success: true,
-                    message: 'Property project deleted successfully',
+                    message: 'Property project soft-deleted successfully',
                     data: project
                 });
             }
         } catch (error: any) {
+            if (error instanceof AppError) throw error;
             throw new AppError('Error deleting property project', 500, error);
         }
     }
@@ -310,24 +316,17 @@ export class PropertyProjectController {
         }
     }
 
-    // VERIFY - Verify project by ID
     verifyProject = async (req: Request, res: Response) => {
         try {
             const { id } = req.params;
 
-            if (!mongoose.isValidObjectId(id)) {
-                throw new AppError('Invalid property project ID', 400);
-            }
-
-            const project = await PropertyProject.findByIdAndUpdate(
-                id,
+            const project = await PropertyProject.findOneAndUpdate(
+                { id: id },
                 { $set: { isVerified: true } },
                 { new: true }
             );
 
-            if (!project) {
-                throw new AppError('Property project not found', 404);
-            }
+            if (!project) throw new AppError('Property project not found', 404);
 
             return res.status(200).json({
                 success: true,
@@ -335,6 +334,7 @@ export class PropertyProjectController {
                 data: project
             });
         } catch (error: any) {
+            if (error instanceof AppError) throw error;
             throw new AppError('Error verifying property project', 500, error);
         }
     }

@@ -13,10 +13,10 @@ const router = express.Router();
 const propertyProjectController = new PropertyProjectController();
 
 // READ - accessible to authenticated users
-router.get('/', validateRequest(PropertyProjectQuerySchema, "query"), propertyProjectController.getAllProjects);
-router.get('/luxury', propertyProjectController.getLuxuryProjects);
-router.get('/developer/:developerId', propertyProjectController.getProjectsByDeveloper);
-router.get('/:id', propertyProjectController.getProjectById);
+router.get('/', authenticateToken, validateRequest(PropertyProjectQuerySchema, "query"), propertyProjectController.getAllProjects);
+router.get('/luxury', authenticateToken, propertyProjectController.getLuxuryProjects);
+router.get('/developer/:developerId', authenticateToken, propertyProjectController.getProjectsByDeveloper);
+router.get('/:id', authenticateToken, propertyProjectController.getProjectById);
 
 // CREATE - only admin and onboarding agents
 router.post(

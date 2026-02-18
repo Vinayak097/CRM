@@ -131,6 +131,12 @@ const activitySchema = new Schema<IActivity>(
   {
     collection: "activities",
     timestamps: false,
+    toJSON: {
+      transform: function(doc, ret) {
+        if (ret.created_at) ret.created_at = ret.created_at?.toISOString?.() || ret.created_at;
+        return ret;
+      }
+    }
   }
 );
 
