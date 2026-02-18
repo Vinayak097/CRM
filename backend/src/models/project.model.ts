@@ -193,13 +193,19 @@ const PropertyProjectSchema = new mongoose.Schema({
     unitName: String,
     unitNumber: String,
     projectName: String,
-    
+    created_at: {
+  type: String,
+  default: () => new Date().toISOString()
+},
+
+updated_at: {
+  type: String,
+  default: () => new Date().toISOString()
+},
+
     is_deleted: { type: Number, default: 0 }
 }, {
-    timestamps: {
-        createdAt: 'created_at',
-        updatedAt: 'updated_at'
-    },
+    timestamps:false,
     collection: 'projects'
 });
 

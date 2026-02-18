@@ -199,7 +199,10 @@ export class PropertyProjectController {
             delete updateData.updated_at;
             
             // Set updated_at manually with ISO format
-            updateData.updated_at = new Date().toISOString();
+            updateData.updated_at = new Date()
+  .toISOString()
+  .replace(/\.\d{3}Z$/, "Z");
+
 
             const project = await PropertyProject.findOneAndUpdate(
                 { id: id },
